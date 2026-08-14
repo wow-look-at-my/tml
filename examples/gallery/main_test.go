@@ -102,13 +102,23 @@ func golden(t *testing.T, name, got string) {
 		require.NoError(t, os.WriteFile(path, []byte(got), 0o644))
 		return
 	}
-	data, err := os.ReadFile(path)
+	assert.Equal(t, readGolden(t, path, got), got)
+}
+
+// readGolden returns the recorded frame. An empty golden is seeded from this run
+// and then fails: seeding silently would bless whatever a broken frame happened
+// to contain and turn the first run green for the wrong reason.
+func readGolden(t *testing.T, path, got string) string {
+	t.Helper()
+	info, err := os.Stat(path)
 	require.NoError(t, err, "missing golden file; rerun with -update")
-	if len(data) == 0 {
-		// Seeding silently would bless whatever a broken frame happened to
-		// contain, so the first run always fails and asks to be read.
-		require.NoError(t, os.WriteFile(path, []byte(got), 0o644))
-		t.Fatalf("golden %s was empty; seeded from this run -- re-run, and read it before trusting it", path)
+
+	if info.Size() > 0 {
+		data, err := os.ReadFile(path)
+		require.NoError(t, err)
+		return string(data)
 	}
-	assert.Equal(t, string(data), got)
+	require.NoError(t, os.WriteFile(path, []byte(got), 0o644))
+	t.Fatalf("golden %s was empty; seeded it from this run -- re-run to verify, and read the diff before trusting it", path)
+	return ""
 }
