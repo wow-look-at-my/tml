@@ -72,7 +72,13 @@ func (s *scrollbox) Compose(slots widget.Slots, w, h int) string {
 	content := lipgloss.JoinVertical(lipgloss.Left, slots.Default()...)
 	all := strings.Split(content, "\n")
 
-	lines := window(all, s.offsetY, h)
+	// The offset is clamped to the content, so scrolling stops at the last
+	// screenful instead of running off into blank space -- and a host that wants
+	// the end of a growing transcript can just ask for a big number. Layout
+	// clamps its copy the same way, or a click would land a line off.
+	offset := clamp(s.offsetY, 0, max(0, len(all)-h))
+
+	lines := window(all, offset, h)
 	for i, line := range lines {
 		lines[i] = columns(line, s.offsetX, viewW)
 	}
@@ -80,7 +86,7 @@ func (s *scrollbox) Compose(slots widget.Slots, w, h int) string {
 		return strings.Join(lines, "\n")
 	}
 
-	bar := s.scrollbar(len(all), h)
+	bar := s.scrollbar(offset, len(all), h)
 	for i := range lines {
 		if i < len(bar) {
 			lines[i] += bar[i]
@@ -91,7 +97,7 @@ func (s *scrollbox) Compose(slots widget.Slots, w, h int) string {
 
 // scrollbar is the gutter column: a track with a thumb sized and placed in
 // proportion to what is on screen.
-func (s *scrollbox) scrollbar(total, view int) []string {
+func (s *scrollbox) scrollbar(offset, total, view int) []string {
 	bar := make([]string, max(0, view))
 	blank := " "
 	if s.bar == "always" {
@@ -112,7 +118,7 @@ func (s *scrollbox) scrollbar(total, view int) []string {
 	reach := total - view
 	start := 0
 	if reach > 0 {
-		start = min(span, max(0, s.offsetY*span/reach))
+		start = min(span, max(0, offset*span/reach))
 	}
 	for i := start; i < start+thumb && i < view; i++ {
 		bar[i] = "█"
@@ -121,8 +127,9 @@ func (s *scrollbox) scrollbar(total, view int) []string {
 }
 
 // window takes height rows starting at offset, padding with blanks when the
-// offset runs past the end. A blank viewport is a visible answer; silently
-// snapping back to the last full page would hide a host scrolling too far.
+// content is shorter than the space. The offset is already clamped by the
+// caller: how many lines the content wraps to depends on the width the widget
+// was given, so the end is a number only this side can work out.
 func window(lines []string, offset, height int) []string {
 	if height <= 0 {
 		return nil
@@ -150,3 +157,6 @@ func columns(line string, offset, width int) string {
 	}
 	return cut
 }
+
+// clamp keeps n inside [low, high].
+func clamp(n, low, high int) int { return max(low, min(n, high)) }

@@ -164,6 +164,38 @@ func TestScrolledOutControlsCannotBeClicked(t *testing.T) {
 	}
 }
 
+// Where a scrolling region actually stopped is a number only the frame knows:
+// how far the content runs depends on the width it wrapped at. So a host that
+// wants the bottom asks to go too far, and reads back where that landed.
+func TestTheFrameReportsWhereAScrollingRegionLanded(t *testing.T) {
+	loaded := interactive(t, `<Scrollbox id="log" offset="9999" height="2" width="20">
+		<Stack>
+			<Text>one</Text>
+			<Text>two</Text>
+			<Text>three</Text>
+			<Text>four</Text>
+		</Stack>
+	</Scrollbox>`, 20, 2)
+
+	target, ok := loaded.UI().Target("log")
+	require.True(t, ok)
+	assert.Equal(t, 2, target.Scroll.MaxY, "four lines seen through two")
+	assert.Equal(t, 2, target.Scroll.Y, "asking for further than there is stops at the end")
+}
+
+// Anything that does not scroll reports no scrolling, rather than a position a
+// host would then try to move.
+func TestANonScrollingControlReportsNoScroll(t *testing.T) {
+	loaded := interactive(t, `<Button id="go" action="go" label="Go"/>`, 20, 3)
+
+	target, ok := loaded.UI().Target("go")
+	require.True(t, ok)
+	assert.Equal(t, tml.Scroll{}, target.Scroll)
+
+	_, ok = loaded.UI().Target("missing")
+	assert.False(t, ok)
+}
+
 // A view with nothing focusable is not broken, it simply has no ring.
 func TestAViewWithNoControlsHasNoRing(t *testing.T) {
 	loaded := interactive(t, `<Text>just words</Text>`, 20, 1)

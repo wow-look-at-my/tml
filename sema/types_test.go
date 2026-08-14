@@ -181,3 +181,22 @@ func TestTruthyIsDefinedOnlyWhereItIsUnambiguous(t *testing.T) {
 	require.Error(t, err, "a number has no defined truth")
 	assert.Contains(t, err.Error(), "no truth value")
 }
+
+// A host's list has to survive its own contents. Joining the items into one
+// string leaves them to be split on commas again, which is how one sentence
+// becomes two entries.
+func TestListValueKeepsItemsWithCommasInThem(t *testing.T) {
+	value := ListValue([]string{"one, with a comma", "two"})
+
+	require.True(t, value.Type().IsList)
+	require.Len(t, value.Items(), 2)
+	assert.Equal(t, "one, with a comma", value.Items()[0].String())
+
+	truthy, err := value.Truthy()
+	require.NoError(t, err)
+	assert.True(t, truthy)
+
+	empty, err := ListValue(nil).Truthy()
+	require.NoError(t, err)
+	assert.False(t, empty)
+}

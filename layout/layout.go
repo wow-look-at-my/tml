@@ -78,11 +78,11 @@ type Box struct {
 	autoWidths, autoHeights []int
 	place                   placement
 
-	// canvas is this box's placement within a parent Canvas; scrolled is the
-	// full size of a Scrollbox's content, which is usually taller than the
-	// viewport showing it.
-	canvas   canvasPlacement
-	scrolled Size
+	// canvas is this box's placement within a parent Canvas; scroll is where a
+	// scrolling region's content ended up, which is what the frame reports back
+	// to the host.
+	canvas canvasPlacement
+	scroll Scroll
 }
 
 // Options configure an engine.

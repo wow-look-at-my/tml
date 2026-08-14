@@ -1,0 +1,12 @@
+{
+	"name": "tml-shots",
+	"private": true,
+	"type": "module",
+	"description": "Screenshots of the examples running in a real terminal",
+	"scripts": {
+		"capture": "node capture.mjs"
+	},
+	"dependencies": {
+		"playwright": "^1.62.1"
+	}
+}

@@ -45,24 +45,15 @@ type builder func(widget.Context) (widget.Native, error)
 // factory pairs a builder with the attribute names it reads. The engine hands
 // anything not on that list to the stylesheet instead, which is what lets
 // <Badge label="new" bg="#f00"/> mean both things at once.
+//
+// This library goes through the same public constructor a host does, so the
+// seam cannot rot on the side nobody uses.
 func factory(build builder, attrs []string) widget.Factory {
-	return declared{build: build, attrs: attrs}
+	return widget.NewFactory(attrs, build)
 }
 
 // slotted is a factory that also names the regions content can be written into,
 // so a misspelt <Button.Contnt> is rejected when the view loads.
 func slotted(build builder, attrs, slots []string) widget.Factory {
-	return declared{build: build, attrs: attrs, slots: slots}
+	return widget.NewSlottedFactory(attrs, slots, build)
 }
-
-type declared struct {
-	build builder
-	attrs []string
-	slots []string
-}
-
-func (d declared) Attributes() []string { return d.attrs }
-
-func (d declared) Slots() []string { return d.slots }
-
-func (d declared) Build(ctx widget.Context) (widget.Native, error) { return d.build(ctx) }

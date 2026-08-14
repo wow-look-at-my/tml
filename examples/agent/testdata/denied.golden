@@ -1,0 +1,30 @@
+ tml agent   mockingbird-1                                            $0.01  ░░░░░░░░░░░░░░░░░░ 
+                                                                                                
+ ────────────────────────────────────────────────────────────────────────────────────────────── 
+                                                                                                
+ ┌ Context ─────────┐  ┌ Session ─────────────────────────────────────────────────────────────┐ 
+ │   cmd/report.go  │  │                                                                    │ │ 
+ │ > report/table.… │  │                                                                    │ │ 
+ │   report/json.go │  │ ┌ cmd/report.go ──────────────────────────────────────────────────┐│ │ 
+ │   report/report… │  │ │ @@ -18,6 +18,10 @@ func newReportCmd() *cobra.Command {         ││ │ 
+ │                  │  │ │      cmd.Flags().StringVar(&out, "out", "", "write to a file")  ││ │ 
+ │                  │  │ │ +    cmd.Flags().BoolVar(&asJSON, "json", false, "write the     ││ │ 
+ │                  │  │ │ report as JSON")                                                ││ │ 
+ │                  │  │ │                                                                 │█ │ 
+ │                  │  │ │      return cmd                                                 │█ │ 
+ │                  │  │ │ @@ -41,7 +45,11 @@ func run(cmd *cobra.Command, args []string)  │█ │ 
+ │                  │  │ │ error {                                                         │█ │ 
+ │                  │  │ │ -    return table.Write(os.Stdout, rows)                        │█ │ 
+ │                  │  │ │ +    if asJSON {                                                │█ │ 
+ │                  │  │ │ +        return json.NewEncoder(os.Stdout).Encode(rows)         │█ │ 
+ │                  │  │ │ +    }                                                          │█ │ 
+ │                  │  │ └─────────────────────────────────────────────────────────────────┘█ │ 
+ │                  │  │                                                                    █ │ 
+ │                  │  │      denied -- the run was skipped and the session stopped here    █ │ 
+ └──────────────────┘  └──────────────────────────────────────────────────────────────────────┘ 
+                                                                                                
+                                                                                       ╭──────╮ 
+ ask for a change, or press space to step the script                                   │ Send │ 
+                                                                                       ╰──────╯ 
+                                                                                                
+ stopped                                       space steps, tab moves, enter activates, q quits 

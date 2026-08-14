@@ -17,3 +17,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: wow-look-at-my/go-toolchain@v1
+
+      # The screenshots are taken from the binaries this job just built, in a
+      # real terminal. see docs/screenshots.md
+      - name: Install ttyd
+        run: sudo apt-get update && sudo apt-get install -y ttyd
+      - name: Install the capture tool
+        run: npm install --no-audit --no-fund
+        working-directory: tools/shots
+      - name: Install the browser
+        run: npx playwright install --with-deps chromium
+        working-directory: tools/shots
+      - name: Capture the screenshots
+        run: node tools/shots/capture.mjs
+        env:
+          SHOTS_BRANCH: ${{ github.ref_name }}
+
+      - name: Publish the screenshots
+        uses: wow-look-at-my/buildhost/.github/actions/buildhost-publish-site@master
+        with:
+          # The project is the repository name, which is the one buildhost's
+          # OIDC trust covers -- naming anything else 404s with "project not
+          # found" rather than creating it.
+          branch: ${{ github.ref_name }}
+          source_dir: build/shots
+          deployment_ref: ${{ github.ref_name }}
+          # tml is private and the pictures are of example programs, so the site
+          # is served without a credential -- which is what lets the README show
+          # them.
+          public: 'true'

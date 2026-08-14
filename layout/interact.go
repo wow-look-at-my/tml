@@ -18,7 +18,16 @@ type Target struct {
 	Action string
 	Focus  bool
 	Rect   Rect
+	// Scroll is where a scrolling region ended up. It is the zero value for
+	// anything that does not scroll.
+	Scroll Scroll
 }
+
+// Scroll is how far a scrolling region's content is shifted, and how far it
+// could be. The maximum depends on how the content wrapped at the width it was
+// given, so a host that wants the end of something still growing asks for more
+// than there is and reads back where it landed.
+type Scroll struct{ X, Y, MaxX, MaxY int }
 
 // Interaction is the focus and pointer state a frame renders against.
 //
@@ -87,7 +96,7 @@ func (p *pass) publish() {
 		if rect.W <= 0 || rect.H <= 0 {
 			continue
 		}
-		targets = append(targets, Target{ID: box.ID, Action: box.Action, Focus: box.focus, Rect: rect})
+		targets = append(targets, Target{ID: box.ID, Action: box.Action, Focus: box.focus, Rect: rect, Scroll: box.scroll})
 	}
 	p.e.opts.Interaction.Frame(targets)
 }

@@ -24,12 +24,21 @@ func TestScrollboxShowsTheWindowTheOffsetSelects(t *testing.T) {
 	assert.Equal(t, "c\nd\ne", box.Compose(content(lines(8)...), 1, 3))
 }
 
-// Scrolling past the end shows blanks rather than snapping back, so a host with
-// its arithmetic wrong sees that it is wrong.
-func TestScrollboxPastTheEndGoesBlank(t *testing.T) {
-	box := composer(t, "Scrollbox", map[string]string{"offset": "9", "scrollbar": "never"})
+// Scrolling stops at the last screenful. How many lines the content wraps to
+// depends on the width the widget was handed, so the end is a number only this
+// side can work out -- which makes "a big number" the only way a host can ask
+// for the bottom of something that is still growing.
+func TestScrollboxStopsAtTheEnd(t *testing.T) {
+	box := composer(t, "Scrollbox", map[string]string{"offset": "9999", "scrollbar": "never"})
 
-	assert.Equal(t, " \n \n ", box.Compose(content(lines(3)...), 1, 3))
+	assert.Equal(t, "f\ng\nh", box.Compose(content(lines(8)...), 1, 3))
+}
+
+// Content that fits needs no scrolling, however far a host asks to go.
+func TestScrollboxWithNothingToScrollStaysPut(t *testing.T) {
+	box := composer(t, "Scrollbox", map[string]string{"offset": "4", "scrollbar": "never"})
+
+	assert.Equal(t, "a\nb\nc", box.Compose(content(lines(3)...), 1, 3))
 }
 
 func TestScrollboxScrollsSideways(t *testing.T) {

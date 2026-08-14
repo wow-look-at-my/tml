@@ -23,9 +23,9 @@ func (s stub) Render(_, _ int) string { return "" }
 // laid out inside what a widget leaves them.
 type wrapper struct {
 	stub
-	insetW, insetH int
-	free           bool
-	offsetY        int
+	insetW, insetH   int
+	free, freeW      bool
+	offsetX, offsetY int
 }
 
 func (w wrapper) Inset() (int, int) { return w.insetW, w.insetH }
@@ -33,7 +33,7 @@ func (w wrapper) Inset() (int, int) { return w.insetW, w.insetH }
 func (w wrapper) Compose(widget.Slots, int, int) string { return "" }
 
 func (w wrapper) Arrange() widget.Layout {
-	return widget.Layout{FreeH: w.free, OffsetY: w.offsetY}
+	return widget.Layout{FreeH: w.free, FreeW: w.freeW, OffsetX: w.offsetX, OffsetY: w.offsetY}
 }
 
 // dialog is a widget with an opinion about where it belongs.
@@ -178,4 +178,19 @@ func TestScrolledComposerShiftsItsChildren(t *testing.T) {
 	root := layoutWith(t, bindings, el("Scroller", nil, tall), 10, 2)
 
 	assert.Equal(t, -2, child(root, 0).Rect.Y)
+}
+
+// Scrolling stops at the content on both axes. The widget draws the last
+// screenful rather than blank space, so the geometry has to stop in the same
+// place or a click would land somewhere the content is not.
+func TestAScrolledComposerStopsAtItsContent(t *testing.T) {
+	bindings := map[string]widget.Native{
+		"Scroller": wrapper{free: true, freeW: true, offsetX: 99, offsetY: 99},
+	}
+	tall := el("Stack", nil, text("abcdefgh"), text("b"), text("c"), text("d"))
+
+	root := layoutWith(t, bindings, el("Scroller", nil, tall), 3, 2)
+
+	assert.Equal(t, -2, child(root, 0).Rect.Y, "four lines seen through two")
+	assert.Equal(t, -5, child(root, 0).Rect.X, "eight cells seen through three")
 }

@@ -43,6 +43,13 @@ for _, event := range m.view.UI().Update(msg) {
 Tab and the arrows move, enter activates, and the pointer hovers, clicks and scrolls against the frame the user is
 actually looking at. `go-toolchain && ./build/gallery` is all of it on one screen.
 
+[![The widget gallery](https://sites.pazer.build/tml/gallery-controls.png)](https://sites.pazer.build/tml/)
+
+[![A mock coding agent built with tml](https://sites.pazer.build/tml/agent-permission.png)](https://sites.pazer.build/tml/)
+
+Both pictures are the examples running in a real terminal, retaken on every push — see `docs/screenshots.md` for the
+rest of them and how they are made.
+
 Your own widgets plug into the same seam the library uses — see `docs/widgets.md`.
 
 ## In a Bubble Tea program
@@ -60,7 +67,8 @@ func (m *model) View() tea.View {
 ```
 
 Run the worked example: `go-toolchain && ./build/dashboard`, or `./build/dashboard -frame` for one frame without a
-terminal.
+terminal. `./build/agent` is a bigger one: a mock coding agent — a transcript that outgrows its viewport, tool output as
+cards, a permission prompt that interrupts — with two of its own widgets bound alongside the library's.
 
 ## Hot reload
 
@@ -109,4 +117,6 @@ go-toolchain
 - `docs/widgets.md` — the widget library, interaction, and writing your own
 - `docs/images.md` — how a picture reaches a terminal, and what happens when it cannot
 - `docs/lipgloss-contract.md` — what TML delegates to Lip Gloss, and the traps in it
+- `docs/agent.md` — the mock coding agent, and what building it changed about the language
+- `docs/screenshots.md` — how the pictures above are taken and published
 - `CLAUDE.md` — the working index for this repo
