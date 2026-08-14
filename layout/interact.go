@@ -112,7 +112,7 @@ func setScreen(box *Box, originX, originY int, clip Rect) {
 
 	offsetX, offsetY := box.Style.ContentOffset()
 	inner := clip
-	if horizontal, vertical := unbounded(box); horizontal || vertical {
+	if want := arrangement(box); want.FreeW || want.FreeH {
 		// Everything below a scrolling region is confined to what it shows,
 		// however far its content runs past the edge.
 		inner = intersect(clip, Rect{

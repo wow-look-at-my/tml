@@ -26,6 +26,16 @@ func (b *Box) Composer() widget.Composer { return b.composer() }
 // Slot is which of the parent widget's slots this box was written into.
 func (b *Box) Slot() string { return b.slot }
 
+// arrangement is how this box's widget wants its children handled. The zero
+// value is the default: shrink to the children, stack them, start at the origin.
+func arrangement(box *Box) widget.Layout {
+	arranger, ok := box.Native.(widget.Arranger)
+	if !ok {
+		return widget.Layout{}
+	}
+	return arranger.Arrange()
+}
+
 // measureComposer sizes a wrapping widget: its children measured against what is
 // left after its own inset, stacked down the page, plus the inset back on.
 //
@@ -34,13 +44,13 @@ func (b *Box) Slot() string { return b.slot }
 // constraints rather than draw.
 func (e *Engine) measureComposer(box *Box, inner Constraints) Size {
 	insetW, insetH := box.composer().Inset()
-	freeW, freeH := unbounded(box)
+	want := arrangement(box)
 
 	child := Constraints{MaxW: max(0, inner.MaxW-insetW), MaxH: max(0, inner.MaxH-insetH)}
-	if freeW {
+	if want.FreeW {
 		child.MaxW = 0
 	}
-	if freeH {
+	if want.FreeH {
 		child.MaxH = 0
 	}
 
@@ -50,15 +60,20 @@ func (e *Engine) measureComposer(box *Box, inner Constraints) Size {
 		content.W = max(content.W, size.W)
 		content.H += size.H
 	}
-	box.scrolled = content
 
-	// An unbounded axis measured the content at its full extent, which is not
-	// what the widget occupies: it takes the space on offer and shows part of it.
-	if freeW && inner.MaxW > 0 {
+	// A free axis measured the children at their full extent, which is not what
+	// the widget occupies: it takes what it is given and shows part of it.
+	if want.FreeW && inner.MaxW > 0 {
+		content.W = min(content.W, max(0, inner.MaxW-insetW))
+	}
+	if want.FreeH && inner.MaxH > 0 {
+		content.H = min(content.H, max(0, inner.MaxH-insetH))
+	}
+	if want.FillW && inner.MaxW > 0 {
 		content.W = max(0, inner.MaxW-insetW)
 	}
-	if freeH && inner.MaxH > 0 {
-		content.H = min(content.H, max(0, inner.MaxH-insetH))
+	if want.FillH && inner.MaxH > 0 {
+		content.H = max(0, inner.MaxH-insetH)
 	}
 	return Size{W: content.W + insetW, H: content.H + insetH}
 }
@@ -67,9 +82,9 @@ func (e *Engine) arrangeComposer(box *Box, composer widget.Composer) {
 	insetW, insetH := composer.Inset()
 	width := max(0, box.Content.W-insetW)
 	height := max(0, box.Content.H-insetH)
+	want := arrangement(box)
 
-	offsetX, offsetY := childOffset(box)
-	y := -offsetY
+	y := -want.OffsetY
 	for _, child := range box.Children {
 		w, h := child.desired.W, child.desired.H
 		if child.width.Kind == sema.LengthStar {
@@ -78,26 +93,16 @@ func (e *Engine) arrangeComposer(box *Box, composer widget.Composer) {
 		if child.height.Kind == sema.LengthStar {
 			h = height
 		}
-		e.arrange(child, Rect{X: -offsetX, Y: y, W: min(w, width), H: h})
+		// A child may only overflow on an axis the widget declared free. That is
+		// what a scrolling region is for; anywhere else it would draw straight
+		// through the frame around it.
+		if !want.FreeW {
+			w = min(w, width)
+		}
+		if !want.FreeH {
+			h = min(h, height)
+		}
+		e.arrange(child, Rect{X: -want.OffsetX, Y: y, W: w, H: h})
 		y += h
 	}
-}
-
-// childOffset is how far a widget has shifted its children inside itself.
-func childOffset(box *Box) (x, y int) {
-	scrolled, ok := box.Native.(widget.Scrolled)
-	if !ok {
-		return 0, 0
-	}
-	return scrolled.ChildOffset()
-}
-
-// unbounded asks a widget whether it measures its children against unlimited
-// space, which is what a scrolling region does.
-func unbounded(box *Box) (horizontal, vertical bool) {
-	free, ok := box.Native.(widget.Unbounded)
-	if !ok {
-		return false, false
-	}
-	return free.Unbounded()
 }

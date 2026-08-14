@@ -71,19 +71,29 @@ type Composer interface {
 	Compose(slots Slots, w, h int) string
 }
 
-// Unbounded is the optional half of a composer that measures its children
-// against unlimited space on an axis, which is what a scrolling region needs:
-// its content is allowed to be bigger than the hole it is seen through.
-type Unbounded interface {
-	Unbounded() (horizontal, vertical bool)
+// Layout is how a composer wants its children measured and placed, for the
+// cases the default does not cover. The default -- shrink to the children,
+// stacked down the page, starting at the top-left -- is the zero value, so a
+// widget only says what differs.
+type Layout struct {
+	// FillW and FillH take all the space on offer rather than shrinking to fit
+	// the children. A viewport does: one that shrank to its content would not be
+	// a viewport, and its scrollbar would end up somewhere in the middle.
+	FillW, FillH bool
+	// FreeW and FreeH measure the children against unlimited space, so they are
+	// allowed to be bigger than the widget showing them. This is what makes a
+	// scrolling region possible at all.
+	FreeW, FreeH bool
+	// OffsetX and OffsetY shift the children inside the widget. Layout needs to
+	// know because a control scrolled halfway off the top is clicked where it is
+	// drawn, not where it would otherwise have been.
+	OffsetX, OffsetY int
 }
 
-// Scrolled is the optional half of a composer that shows only part of its
-// children: how far they are shifted inside it. Layout needs it because a
-// control that has been scrolled halfway off is clicked where it is drawn, not
-// where it would have been.
-type Scrolled interface {
-	ChildOffset() (x, y int)
+// Arranger is the optional half of a composer whose children need measuring or
+// placing differently from the default.
+type Arranger interface {
+	Arrange() Layout
 }
 
 // Anchored is a widget with an opinion about where it belongs on a canvas. A

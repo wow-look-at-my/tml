@@ -202,12 +202,7 @@ func (p *pass) build(node *sema.Node) (*Box, error) {
 	}
 	if native, ok := e.opts.Widgets.Lookup(node.Name); ok {
 		box.Native = native
-		if err := p.track(box); err != nil {
-			return nil, err
-		}
-		return box, nil
-	}
-	if hasFactory {
+	} else if hasFactory {
 		native, err := factory.Build(widget.Context{
 			Attrs: widget.NewAttrs(node.Name, node.Attrs, node.Order),
 			FS:    e.opts.FS,
@@ -218,12 +213,15 @@ func (p *pass) build(node *sema.Node) (*Box, error) {
 			return nil, &syntax.Error{Pos: node.Pos, Message: err.Error()}
 		}
 		box.Native = native
+	}
+	if box.Native != nil {
 		if err := p.track(box); err != nil {
 			return nil, err
 		}
 		// A composer keeps its children: they are laid out inside whatever space
-		// it insets for itself, and handed back to it already drawn.
-		if _, wraps := native.(widget.Composer); !wraps {
+		// it insets for itself, and handed back to it already drawn. Anything else
+		// draws itself, so whatever was written inside it is not layout's to place.
+		if _, wraps := box.Native.(widget.Composer); !wraps {
 			return box, nil
 		}
 	}
@@ -305,6 +303,18 @@ func (b *Box) outer() (w, h int) {
 func (e *Engine) measure(box *Box, c Constraints) Size {
 	outerW, outerH := box.outer()
 	inner := Constraints{MaxW: max(0, c.MaxW-outerW), MaxH: max(0, c.MaxH-outerH)}
+
+	// An explicit size is a constraint on the children too, not just on the box
+	// itself. Measuring them against the parent's available space and only then
+	// clamping the parent would let a child ask for room the parent has already
+	// said it does not have -- which is how a scrolling region ends up rendering
+	// past the frame around it.
+	if box.width.Kind == sema.LengthCells {
+		inner.MaxW = min(inner.MaxW, max(0, box.width.Cells-outerW))
+	}
+	if box.height.Kind == sema.LengthCells {
+		inner.MaxH = min(inner.MaxH, max(0, box.height.Cells-outerH))
+	}
 
 	var content Size
 	switch {

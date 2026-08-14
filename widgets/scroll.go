@@ -39,14 +39,16 @@ func newScrollbox(ctx widget.Context) (widget.Native, error) {
 	return box, nil
 }
 
-// Unbounded is the whole point of a scrolling region: its content is measured
+// Arrange is the whole point of a scrolling region: the content is measured
 // against unlimited height, so it is free to be taller than the hole it is seen
-// through.
-func (s *scrollbox) Unbounded() (bool, bool) { return false, true }
-
-// ChildOffset tells layout where the content actually sits, so a control
-// scrolled halfway off the top is clicked where it is drawn.
-func (s *scrollbox) ChildOffset() (int, int) { return s.offsetX, s.offsetY }
+// through, while the region itself takes the full width on offer -- one that
+// shrank to its content would put its scrollbar somewhere in the middle.
+//
+// The offset goes back to layout as well, so a control scrolled halfway off the
+// top is clicked where it is drawn.
+func (s *scrollbox) Arrange() widget.Layout {
+	return widget.Layout{FreeH: true, FillW: true, OffsetX: s.offsetX, OffsetY: s.offsetY}
+}
 
 // Inset reserves the scrollbar column. Auto cannot know yet whether there is
 // anything to scroll -- that needs the drawn content -- so it reserves the

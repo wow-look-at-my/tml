@@ -76,22 +76,15 @@ func TestScrollboxGutter(t *testing.T) {
 }
 
 // The content is measured against unlimited height -- that is the whole point --
-// and layout is told how far it has been shifted so a control scrolled halfway
-// off is clicked where it is drawn.
-func TestScrollboxDeclaresItsUnboundedAxisAndOffset(t *testing.T) {
+// the region itself takes the full width so its scrollbar sits at the edge, and
+// layout is told how far the content has been shifted so a control scrolled
+// halfway off is clicked where it is drawn.
+func TestScrollboxDeclaresHowItsChildrenAreLaidOut(t *testing.T) {
 	box := composer(t, "Scrollbox", map[string]string{"offset": "3", "offsetX": "2"})
 
-	free, ok := box.(widget.Unbounded)
+	arranger, ok := box.(widget.Arranger)
 	require.True(t, ok)
-	horizontal, vertical := free.Unbounded()
-	assert.False(t, horizontal)
-	assert.True(t, vertical)
-
-	scrolled, ok := box.(widget.Scrolled)
-	require.True(t, ok)
-	x, y := scrolled.ChildOffset()
-	assert.Equal(t, 2, x)
-	assert.Equal(t, 3, y)
+	assert.Equal(t, widget.Layout{FreeH: true, FillW: true, OffsetX: 2, OffsetY: 3}, arranger.Arrange())
 }
 
 // A negative offset is meaningless, and letting it through would put the content
@@ -99,10 +92,9 @@ func TestScrollboxDeclaresItsUnboundedAxisAndOffset(t *testing.T) {
 func TestScrollboxClampsNegativeOffsets(t *testing.T) {
 	box := build(t, "Scrollbox", map[string]string{"offset": "-4", "offsetX": "-2"})
 
-	scrolled := box.(widget.Scrolled)
-	x, y := scrolled.ChildOffset()
-	assert.Equal(t, 0, x)
-	assert.Equal(t, 0, y)
+	want := box.(widget.Arranger).Arrange()
+	assert.Equal(t, 0, want.OffsetX)
+	assert.Equal(t, 0, want.OffsetY)
 }
 
 func TestScrollboxRejectsAnUnknownScrollbarMode(t *testing.T) {
