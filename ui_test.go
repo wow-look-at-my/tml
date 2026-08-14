@@ -60,7 +60,7 @@ func TestTabMovesAndWraps(t *testing.T) {
 
 	events := press(u, "tab")
 	require.Len(t, events, 1)
-	assert.Equal(t, Event{Kind: FocusMoved, ID: "quit", Action: "quit"}, events[0])
+	assert.Equal(t, Event{Kind: FocusMoved, ID: "quit", Action: "quit", X: -1, Y: -1}, events[0])
 	assert.True(t, state(u, 1).Focused)
 
 	press(u, "tab")
@@ -79,7 +79,7 @@ func TestEnterAndSpaceActivateTheFocusedControl(t *testing.T) {
 	for _, stroke := range []string{"enter", "space"} {
 		events := press(u, stroke)
 		require.Len(t, events, 1, stroke)
-		assert.Equal(t, Event{Kind: Activated, ID: "save", Action: "save-doc"}, events[0])
+		assert.Equal(t, Event{Kind: Activated, ID: "save", Action: "save-doc", X: -1, Y: -1}, events[0])
 	}
 }
 
@@ -172,7 +172,7 @@ func TestWheelReportsScrollOverAControl(t *testing.T) {
 
 	events := u.Update(tea.MouseWheelMsg{X: 1, Y: 1, Button: tea.MouseWheelDown})
 	require.Len(t, events, 1)
-	assert.Equal(t, Event{Kind: Scrolled, ID: "log", Action: "scroll-log", Delta: 1}, events[0])
+	assert.Equal(t, Event{Kind: Scrolled, ID: "log", Action: "scroll-log", Delta: 1, X: 1, Y: 1}, events[0])
 
 	events = u.Update(tea.MouseWheelMsg{X: 1, Y: 1, Button: tea.MouseWheelUp})
 	require.Len(t, events, 1)
@@ -235,7 +235,7 @@ func TestThePointerReachesWhatTheKeyboardSkips(t *testing.T) {
 
 	events := u.Update(tea.MouseWheelMsg{X: 2, Y: 3, Button: tea.MouseWheelDown})
 	require.Len(t, events, 1)
-	assert.Equal(t, Event{Kind: Scrolled, ID: "log", Action: "scroll-log", Delta: 1}, events[0])
+	assert.Equal(t, Event{Kind: Scrolled, ID: "log", Action: "scroll-log", Delta: 1, X: 2, Y: 1}, events[0])
 }
 
 // Clicking one leaves the keyboard where it was rather than sending focus
@@ -248,6 +248,32 @@ func TestClickingAPointerOnlyElementDoesNotMoveFocus(t *testing.T) {
 	id, _ := u.Focused()
 	assert.Equal(t, "save", id)
 	assert.False(t, u.Focus("log"), "it never takes focus by name either")
+}
+
+// One widget can draw many things -- a list's rows, a table's columns -- and the
+// ring sees one element. Where inside it the pointer landed is what lets the host
+// tell them apart, so it is reported in cells from the control's own corner.
+func TestPointerEventsSayWhereInTheControlTheyLanded(t *testing.T) {
+	u := NewUI()
+	ring(u, target("services", "pick", 4, 2, 12, 5))
+
+	u.Update(tea.MouseClickMsg{X: 7, Y: 5, Button: tea.MouseLeft})
+	events := u.Update(tea.MouseReleaseMsg{X: 7, Y: 5, Button: tea.MouseLeft})
+	require.Len(t, events, 1)
+	assert.Equal(t, 3, events[0].X)
+	assert.Equal(t, 3, events[0].Y)
+}
+
+// The keyboard has no pointer, and reporting the corner would read as a click on
+// the first row of whatever was focused.
+func TestKeyboardEventsHaveNoPointer(t *testing.T) {
+	u := NewUI()
+	ring(u, target("services", "pick", 4, 2, 12, 5))
+
+	events := press(u, "enter")
+	require.Len(t, events, 1)
+	assert.Equal(t, -1, events[0].X)
+	assert.Equal(t, -1, events[0].Y)
 }
 
 func TestEventKindsAreNamed(t *testing.T) {

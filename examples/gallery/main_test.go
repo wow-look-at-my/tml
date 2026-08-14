@@ -181,6 +181,20 @@ func TestTheWheelScrollsTheLog(t *testing.T) {
 	assert.NotContains(t, ansi.Strip(m.frameOf()), "step 1 finished", "the first line has scrolled off")
 }
 
+// A list is one control to the ring, so clicking a row is the host reading the
+// event's own coordinates. This is the case the coordinates exist for.
+func TestClickingAListRowSelectsIt(t *testing.T) {
+	m := gallery(t)
+	m.tab = "data"
+	require.NotContains(t, m.frameOf(), "tml: ")
+
+	list := control(t, m, "services")
+	press(m, list.Rect.X+2, list.Rect.Y+3)
+
+	assert.Equal(t, 3, m.selected)
+	assert.Contains(t, ansi.Strip(m.frameOf()), "> scheduler", "the cursor moved to the row that was clicked")
+}
+
 // press clicks and releases over one point, which is what actually activates a
 // control: a press alone is only the start of a click that can still be taken
 // back by releasing somewhere else.

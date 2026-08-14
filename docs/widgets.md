@@ -47,6 +47,16 @@ A control is reachable two ways, and they are not the same set:
 A disabled control is in neither: it is left out of the frame's geometry entirely, so a click where it is drawn does
 nothing at all.
 
+One widget can draw many things — a list's rows, a table's columns — and the ring still sees one element. A pointer
+event carries `X` and `Y` in cells from that element's own corner, which is how the host tells them apart; both are `-1`
+when the keyboard did it.
+
+```go
+if event.ID == "services" && event.Y >= 0 {
+    m.selected = event.Y
+}
+```
+
 Focus is a rendering input, not something a widget stores. The engine hands each widget its `widget.State` before
 measuring, so a control that grows when focused is measured at the size it will actually draw at.
 

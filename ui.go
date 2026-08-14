@@ -50,6 +50,11 @@ type Event struct {
 	ID     string
 	Action string
 	Delta  int
+	// X and Y are where the pointer was inside the control, in cells from its
+	// top-left. A widget that draws several things -- a list's rows, a table's
+	// columns -- is one element to the ring, so this is how the host works out
+	// which of them was clicked. Both are -1 when the keyboard did it.
+	X, Y int
 }
 
 // KeyMap is which keys drive the focus ring. Replace it when the host wants a
@@ -165,7 +170,7 @@ func (u *UI) Update(msg tea.Msg) []Event {
 		if pressed == "" || target != pressed {
 			return nil
 		}
-		return u.activate(target)
+		return u.at(target, Activated, 0, msg.X, msg.Y)
 	case tea.MouseWheelMsg:
 		target := u.hit(msg.X, msg.Y)
 		if target == "" {
@@ -173,9 +178,9 @@ func (u *UI) Update(msg tea.Msg) []Event {
 		}
 		switch msg.Button {
 		case tea.MouseWheelUp:
-			return u.event(target, Scrolled, -1)
+			return u.at(target, Scrolled, -1, msg.X, msg.Y)
 		case tea.MouseWheelDown:
-			return u.event(target, Scrolled, 1)
+			return u.at(target, Scrolled, 1, msg.X, msg.Y)
 		}
 	}
 	return nil
@@ -258,19 +263,38 @@ func (u *UI) focusKey(key string) []Event {
 	}
 	u.focus = key
 	id, action := u.Focused()
-	return []Event{{Kind: FocusMoved, ID: id, Action: action}}
+	return []Event{{Kind: FocusMoved, ID: id, Action: action, X: -1, Y: -1}}
 }
 
+// activate is the keyboard firing a control, so there is no pointer to report.
 func (u *UI) activate(key string) []Event {
-	return u.event(key, Activated, 0)
+	return u.event(key, Activated, 0, -1, -1)
 }
 
-func (u *UI) event(key string, kind EventKind, delta int) []Event {
+// at is a pointer event, with the screen point turned into an offset inside the
+// control it landed on.
+func (u *UI) at(key string, kind EventKind, delta, screenX, screenY int) []Event {
 	index := u.indexOf(key)
 	if index < 0 {
 		return nil
 	}
-	return []Event{{Kind: kind, ID: u.targets[index].ID, Action: u.targets[index].Action, Delta: delta}}
+	rect := u.targets[index].Rect
+	return u.event(key, kind, delta, screenX-rect.X, screenY-rect.Y)
+}
+
+func (u *UI) event(key string, kind EventKind, delta, x, y int) []Event {
+	index := u.indexOf(key)
+	if index < 0 {
+		return nil
+	}
+	return []Event{{
+		Kind:   kind,
+		ID:     u.targets[index].ID,
+		Action: u.targets[index].Action,
+		Delta:  delta,
+		X:      x,
+		Y:      y,
+	}}
 }
 
 // hit finds the control under a point. Later targets win, because that is the

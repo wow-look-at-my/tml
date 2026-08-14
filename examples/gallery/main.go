@@ -113,7 +113,13 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	for _, event := range m.view.UI().Update(msg) {
 		switch event.Kind {
 		case tml.Activated:
-			if !m.act(event.Action) {
+			// A list is one control to the ring, so which row was clicked is in
+			// the event's own coordinates rather than in an action of its own.
+			if event.ID == "services" && event.Y >= 0 {
+				m.selected = clamp(event.Y, 0, len(services)-1)
+				continue
+			}
+			if event.Action != "" && !m.act(event.Action) {
 				// A control the model has no answer for is a bug in this file,
 				// and a button that does nothing when pressed looks exactly like
 				// one that is broken. Say so on screen rather than swallowing it.

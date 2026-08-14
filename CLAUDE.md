@@ -70,6 +70,9 @@ publishes where everything landed, so a click resolves against the frame the use
 The focus ring is the widgets that take focus; the pointer also reaches anything else with an id, which is what lets the
 wheel find a `Scrollbox`. A widget that implements `Focusable` and refuses is disabled and reachable by neither.
 
+A pointer event carries `X`/`Y` inside the control it hit, `-1` from the keyboard. That is how a host tells one row of a
+`List` from another: a multi-part widget is still one element to the ring, and sub-targets are deliberately not a thing.
+
 ## Parsing
 
 Delegated to `github.com/wow-look-at-my/xml-validator` — strict XML 1.1, namespace validation, UTF-8/BOM rejection and
