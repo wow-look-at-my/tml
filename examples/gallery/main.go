@@ -249,6 +249,7 @@ func main() {
 	height := flag.Int("height", 30, "viewport height for -frame")
 	tab := flag.String("tab", "controls", "section to show for -frame: controls, data or media")
 	popup := flag.Bool("popup", false, "show the confirmation popup for -frame")
+	focus := flag.String("focus", "", "id of the control to put the keyboard on for -frame")
 	flag.Parse()
 
 	m, err := newModel()
@@ -261,6 +262,15 @@ func main() {
 		m.width, m.height = *width, *height
 		m.tab, m.confirming = *tab, *popup
 		m.query = "sched"
+		if *focus != "" {
+			// Focus resolves against a frame's controls, so there has to be one
+			// before there is anything to name.
+			m.frameOf()
+			if !m.view.UI().Focus(*focus) {
+				fmt.Fprintf(os.Stderr, "error: no control with id %q on this frame\n", *focus)
+				os.Exit(1)
+			}
+		}
 		fmt.Println(m.frameOf())
 		return
 	}
