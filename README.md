@@ -40,6 +40,16 @@ func (m *model) View() tea.View {
 Run the worked example: `go-toolchain && ./build/dashboard`, or `./build/dashboard -frame` for one frame without a
 terminal.
 
+## Hot reload
+
+```go
+go tml.Watch(ctx, "ui", "app.tml", opts, func(v *tml.View, err error) {
+    program.Send(reloaded{view: v, err: err})
+})
+```
+
+Edits show up without a restart. A reload that fails hands you the error instead of quietly keeping the last good view.
+
 ## CLI
 
 ```bash

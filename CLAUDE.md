@@ -75,6 +75,13 @@ lives under `cmd/`.
 - `cmd/tml/` — the CLI binary
 - `examples/dashboard/` — a Bubble Tea program whose whole view is TML
 
+## Hot reload
+
+`tml.Watch(ctx, dir, entry, opts, onChange)` reloads on change, by polling modification times rather than subscribing to
+filesystem events — editors save by write-then-rename, which replaces the inode an event watcher holds and drops the change
+that mattered. A failed reload is delivered to `onChange` as an error and the previous view is left alone; showing it is
+the caller's job, and hiding it defeats the point.
+
 ## Testing
 
 Golden files live in `testdata/`. An empty golden seeds itself from the run and then FAILS, so a broken renderer can never
