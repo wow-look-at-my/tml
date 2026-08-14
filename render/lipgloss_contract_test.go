@@ -40,6 +40,24 @@ func TestStyleWidthWrapsToCellWidth(t *testing.T) {
 	assert.Greater(t, lipgloss.Height(out), 1, "overflowing text wraps instead of truncating")
 }
 
+// Width and Height are the WHOLE block, border included: lipgloss subtracts the
+// border size before it wraps or pads. Every wrapping widget depends on this --
+// it is why a composer passes the size it was given straight through instead of
+// subtracting its own inset first, which would take the border off twice.
+//
+// The floor matters as much: content is never less than one line, so a bordered
+// block is at least three rows however small a height is asked for.
+func TestStyleSizeIncludesTheBorder(t *testing.T) {
+	framed := lipgloss.NewStyle().Border(lipgloss.NormalBorder()).Width(6).Height(3)
+
+	out := framed.Render("hi")
+	assert.Equal(t, 6, lipgloss.Width(out), "the border eats into the width, it does not add to it")
+	assert.Equal(t, 3, lipgloss.Height(out))
+
+	assert.Equal(t, 3, lipgloss.Height(framed.Height(2).Render("")),
+		"two rows is impossible with a border: one content line is the floor")
+}
+
 // Inherit fills unset fields from a parent style but DELIBERATELY excludes padding
 // and margin. So <Style extends="..."> cannot be implemented as Inherit alone: TML
 // resolves the cascade in its own style model and emits a fully-resolved style here.

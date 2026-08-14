@@ -40,7 +40,10 @@ func (u unknownElement) Error() string { return "no widget named " + string(u) }
 func assertUnknown(element string) error { return unknownElement(element) }
 
 func TestLibraryBindsEveryDocumentedWidget(t *testing.T) {
-	assert.Equal(t, []string{"Badge", "ProgressBar", "Rule", "Sparkline", "Spinner"}, Names())
+	assert.Equal(t, []string{
+		"Badge", "Border", "Button", "Popup", "ProgressBar",
+		"Rule", "Scrollbox", "Sparkline", "Spinner",
+	}, Names())
 }
 
 func TestRuleFillsItsSpace(t *testing.T) {

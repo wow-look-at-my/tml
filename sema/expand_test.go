@@ -329,7 +329,7 @@ func TestExpandRejects(t *testing.T) {
 		{
 			name:     "property element under the wrong parent",
 			template: `<Stack><Card.actions><Text>x</Text></Card.actions></Stack>`,
-			wantErr:  "must be a direct child of a <Card> element",
+			wantErr:  `<Card.actions> names a slot on "Card" but is inside <Stack>`,
 		},
 	}
 	for _, tc := range tests {

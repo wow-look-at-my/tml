@@ -64,7 +64,10 @@ func Load(fsys fs.FS, entry string, opts Options) (*View, error) {
 	if !opts.Bare {
 		registry = opts.Widgets.Merge(widgets.Library())
 	}
-	program, err := sema.Analyze(unit, sema.Options{Natives: registry.Names()})
+	program, err := sema.Analyze(unit, sema.Options{
+		Natives: registry.Names(),
+		Slots:   registry.SlotNames(),
+	})
 	if err != nil {
 		return nil, err
 	}

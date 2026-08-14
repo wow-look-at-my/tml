@@ -19,6 +19,10 @@ type Node struct {
 	Children []*Node
 	Text     string
 	Pos      syntax.Pos
+	// Slot is which of the parent's slots this child was written into, empty
+	// for the default one. A component's slots are resolved during expansion; a
+	// widget's are not, because only the widget knows what to do with them.
+	Slot string
 }
 
 // Attr reads an evaluated attribute.
@@ -248,12 +252,42 @@ func (p *Program) expandNative(node *tnode, scope *evalScope, file string, slots
 		out.Attrs[attr.name] = value
 		out.Order = append(out.Order, attr.name)
 	}
-	children, err := p.expandNodes(node.children, scope, file, slots, stack)
+	// A native element's slots stay slots: unlike a component, whose template
+	// decides where the content goes, a widget is the only thing that knows what
+	// its own regions mean.
+	content, err := collectSlotContent(node)
 	if err != nil {
 		return nil, err
 	}
-	out.Children = children
+	for _, name := range slotOrder(node, content) {
+		children, err := p.expandNodes(content[name], scope, file, slots, stack)
+		if err != nil {
+			return nil, err
+		}
+		for _, child := range children {
+			child.Slot = name
+			out.Children = append(out.Children, child)
+		}
+	}
 	return []*Node{out}, nil
+}
+
+// slotOrder lists a native element's filled slots in document order, so the
+// children come out in the sequence they were written.
+func slotOrder(node *tnode, content map[string][]*tnode) []string {
+	order := make([]string, 0, len(content))
+	seen := map[string]bool{}
+	for _, child := range node.children {
+		name := defaultSlot
+		if owner, slot, isProperty := strings.Cut(child.name, "."); isProperty && owner == node.name {
+			name = slot
+		}
+		if _, filled := content[name]; filled && !seen[name] {
+			seen[name] = true
+			order = append(order, name)
+		}
+	}
+	return order
 }
 
 func (p *Program) expandInstance(c *compiled, node *tnode, scope *evalScope, file string, slots *slotArgs, stack []string) ([]*Node, error) {

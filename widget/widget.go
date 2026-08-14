@@ -50,6 +50,49 @@ type Focusable interface {
 	AcceptsFocus() bool
 }
 
+// Composer is a widget that wraps the children written inside it rather than
+// replacing them: a frame, a dialog, a labelled group.
+//
+// The division of labour is that widgets draw and panels solve constraints. A
+// composer is handed its children already rendered, at the size layout worked
+// out from Inset, and returns the block to put on the screen. Everything the
+// built-in <Border> and <Popup> do is done through this interface, so a widget
+// written outside the language is not a second-class one.
+//
+// A composer's Measure and Render are still called when the element has no
+// children, which is what makes an empty <Border/> draw an empty frame instead
+// of nothing.
+type Composer interface {
+	Native
+	// Inset is the space the widget keeps for itself around its children, so
+	// layout can measure them against what is actually left.
+	Inset() (horizontal, vertical int)
+	// Compose draws the widget at the size it was given, around its children.
+	Compose(slots Slots, w, h int) string
+}
+
+// Unbounded is the optional half of a composer that measures its children
+// against unlimited space on an axis, which is what a scrolling region needs:
+// its content is allowed to be bigger than the hole it is seen through.
+type Unbounded interface {
+	Unbounded() (horizontal, vertical bool)
+}
+
+// Scrolled is the optional half of a composer that shows only part of its
+// children: how far they are shifted inside it. Layout needs it because a
+// control that has been scrolled halfway off is clicked where it is drawn, not
+// where it would have been.
+type Scrolled interface {
+	ChildOffset() (x, y int)
+}
+
+// Anchored is a widget with an opinion about where it belongs on a canvas. A
+// dialog says center, so a popup lands in the middle without the author having
+// to position it. An explicit Canvas.anchor still wins.
+type Anchored interface {
+	DefaultAnchor() string
+}
+
 // Context is what a factory gets to build one element's widget.
 type Context struct {
 	// Attrs are the element's evaluated attributes.
@@ -62,6 +105,24 @@ type Context struct {
 	Dir string
 	// Dark reports whether the view is rendering against a dark theme.
 	Dark bool
+}
+
+// Slots are a composer's children, already drawn, grouped by the slot they were
+// written into. The default slot -- anything written directly inside the
+// element -- is the empty name.
+type Slots map[string][]string
+
+// Get is the content of one slot.
+func (s Slots) Get(name string) []string { return s[name] }
+
+// Default is the content written directly inside the element.
+func (s Slots) Default() []string { return s[""] }
+
+// Slotted is the optional half of a factory that accepts named content. The
+// names are checked when the view loads, so a misspelt slot is a diagnostic
+// rather than content that silently goes nowhere.
+type Slotted interface {
+	Slots() []string
 }
 
 // Factory builds a widget per element, from that element's attributes.
@@ -136,6 +197,21 @@ func (r *Registry) Bound(name string) bool {
 	}
 	_, ok := r.factories[name]
 	return ok
+}
+
+// SlotNames maps each bound widget to the slots it accepts, for the analyzer to
+// check property elements against.
+func (r *Registry) SlotNames() map[string][]string {
+	if r == nil {
+		return nil
+	}
+	slots := map[string][]string{}
+	for name, factory := range r.factories {
+		if slotted, ok := factory.(Slotted); ok {
+			slots[name] = slotted.Slots()
+		}
+	}
+	return slots
 }
 
 // Names lists the bound element names, sorted so diagnostics are stable.

@@ -18,6 +18,10 @@ import (
 // Library returns a registry holding every built-in widget.
 func Library() *widget.Registry {
 	return widget.NewRegistry().
+		BindFactory("Border", factory(newFrame(false), frameAttrs)).
+		BindFactory("Popup", factory(newFrame(true), frameAttrs)).
+		BindFactory("Scrollbox", factory(newScrollbox, scrollboxAttrs)).
+		BindFactory("Button", slotted(newButton, buttonAttrs, buttonSlots)).
 		BindFactory("Rule", factory(newRule, ruleAttrs)).
 		BindFactory("ProgressBar", factory(newProgressBar, progressAttrs)).
 		BindFactory("Spinner", factory(newSpinner, spinnerAttrs)).
@@ -39,11 +43,20 @@ func factory(build builder, attrs []string) widget.Factory {
 	return declared{build: build, attrs: attrs}
 }
 
+// slotted is a factory that also names the regions content can be written into,
+// so a misspelt <Button.Contnt> is rejected when the view loads.
+func slotted(build builder, attrs, slots []string) widget.Factory {
+	return declared{build: build, attrs: attrs, slots: slots}
+}
+
 type declared struct {
 	build builder
 	attrs []string
+	slots []string
 }
 
 func (d declared) Attributes() []string { return d.attrs }
+
+func (d declared) Slots() []string { return d.slots }
 
 func (d declared) Build(ctx widget.Context) (widget.Native, error) { return d.build(ctx) }

@@ -1,0 +1,150 @@
+package widgets
+
+import (
+	"strings"
+
+	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
+
+	"github.com/wow-look-at-my/tml/widget"
+)
+
+var scrollboxAttrs = []string{"offset", "offsetX", "scrollbar"}
+
+// scrollbox shows part of content that is taller than the space it has, with a
+// scrollbar beside it when there is more than fits.
+//
+// The offset is a property, not state: the host owns how far it has scrolled, the
+// same way it owns everything else a view is rendered from. Wheel events come
+// back through the UI as Scrolled events for the host to act on.
+type scrollbox struct {
+	offsetX, offsetY int
+	bar              string
+}
+
+func newScrollbox(ctx widget.Context) (widget.Native, error) {
+	bar, err := ctx.Attrs.Enum("scrollbar", "auto", "auto", "always", "never")
+	if err != nil {
+		return nil, err
+	}
+	box := &scrollbox{bar: bar}
+	if box.offsetY, err = ctx.Attrs.Int("offset", 0); err != nil {
+		return nil, err
+	}
+	if box.offsetX, err = ctx.Attrs.Int("offsetX", 0); err != nil {
+		return nil, err
+	}
+	box.offsetX = max(0, box.offsetX)
+	box.offsetY = max(0, box.offsetY)
+	return box, nil
+}
+
+// Unbounded is the whole point of a scrolling region: its content is measured
+// against unlimited height, so it is free to be taller than the hole it is seen
+// through.
+func (s *scrollbox) Unbounded() (bool, bool) { return false, true }
+
+// ChildOffset tells layout where the content actually sits, so a control
+// scrolled halfway off the top is clicked where it is drawn.
+func (s *scrollbox) ChildOffset() (int, int) { return s.offsetX, s.offsetY }
+
+// Inset reserves the scrollbar column. Auto cannot know yet whether there is
+// anything to scroll -- that needs the drawn content -- so it reserves the
+// column and draws a blank one when there is not. Reflowing the content the
+// moment it grew past the edge would be worse: everything would shift sideways.
+func (s *scrollbox) Inset() (int, int) {
+	if s.bar == "never" {
+		return 0, 0
+	}
+	return 1, 0
+}
+
+func (s *scrollbox) Measure(maxW, maxH int) (int, int) { return maxW, maxH }
+
+func (s *scrollbox) Render(w, h int) string { return s.Compose(nil, w, h) }
+
+func (s *scrollbox) Compose(slots widget.Slots, w, h int) string {
+	gutter, _ := s.Inset()
+	viewW := max(0, w-gutter)
+
+	content := lipgloss.JoinVertical(lipgloss.Left, slots.Default()...)
+	all := strings.Split(content, "\n")
+
+	lines := window(all, s.offsetY, h)
+	for i, line := range lines {
+		lines[i] = columns(line, s.offsetX, viewW)
+	}
+	if gutter == 0 {
+		return strings.Join(lines, "\n")
+	}
+
+	bar := s.scrollbar(len(all), h)
+	for i := range lines {
+		if i < len(bar) {
+			lines[i] += bar[i]
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
+// scrollbar is the gutter column: a track with a thumb sized and placed in
+// proportion to what is on screen.
+func (s *scrollbox) scrollbar(total, view int) []string {
+	bar := make([]string, max(0, view))
+	blank := " "
+	if s.bar == "always" {
+		blank = "│"
+	}
+	for i := range bar {
+		bar[i] = blank
+	}
+	if view <= 0 || total <= view {
+		return bar
+	}
+
+	for i := range bar {
+		bar[i] = "│"
+	}
+	thumb := max(1, view*view/total)
+	span := view - thumb
+	reach := total - view
+	start := 0
+	if reach > 0 {
+		start = min(span, max(0, s.offsetY*span/reach))
+	}
+	for i := start; i < start+thumb && i < view; i++ {
+		bar[i] = "█"
+	}
+	return bar
+}
+
+// window takes height rows starting at offset, padding with blanks when the
+// offset runs past the end. A blank viewport is a visible answer; silently
+// snapping back to the last full page would hide a host scrolling too far.
+func window(lines []string, offset, height int) []string {
+	if height <= 0 {
+		return nil
+	}
+	out := make([]string, 0, height)
+	for i := offset; i < offset+height; i++ {
+		if i >= 0 && i < len(lines) {
+			out = append(out, lines[i])
+			continue
+		}
+		out = append(out, "")
+	}
+	return out
+}
+
+// columns takes width cells starting at offset, measured in display cells so an
+// escape sequence is carried along rather than counted.
+func columns(line string, offset, width int) string {
+	if width <= 0 {
+		return ""
+	}
+	cut := ansi.Cut(line, offset, offset+width)
+	if gap := width - lipgloss.Width(cut); gap > 0 {
+		cut += strings.Repeat(" ", gap)
+	}
+	return cut
+}

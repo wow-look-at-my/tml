@@ -44,6 +44,9 @@ type Box struct {
 	// covers the cells the box actually paints. This is what a pointer is tested
 	// against.
 	Screen Rect
+	// Clip is the region an ancestor still shows. It is the viewport for
+	// anything outside a Scrollbox, and the visible part of one inside.
+	Clip Rect
 	// Content is the size available inside margin, border and padding. It is
 	// what a bound widget is told to render into.
 	Content Size
@@ -63,6 +66,7 @@ type Box struct {
 	State widget.State
 
 	attrs   map[string]string
+	slot    string
 	desired Size
 	width   sema.Length
 	height  sema.Length
@@ -72,6 +76,12 @@ type Box struct {
 	cols, rows              []sema.Length
 	autoWidths, autoHeights []int
 	place                   placement
+
+	// canvas is this box's placement within a parent Canvas; scrolled is the
+	// full size of a Scrollbox's content, which is usually taller than the
+	// viewport showing it.
+	canvas   canvasPlacement
+	scrolled Size
 }
 
 // Options configure an engine.
@@ -107,7 +117,7 @@ var layoutAttrs = map[string]bool{
 	"width": true, "height": true, "orientation": true, "gap": true, "style": true,
 	"columns": true, "rows": true, "id": true, "action": true,
 	"offset": true, "offsetX": true, "scrollbar": true,
-	"title": true, "titleAlign": true, "open": true, "anchor": true,
+	"title": true, "titleAlign": true,
 }
 
 func isLayoutAttr(name string) bool {
@@ -136,7 +146,7 @@ func (e *Engine) Layout(node *sema.Node, width, height int) (*Box, error) {
 		rect.H = min(box.desired.H, height)
 	}
 	e.arrange(box, rect)
-	setScreen(box, 0, 0)
+	setScreen(box, 0, 0, Rect{W: width, H: height})
 	p.publish()
 	return box, nil
 }
@@ -173,6 +183,7 @@ func (p *pass) build(node *sema.Node) (*Box, error) {
 		Style:  resolved,
 		Pos:    node.Pos,
 		attrs:  attrs,
+		slot:   node.Slot,
 		ID:     attrs["id"],
 		Action: attrs["action"],
 	}
@@ -210,7 +221,11 @@ func (p *pass) build(node *sema.Node) (*Box, error) {
 		if err := p.track(box); err != nil {
 			return nil, err
 		}
-		return box, nil
+		// A composer keeps its children: they are laid out inside whatever space
+		// it insets for itself, and handed back to it already drawn.
+		if _, wraps := native.(widget.Composer); !wraps {
+			return box, nil
+		}
 	}
 	for _, child := range node.Children {
 		built, err := p.build(child)
@@ -223,6 +238,10 @@ func (p *pass) build(node *sema.Node) (*Box, error) {
 	switch box.Name {
 	case "Grid":
 		if err := initGrid(box); err != nil {
+			return nil, err
+		}
+	case "Canvas":
+		if err := initCanvas(box); err != nil {
 			return nil, err
 		}
 	default:
@@ -289,9 +308,11 @@ func (e *Engine) measure(box *Box, c Constraints) Size {
 
 	var content Size
 	switch {
+	case len(box.Children) > 0 && box.composer() != nil:
+		content = e.measureComposer(box, inner)
 	case box.Native != nil:
-		// A host widget measures itself. TML supplies the space and takes the
-		// answer, so a bubbles component keeps deciding its own shape.
+		// A widget measures itself. TML supplies the space and takes the answer,
+		// so a bubbles component keeps deciding its own shape.
 		w, h := box.Native.Measure(inner.MaxW, inner.MaxH)
 		content = Size{W: w, H: h}
 	default:
@@ -331,6 +352,8 @@ func (e *Engine) measureContent(box *Box, inner Constraints) Size {
 		content = e.measureStack(box, inner)
 	case "Grid":
 		content = e.measureGrid(box, inner)
+	case "Canvas":
+		content = e.measureFill(box, inner)
 	default:
 		content = e.measureChildren(box, inner)
 	}
@@ -411,6 +434,10 @@ func (e *Engine) arrange(box *Box, rect Rect) {
 	outerW, outerH := box.outer()
 	box.Content = Size{W: max(0, rect.W-outerW), H: max(0, rect.H-outerH)}
 
+	if composer := box.composer(); composer != nil && len(box.Children) > 0 {
+		e.arrangeComposer(box, composer)
+		return
+	}
 	if box.Native != nil {
 		return
 	}
@@ -421,6 +448,8 @@ func (e *Engine) arrange(box *Box, rect Rect) {
 		e.arrangeStack(box)
 	case "Grid":
 		e.arrangeGrid(box)
+	case "Canvas":
+		e.arrangeCanvas(box)
 	default:
 		// A decorator gives each child the whole content box, clamped to what
 		// the child asked for unless it is star-sized and wants to fill.

@@ -58,7 +58,14 @@ func (p *pass) publish() {
 	}
 	targets := make([]Target, 0, len(p.targets))
 	for _, box := range p.targets {
-		targets = append(targets, Target{ID: box.ID, Action: box.Action, Rect: box.Screen})
+		// The clipped rect, not the box's own: a control scrolled out of its
+		// viewport is not on the screen, and clicking where it would have been
+		// must not activate it.
+		rect := intersect(box.Screen, box.Clip)
+		if rect.W <= 0 || rect.H <= 0 {
+			continue
+		}
+		targets = append(targets, Target{ID: box.ID, Action: box.Action, Rect: rect})
 	}
 	p.e.opts.Interaction.Frame(targets)
 }
@@ -93,7 +100,7 @@ func (p *pass) track(box *Box) error {
 // A child's rect is relative to its parent's content origin, so the walk carries
 // that origin down. Margin is dropped on the way out: the screen rect is the
 // cells the box paints, which is what a click has to land in.
-func setScreen(box *Box, originX, originY int) {
+func setScreen(box *Box, originX, originY int, clip Rect) {
 	margin := box.Style.Margin
 	box.Screen = Rect{
 		X: originX + box.Rect.X + margin.Left,
@@ -101,8 +108,34 @@ func setScreen(box *Box, originX, originY int) {
 		W: max(0, box.Rect.W-margin.Horizontal()),
 		H: max(0, box.Rect.H-margin.Vertical()),
 	}
+	box.Clip = clip
+
 	offsetX, offsetY := box.Style.ContentOffset()
+	inner := clip
+	if horizontal, vertical := unbounded(box); horizontal || vertical {
+		// Everything below a scrolling region is confined to what it shows,
+		// however far its content runs past the edge.
+		inner = intersect(clip, Rect{
+			X: box.Screen.X + offsetX,
+			Y: box.Screen.Y + offsetY,
+			W: box.Content.W,
+			H: box.Content.H,
+		})
+	}
 	for _, child := range box.Children {
-		setScreen(child, originX+box.Rect.X+offsetX, originY+box.Rect.Y+offsetY)
+		setScreen(child, originX+box.Rect.X+offsetX, originY+box.Rect.Y+offsetY, inner)
+	}
+}
+
+// intersect is the overlap of two rects, or an empty rect when they do not
+// touch at all.
+func intersect(a, b Rect) Rect {
+	x := max(a.X, b.X)
+	y := max(a.Y, b.Y)
+	return Rect{
+		X: x,
+		Y: y,
+		W: max(0, min(a.X+a.W, b.X+b.W)-x),
+		H: max(0, min(a.Y+a.H, b.Y+b.H)-y),
 	}
 }
