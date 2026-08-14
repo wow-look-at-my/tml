@@ -397,8 +397,8 @@ func main() {
 	frame := flag.Bool("frame", false, "render one frame to stdout and exit")
 	width := flag.Int("width", 96, "viewport width for -frame")
 	height := flag.Int("height", 30, "viewport height for -frame")
-	steps := flag.Int("steps", 0, "run this many script beats before rendering")
-	focus := flag.String("focus", "", "id of the control to put the keyboard on for -frame")
+	steps := flag.Int("steps", 0, "run this many script beats before starting")
+	focus := flag.String("focus", "", "id of the control to put the keyboard on")
 	answer := flag.String("answer", "", "allow or deny the permission the script stopped on")
 	flag.Parse()
 
@@ -408,28 +408,35 @@ func main() {
 		os.Exit(1)
 	}
 
+	// The flags set the starting state either way round: a still frame and a
+	// terminal session are the same program, and a screenshot of one beat is
+	// only reproducible if it can be asked for.
 	if *frame {
 		m.width, m.height = *width, *height
-		for range *steps {
-			m.step()
-		}
-		switch *answer {
-		case "allow":
-			m.answer(true)
-		case "deny":
-			m.answer(false)
-		case "":
-		default:
-			fmt.Fprintf(os.Stderr, "error: -answer takes allow or deny, not %q\n", *answer)
+	}
+	for range *steps {
+		m.step()
+	}
+	switch *answer {
+	case "allow":
+		m.answer(true)
+	case "deny":
+		m.answer(false)
+	case "":
+	default:
+		fmt.Fprintf(os.Stderr, "error: -answer takes allow or deny, not %q\n", *answer)
+		os.Exit(1)
+	}
+	if *focus != "" {
+		// Focus resolves against a frame's controls, so there has to be one
+		// before there is anything to name.
+		m.render()
+		if !m.view.UI().Focus(*focus) {
+			fmt.Fprintf(os.Stderr, "error: no control with id %q on this frame\n", *focus)
 			os.Exit(1)
 		}
-		if *focus != "" {
-			m.render()
-			if !m.view.UI().Focus(*focus) {
-				fmt.Fprintf(os.Stderr, "error: no control with id %q on this frame\n", *focus)
-				os.Exit(1)
-			}
-		}
+	}
+	if *frame {
 		fmt.Println(m.render())
 		return
 	}

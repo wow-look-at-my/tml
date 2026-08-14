@@ -285,21 +285,26 @@ func main() {
 		os.Exit(1)
 	}
 
+	// The flags set the starting state either way round: a still frame and a
+	// terminal session are the same program, and a screenshot of one section is
+	// only reproducible if it can be asked for.
+	m.tab, m.confirming = *tab, *popup
+	// An animation shown at its start reads as an animation that does not work,
+	// so both begin partway through.
+	m.query, m.progress, m.frame = "sched", 62, 3
 	if *frame {
 		m.width, m.height = *width, *height
-		m.tab, m.confirming = *tab, *popup
-		// A still frame of an animation has to be taken somewhere other than at
-		// the start, or the progress bar in it reads as a bar that does not work.
-		m.query, m.progress, m.frame = "sched", 62, 3
-		if *focus != "" {
-			// Focus resolves against a frame's controls, so there has to be one
-			// before there is anything to name.
-			m.frameOf()
-			if !m.view.UI().Focus(*focus) {
-				fmt.Fprintf(os.Stderr, "error: no control with id %q on this frame\n", *focus)
-				os.Exit(1)
-			}
+	}
+	if *focus != "" {
+		// Focus resolves against a frame's controls, so there has to be one
+		// before there is anything to name.
+		m.frameOf()
+		if !m.view.UI().Focus(*focus) {
+			fmt.Fprintf(os.Stderr, "error: no control with id %q on this frame\n", *focus)
+			os.Exit(1)
 		}
+	}
+	if *frame {
 		fmt.Println(m.frameOf())
 		return
 	}
