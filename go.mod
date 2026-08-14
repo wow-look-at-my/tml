@@ -1,3 +1,3 @@
 module github.com/wow-look-at-my/tml
 
-go 1.24.7
+go 1.25.0
