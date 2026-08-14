@@ -101,6 +101,18 @@ func TestStarSizingFillsTheViewport(t *testing.T) {
 	}
 }
 
+// The grid fixture proves the whole pipeline handles attached properties:
+// parse, analyse, expand, solve tracks, and composite children at coordinates.
+func TestGridRendersThroughTheWholePipeline(t *testing.T) {
+	view, err := tml.Load(os.DirFS("testdata/grid"), "app.tml", tml.Options{})
+	require.NoError(t, err)
+
+	// gap applies to both axes, so four content rows occupy seven lines.
+	out, err := view.Render(nil, 40, 7)
+	require.NoError(t, err)
+	golden(t, "grid-render", out)
+}
+
 // fakeInput stands in for a bubbles component: it draws itself and accepts a
 // width, exactly the two things TML asks of one.
 type fakeInput struct{ width int }

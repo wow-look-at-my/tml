@@ -1,0 +1,7 @@
+service    state detail                 
+                                        
+api        up    3 replicas             
+                                        
+worker     down  restarting             
+                                        
+spans every column                      

@@ -1,0 +1,22 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<Component xmlns="urn:tml:v1" name="Table">
+	<Property name="rows" type="string[]" default=""/>
+
+	<Template>
+		<Grid columns="10,auto,*" gap="1">
+			<Text Grid.row="0" Grid.column="0">service</Text>
+			<Text Grid.row="0" Grid.column="1">state</Text>
+			<Text Grid.row="0" Grid.column="2">detail</Text>
+
+			<Text Grid.row="1" Grid.column="0">api</Text>
+			<Text Grid.row="1" Grid.column="1">up</Text>
+			<Text Grid.row="1" Grid.column="2">3 replicas</Text>
+
+			<Text Grid.row="2" Grid.column="0">worker</Text>
+			<Text Grid.row="2" Grid.column="1">down</Text>
+			<Text Grid.row="2" Grid.column="2">restarting</Text>
+
+			<Text Grid.row="3" Grid.column="0" Grid.columnSpan="3">spans every column</Text>
+		</Grid>
+	</Template>
+</Component>
