@@ -261,7 +261,9 @@ func main() {
 	if *frame {
 		m.width, m.height = *width, *height
 		m.tab, m.confirming = *tab, *popup
-		m.query = "sched"
+		// A still frame of an animation has to be taken somewhere other than at
+		// the start, or the progress bar in it reads as a bar that does not work.
+		m.query, m.progress, m.frame = "sched", 62, 3
 		if *focus != "" {
 			// Focus resolves against a frame's controls, so there has to be one
 			// before there is anything to name.
