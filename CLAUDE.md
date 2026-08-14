@@ -36,15 +36,39 @@ the proxy but declare a different module path and fail the build. Requires Go >=
 
 ## Layout
 
-Two-pass measure/arrange. Implemented panels: `Stack`, `Grid`, `Box`, `Text`, `Spacer`. Sizing is `auto`, fixed cells, or
-`*` star share, and a star size propagates upward so an auto-sized ancestor cannot collapse it.
+Two-pass measure/arrange. Implemented panels: `Stack`, `Grid`, `Canvas`, `Box`, `Text`, `Spacer`. Sizing is `auto`, fixed
+cells, or `*` star share, and a star size propagates upward so an auto-sized ancestor cannot collapse it.
 
 `Grid` declares tracks and each child declares placement through attached properties (`Grid.row`, `Grid.column`, and the
 two span variants). Track solving is fixed, then auto, then star. Grid children are composited through lipgloss layers
 rather than joined, since they sit at coordinates.
 
-`Dock` and `Overlay` are NOT implemented. They are deliberately absent from `sema.Builtins`, so using one is an
-unknown-element error rather than a silent blank. Add a panel to that list only once it lays out.
+`Canvas` positions children freely through `Canvas.x`, `Canvas.y` and `Canvas.anchor`, and fills whatever it is offered
+rather than shrinking. A widget can name its own default anchor, which is how `<Popup>` centres itself.
+
+`Dock` is NOT implemented. It is deliberately absent from `sema.Builtins`, so using it is an unknown-element error rather
+than a silent blank. Add a panel to that list only once it lays out.
+
+## Widgets
+
+Panels solve constraints; widgets draw. `widgets/` is the library — Border, Popup, Scrollbox, Button, Textbox, Checkbox,
+Radio, List, Table, Image, Rule, ProgressBar, Spinner, Sparkline, Badge — registered by default, dropped by
+`Options.Bare`, and overridable by name. Nothing in it holds state.
+
+Containers go through the public `widget.Composer`/`Arranger` seam, not through the engine, so a widget written outside
+the language is not a second-class one. Do not special-case a library widget inside `layout/`.
+
+- docs/widgets.md — the library reference, interaction, and the interfaces a widget opts into.
+- docs/images.md — the kitty/iterm/mosaic/link ladder, sizing against cell aspect, transparency.
+
+## Interaction
+
+`id` and `action` on any element; `view.UI().Update(msg)` turns a Bubble Tea message into `Activated`, `FocusMoved` and
+`Scrolled` events carrying that id and action. Layout asks the UI for each element's state before measuring, then
+publishes where everything landed, so a click resolves against the frame the user is looking at.
+
+The focus ring is the widgets that take focus; the pointer also reaches anything else with an id, which is what lets the
+wheel find a `Scrollbox`. A widget that implements `Focusable` and refuses is disabled and reachable by neither.
 
 ## Parsing
 
@@ -66,15 +90,18 @@ The root is the importable package, so a Bubble Tea app imports `github.com/wow-
 lives under `cmd/`.
 
 - `tml.go` — the façade: `Load`, `View`, `Props`, `Options`
+- `ui.go` — the focus ring, the pointer, and the events a host reads
 - `syntax/` — AST, loader, `<Import>` resolution, diagnostics
 - `sema/` — property types, values, expressions, slot and component analysis, expansion
 - `layout/` — constraints, measure/arrange, the panels
 - `style/` — theme tokens, named styles, resolution to `lipgloss.Style`
 - `render/` — composition of a laid-out tree into terminal output
-- `widget/` — host element registry and the bubbles adapter
+- `widget/` — the widget seam: registry, typed attributes, the bubbles adapter
+- `widgets/` — the built-in widget library
 - `cli/` — cobra commands, one self-registering command per file
 - `cmd/tml/` — the CLI binary
 - `examples/dashboard/` — a Bubble Tea program whose whole view is TML
+- `examples/gallery/` — every library widget on one interactive screen
 
 ## Hot reload
 
@@ -88,4 +115,6 @@ the caller's job, and hiding it defeats the point.
 Golden files live in `testdata/`. An empty golden seeds itself from the run and then FAILS, so a broken renderer can never
 bless its own output. Read the diff before trusting a reseeded golden.
 
-`examples/dashboard -frame` renders one frame without a terminal, which is how the example is checked headlessly.
+Either example renders one frame without a terminal with `-frame`, which is how they are checked headlessly. The
+gallery's goldens are the widget library's regression net: they are stripped of colour to stay readable, and the test
+pins the terminal to one with no graphics protocol so the image lands on half-blocks wherever it runs.

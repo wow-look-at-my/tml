@@ -23,6 +23,28 @@ the Charm stack — TML solves layout and Lip Gloss renders, so a view drops str
 </Card>
 ```
 
+## Widgets
+
+Buttons, fields, checkboxes, lists, tables, frames, popups, scrolling regions, progress bars, spinners, sparklines and
+images ship with the language and need no setup. Give a control an `id` and an `action` and it joins the focus ring:
+
+```xml
+<Button id="save" action="save" variant="primary" label="Save"/>
+```
+
+```go
+for _, event := range m.view.UI().Update(msg) {
+    if event.Kind == tml.Activated {
+        m.act(event.Action)   // "save" -- never a coordinate, never a widget pointer
+    }
+}
+```
+
+Tab and the arrows move, enter activates, and the pointer hovers, clicks and scrolls against the frame the user is
+actually looking at. `go-toolchain && ./build/gallery` is all of it on one screen.
+
+Your own widgets plug into the same seam the library uses — see `docs/widgets.md`.
+
 ## In a Bubble Tea program
 
 The model keeps its state and its `Update`; TML owns layout, theming and structure.
@@ -61,8 +83,8 @@ tml render app.tml --width 80 --height 24
 ## What it does
 
 Typed properties with defaults, slots with fallback content, imports, `if` and `For`, themes with light/dark tokens and
-named styles, and a measure/arrange layout engine with `auto`, fixed and star sizing across `Stack`, `Grid` and `Box`.
-`Grid` takes XAML-style attached properties:
+named styles, a widget library with keyboard and mouse interaction, and a measure/arrange layout engine with `auto`,
+fixed and star sizing across `Stack`, `Grid`, `Canvas` and `Box`. `Grid` takes XAML-style attached properties:
 
 ```xml
 <Grid columns="auto,1*,2*" gap="1">
@@ -73,7 +95,7 @@ named styles, and a measure/arrange layout engine with `auto`, fixed and star si
 Everything that can be checked without call-site values is checked when the view loads — unknown elements, bad types,
 unresolved references, even inside a branch that never runs.
 
-`Dock` and `Overlay` are not implemented yet and are reported as unknown elements rather than silently ignored.
+`Dock` is not implemented yet and is reported as an unknown element rather than silently ignored.
 
 ## Build
 
@@ -84,5 +106,7 @@ go-toolchain
 ## Docs
 
 - `docs/language.md` — the language reference
+- `docs/widgets.md` — the widget library, interaction, and writing your own
+- `docs/images.md` — how a picture reaches a terminal, and what happens when it cannot
 - `docs/lipgloss-contract.md` — what TML delegates to Lip Gloss, and the traps in it
 - `CLAUDE.md` — the working index for this repo
