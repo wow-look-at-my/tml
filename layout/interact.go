@@ -7,11 +7,16 @@ import (
 	"github.com/wow-look-at-my/tml/widget"
 )
 
-// Target is one focusable element in a rendered frame: what to call it, what it
-// does, and where it ended up on screen.
+// Target is one interactive element in a rendered frame: what to call it, what
+// it does, whether the keyboard can land on it, and where it ended up on screen.
+//
+// Focus is not the same as interactive. A scrolling region answers the wheel
+// under the pointer without ever being a tab stop, and leaving it out of the
+// frame's geometry would mean the pointer had nothing to land on.
 type Target struct {
 	ID     string
 	Action string
+	Focus  bool
 	Rect   Rect
 }
 
@@ -22,9 +27,12 @@ type Target struct {
 // to resolve against. Keeping it an interface is what stops the layout engine
 // from depending on Bubble Tea.
 type Interaction interface {
-	// State reports how the focusable at index in the ring should render.
-	State(index int, id, action string) widget.State
-	// Frame publishes the ring for the frame just laid out, in document order.
+	// States reports how each element should draw, in the order given. It is
+	// asked before anything is measured, so the rects are still empty: what it
+	// has to go on is the ids, the actions and which elements take focus.
+	States(targets []Target) []widget.State
+	// Frame publishes the same elements for the frame just laid out, this time
+	// with the geometry they landed on.
 	Frame(targets []Target)
 }
 
@@ -36,19 +44,33 @@ type pass struct {
 	ids     map[string]syntax.Pos
 }
 
-// syncState tells every focusable widget how it is being interacted with, before
-// anything is measured. A control that grows when focused has to know first, or
-// the frame would be sized for the state it was in last time.
+// syncState tells every interactive widget how it is being interacted with,
+// before anything is measured. A control that grows when focused has to know
+// first, or the frame would be sized for the state it was in last time.
 func (p *pass) syncState() {
 	if p.e.opts.Interaction == nil {
 		return
 	}
+	states := p.e.opts.Interaction.States(p.ring())
 	for i, box := range p.targets {
-		box.State = p.e.opts.Interaction.State(i, box.ID, box.Action)
+		if i >= len(states) {
+			break
+		}
+		box.State = states[i]
 		if stateful, ok := box.Native.(widget.Stateful); ok {
 			stateful.SetState(box.State)
 		}
 	}
+}
+
+// ring is the tracked elements without their geometry, which is all there is to
+// report before the measure pass has run.
+func (p *pass) ring() []Target {
+	targets := make([]Target, 0, len(p.targets))
+	for _, box := range p.targets {
+		targets = append(targets, Target{ID: box.ID, Action: box.Action, Focus: box.focus})
+	}
+	return targets
 }
 
 // publish hands the frame's focus ring back with the geometry it landed on.
@@ -65,17 +87,19 @@ func (p *pass) publish() {
 		if rect.W <= 0 || rect.H <= 0 {
 			continue
 		}
-		targets = append(targets, Target{ID: box.ID, Action: box.Action, Rect: rect})
+		targets = append(targets, Target{ID: box.ID, Action: box.Action, Focus: box.focus, Rect: rect})
 	}
 	p.e.opts.Interaction.Frame(targets)
 }
 
-// track adds a widget to the focus ring if it takes focus right now. A disabled
-// control says no, which is what keeps tab from stopping somewhere unusable.
+// track records a widget the user can reach: one that takes focus, or one that
+// was given an id, which is how a template says a widget answers the pointer.
+// A disabled control is still reachable by name but takes no focus, which is
+// what keeps tab from stopping somewhere unusable.
 //
-// An id is how focus survives from one frame to the next, so two controls
-// answering to the same one is rejected rather than left to send focus
-// somewhere arbitrary.
+// An id is also how focus survives from one frame to the next, so two controls
+// answering to the same one is rejected rather than left to send focus somewhere
+// arbitrary.
 func (p *pass) track(box *Box) error {
 	if box.ID != "" {
 		if first, dup := p.ids[box.ID]; dup {
@@ -87,8 +111,16 @@ func (p *pass) track(box *Box) error {
 		}
 		p.ids[box.ID] = box.Pos
 	}
-	focusable, ok := box.Native.(widget.Focusable)
-	if !ok || !focusable.AcceptsFocus() {
+	if focusable, ok := box.Native.(widget.Focusable); ok {
+		// Implementing Focusable is a widget saying it takes input at all, so one
+		// that refuses focus is disabled: it is left out entirely rather than
+		// left clickable.
+		box.focus = focusable.AcceptsFocus()
+		if !box.focus {
+			return nil
+		}
+	}
+	if !box.focus && box.ID == "" {
 		return nil
 	}
 	p.targets = append(p.targets, box)

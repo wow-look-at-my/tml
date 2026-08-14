@@ -65,6 +65,9 @@ type Box struct {
 	// State is how this element renders in this frame -- focused, hovered, held.
 	State widget.State
 
+	// focus reports whether the keyboard can land here. An element with an id
+	// but no focus still answers the pointer.
+	focus   bool
 	attrs   map[string]string
 	slot    string
 	desired Size

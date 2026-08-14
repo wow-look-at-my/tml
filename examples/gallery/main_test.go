@@ -166,6 +166,21 @@ func TestConfirmingQuitEndsTheProgram(t *testing.T) {
 	assert.NotNil(t, cmd)
 }
 
+// The log is a scrolling region, not a tab stop, so the wheel over it is the
+// only way to reach it -- which is the whole reason the pointer resolves against
+// more than the focus ring.
+func TestTheWheelScrollsTheLog(t *testing.T) {
+	m := gallery(t)
+	m.tab = "data"
+	require.NotContains(t, m.frameOf(), "tml: ")
+
+	log := control(t, m, "log")
+	m.Update(tea.MouseWheelMsg{X: log.Rect.X + 1, Y: log.Rect.Y + 1, Button: tea.MouseWheelDown})
+
+	assert.Equal(t, 1, m.offset)
+	assert.NotContains(t, ansi.Strip(m.frameOf()), "step 1 finished", "the first line has scrolled off")
+}
+
 // press clicks and releases over one point, which is what actually activates a
 // control: a press alone is only the start of a click that can still be taken
 // back by releasing somewhere else.

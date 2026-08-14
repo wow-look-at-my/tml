@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/wow-look-at-my/tml/layout"
+	"github.com/wow-look-at-my/tml/widget"
 )
 
 // ring publishes a frame the way layout does, so the UI has geometry to resolve
@@ -17,7 +18,21 @@ func ring(u *UI, targets ...layout.Target) {
 }
 
 func target(id, action string, x, y, w, h int) layout.Target {
-	return layout.Target{ID: id, Action: action, Rect: layout.Rect{X: x, Y: y, W: w, H: h}}
+	return layout.Target{ID: id, Action: action, Focus: true, Rect: layout.Rect{X: x, Y: y, W: w, H: h}}
+}
+
+// pointerOnly is an element the pointer can reach and the keyboard cannot, which
+// is what a scrolling region is.
+func pointerOnly(id, action string, x, y, w, h int) layout.Target {
+	found := target(id, action, x, y, w, h)
+	found.Focus = false
+	return found
+}
+
+// state is how the element at index draws in the frame the UI has published,
+// which is what layout asks for before it measures anything.
+func state(u *UI, index int) widget.State {
+	return u.States(u.Targets())[index]
 }
 
 func press(u *UI, stroke string) []Event {
@@ -29,8 +44,14 @@ func press(u *UI, stroke string) []Event {
 func TestFocusStartsOnTheFirstControl(t *testing.T) {
 	u := NewUI()
 
-	assert.True(t, u.State(0, "save", "save").Focused)
-	assert.False(t, u.State(1, "quit", "quit").Focused)
+	states := u.States([]layout.Target{
+		pointerOnly("log", "", 0, 0, 8, 4),
+		target("save", "save", 0, 5, 8, 1),
+		target("quit", "quit", 0, 6, 8, 1),
+	})
+	assert.False(t, states[0].Focused, "the keyboard never starts somewhere it cannot go")
+	assert.True(t, states[1].Focused)
+	assert.False(t, states[2].Focused)
 }
 
 func TestTabMovesAndWraps(t *testing.T) {
@@ -40,7 +61,7 @@ func TestTabMovesAndWraps(t *testing.T) {
 	events := press(u, "tab")
 	require.Len(t, events, 1)
 	assert.Equal(t, Event{Kind: FocusMoved, ID: "quit", Action: "quit"}, events[0])
-	assert.True(t, u.State(1, "quit", "quit").Focused)
+	assert.True(t, state(u, 1).Focused)
 
 	press(u, "tab")
 	id, _ := u.Focused()
@@ -100,11 +121,11 @@ func TestPointerHoversAndActivatesOnRelease(t *testing.T) {
 	ring(u, target("save", "save", 0, 0, 8, 1), target("quit", "quit", 0, 2, 8, 1))
 
 	u.Update(tea.MouseMotionMsg{X: 3, Y: 2})
-	assert.True(t, u.State(1, "quit", "quit").Hovered)
-	assert.False(t, u.State(0, "save", "save").Hovered)
+	assert.True(t, state(u, 1).Hovered)
+	assert.False(t, state(u, 0).Hovered)
 
 	u.Update(tea.MouseClickMsg{X: 3, Y: 2, Button: tea.MouseLeft})
-	assert.True(t, u.State(1, "quit", "quit").Pressed)
+	assert.True(t, state(u, 1).Pressed)
 	id, _ := u.Focused()
 	assert.Equal(t, "quit", id, "clicking takes focus as well")
 
@@ -112,7 +133,7 @@ func TestPointerHoversAndActivatesOnRelease(t *testing.T) {
 	require.Len(t, events, 1)
 	assert.Equal(t, Activated, events[0].Kind)
 	assert.Equal(t, "quit", events[0].ID)
-	assert.False(t, u.State(1, "quit", "quit").Pressed)
+	assert.False(t, state(u, 1).Pressed)
 }
 
 // Releasing somewhere else takes the click back, which is what every other
@@ -199,6 +220,34 @@ func TestFocusByIDReportsWhetherItLanded(t *testing.T) {
 	assert.False(t, u.Focus("nope"))
 	assert.False(t, u.Focus(""))
 	assert.Len(t, u.Targets(), 2)
+}
+
+// A scrolling region answers the wheel without ever being a tab stop: the
+// pointer reaches everything the frame published, the keyboard only the part of
+// it that can do something with a key.
+func TestThePointerReachesWhatTheKeyboardSkips(t *testing.T) {
+	u := NewUI()
+	ring(u, target("save", "save", 0, 0, 8, 1), pointerOnly("log", "scroll-log", 0, 2, 10, 5))
+
+	assert.Empty(t, press(u, "tab"), "there is nowhere else for the keyboard to go")
+	id, _ := u.Focused()
+	assert.Equal(t, "save", id)
+
+	events := u.Update(tea.MouseWheelMsg{X: 2, Y: 3, Button: tea.MouseWheelDown})
+	require.Len(t, events, 1)
+	assert.Equal(t, Event{Kind: Scrolled, ID: "log", Action: "scroll-log", Delta: 1}, events[0])
+}
+
+// Clicking one leaves the keyboard where it was rather than sending focus
+// somewhere it cannot come back from.
+func TestClickingAPointerOnlyElementDoesNotMoveFocus(t *testing.T) {
+	u := NewUI()
+	ring(u, target("save", "save", 0, 0, 8, 1), pointerOnly("log", "", 0, 2, 10, 5))
+
+	assert.Empty(t, u.Update(tea.MouseClickMsg{X: 2, Y: 3, Button: tea.MouseLeft}))
+	id, _ := u.Focused()
+	assert.Equal(t, "save", id)
+	assert.False(t, u.Focus("log"), "it never takes focus by name either")
 }
 
 func TestEventKindsAreNamed(t *testing.T) {

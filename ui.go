@@ -92,32 +92,46 @@ func NewUI() *UI { return &UI{keys: DefaultKeyMap()} }
 // SetKeyMap replaces the bindings.
 func (u *UI) SetKeyMap(keys KeyMap) { u.keys = keys }
 
-// State implements layout.Interaction.
-func (u *UI) State(index int, id, _ string) widget.State {
-	key := targetKey(index, id)
-	focused := u.focus == key
-	if u.focus == "" {
-		// Nothing has been focused yet, so the ring starts at its first control
-		// rather than nowhere. A view whose buttons are all unfocused on the
-		// first frame looks broken.
-		focused = index == 0
+// States implements layout.Interaction.
+func (u *UI) States(targets []layout.Target) []widget.State {
+	// Nothing has been focused yet, so the keyboard starts on the frame's first
+	// control rather than nowhere: a view whose buttons are all unfocused on the
+	// first frame looks broken.
+	focus := u.focus
+	if focus == "" {
+		focus = firstFocusable(targets)
 	}
-	return widget.State{Focused: focused, Hovered: u.hover == key, Pressed: u.press == key}
+
+	states := make([]widget.State, 0, len(targets))
+	for i, target := range targets {
+		key := targetKey(i, target.ID)
+		states = append(states, widget.State{
+			Focused: target.Focus && focus == key,
+			Hovered: u.hover == key,
+			Pressed: u.press == key,
+		})
+	}
+	return states
 }
 
 // Frame implements layout.Interaction.
 func (u *UI) Frame(targets []layout.Target) {
 	u.targets = targets
-	if len(targets) == 0 {
-		u.focus = ""
-		return
-	}
 	// A control can disappear between frames -- a popup closes, an `if` flips.
-	// Falling back to the first keeps the ring usable instead of stranding focus
-	// on something no longer drawn.
-	if u.indexOf(u.focus) < 0 {
-		u.focus = targetKey(0, targets[0].ID)
+	// Falling back to the first focusable keeps the keyboard usable instead of
+	// stranding it on something no longer drawn.
+	if index := u.indexOf(u.focus); index < 0 || !targets[index].Focus {
+		u.focus = firstFocusable(targets)
 	}
+}
+
+func firstFocusable(targets []layout.Target) string {
+	for i, target := range targets {
+		if target.Focus {
+			return targetKey(i, target.ID)
+		}
+	}
+	return ""
 }
 
 // Update feeds a Bubble Tea message through the focus ring and reports what the
@@ -182,25 +196,41 @@ func (u *UI) key(stroke string) []Event {
 	return nil
 }
 
-// move steps the ring, wrapping at both ends so tab never dead-ends.
+// move steps the ring, wrapping at both ends so tab never dead-ends. Elements
+// that only answer the pointer are stepped over: tab landing on a scrolling
+// region that does nothing with the keyboard is a dead stop.
 func (u *UI) move(step int) []Event {
-	if len(u.targets) == 0 {
+	ring := u.ring()
+	if len(ring) == 0 {
 		return nil
 	}
-	index := u.indexOf(u.focus)
-	if index < 0 {
-		index = 0
-	} else {
-		index = (index + step + len(u.targets)) % len(u.targets)
+	at := 0
+	for i, index := range ring {
+		if targetKey(index, u.targets[index].ID) == u.focus {
+			at = (i + step + len(ring)) % len(ring)
+			break
+		}
 	}
+	index := ring[at]
 	return u.focusKey(targetKey(index, u.targets[index].ID))
 }
 
+// ring is the indices of the targets the keyboard can reach, in document order.
+func (u *UI) ring() []int {
+	var ring []int
+	for i, target := range u.targets {
+		if target.Focus {
+			ring = append(ring, i)
+		}
+	}
+	return ring
+}
+
 // Focus moves the keyboard to the control with the given id. It reports whether
-// such a control was in the last frame.
+// such a control took focus in the last frame.
 func (u *UI) Focus(id string) bool {
 	for i, target := range u.targets {
-		if target.ID == id && id != "" {
+		if target.ID == id && id != "" && target.Focus {
 			u.focus = targetKey(i, target.ID)
 			return true
 		}
@@ -217,11 +247,13 @@ func (u *UI) Focused() (id, action string) {
 	return u.targets[index].ID, u.targets[index].Action
 }
 
-// Targets is the last frame's focus ring, in document order.
+// Targets is every interactive element in the last frame, in document order:
+// the focus ring plus anything the pointer alone can reach.
 func (u *UI) Targets() []layout.Target { return u.targets }
 
 func (u *UI) focusKey(key string) []Event {
-	if u.focus == key {
+	index := u.indexOf(key)
+	if u.focus == key || index < 0 || !u.targets[index].Focus {
 		return nil
 	}
 	u.focus = key
