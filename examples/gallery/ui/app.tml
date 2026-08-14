@@ -10,6 +10,9 @@
 	<Property name="controlsTab" type="bool" default="true"/>
 	<Property name="dataTab" type="bool" default="false"/>
 	<Property name="mediaTab" type="bool" default="false"/>
+	<Property name="controlsVariant" type="string" default="primary"/>
+	<Property name="dataVariant" type="string" default="default"/>
+	<Property name="mediaVariant" type="string" default="default"/>
 
 	<Property name="query" type="string" default=""/>
 	<Property name="cursor" type="int" default="0"/>
@@ -42,9 +45,11 @@
 				<Rule color="{theme.line}"/>
 
 				<Stack orientation="horizontal" gap="1">
-					<Button id="tab-controls" action="tab:controls" label="Controls"/>
-					<Button id="tab-data" action="tab:data" label="Data"/>
-					<Button id="tab-media" action="tab:media" label="Media"/>
+					<!-- The variant is data, so the section that is showing is the
+					     one drawn in the accent colour. -->
+					<Button id="tab-controls" action="tab:controls" label="Controls" variant="{controlsVariant}"/>
+					<Button id="tab-data" action="tab:data" label="Data" variant="{dataVariant}"/>
+					<Button id="tab-media" action="tab:media" label="Media" variant="{mediaVariant}"/>
 				</Stack>
 
 				<Border title="Controls" color="{theme.line}" width="*" if="{controlsTab}">

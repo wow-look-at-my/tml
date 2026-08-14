@@ -226,20 +226,24 @@ func (m *model) frameOf() string {
 		"controlsTab": sema.BoolValue(m.tab == "controls"),
 		"dataTab":     sema.BoolValue(m.tab == "data"),
 		"mediaTab":    sema.BoolValue(m.tab == "media"),
-		"query":       sema.StringValue(m.query),
-		"cursor":      sema.StringValue(strconv.Itoa(len(m.query))),
-		"notify":      sema.BoolValue(m.notify),
-		"small":       sema.BoolValue(m.size == "small"),
-		"medium":      sema.BoolValue(m.size == "medium"),
-		"large":       sema.BoolValue(m.size == "large"),
-		"progress":    sema.StringValue(strconv.Itoa(m.progress)),
-		"load":        sema.StringValue(join(m.load)),
-		"services":    sema.StringValue(strings.Join(services, ",")),
-		"selected":    sema.StringValue(strconv.Itoa(m.selected)),
-		"offset":      sema.StringValue(strconv.Itoa(m.offset)),
-		"log":         sema.StringValue(strings.Join(m.log, ",")),
-		"steps":       sema.StringValue(strings.Join(steps, ",")),
-		"confirming":  sema.BoolValue(m.confirming),
+
+		"controlsVariant": sema.StringValue(variant(m.tab == "controls")),
+		"dataVariant":     sema.StringValue(variant(m.tab == "data")),
+		"mediaVariant":    sema.StringValue(variant(m.tab == "media")),
+		"query":           sema.StringValue(m.query),
+		"cursor":          sema.StringValue(strconv.Itoa(len(m.query))),
+		"notify":          sema.BoolValue(m.notify),
+		"small":           sema.BoolValue(m.size == "small"),
+		"medium":          sema.BoolValue(m.size == "medium"),
+		"large":           sema.BoolValue(m.size == "large"),
+		"progress":        sema.StringValue(strconv.Itoa(m.progress)),
+		"load":            sema.StringValue(join(m.load)),
+		"services":        sema.StringValue(strings.Join(services, ",")),
+		"selected":        sema.StringValue(strconv.Itoa(m.selected)),
+		"offset":          sema.StringValue(strconv.Itoa(m.offset)),
+		"log":             sema.StringValue(strings.Join(m.log, ",")),
+		"steps":           sema.StringValue(strings.Join(steps, ",")),
+		"confirming":      sema.BoolValue(m.confirming),
 	}, m.width, m.height)
 	if err != nil {
 		// A render failure is shown rather than swallowed: a blank frame looks
@@ -247,6 +251,15 @@ func (m *model) frameOf() string {
 		return "tml: " + err.Error()
 	}
 	return out
+}
+
+// variant is how a tab button is drawn. The language has no conditional
+// expression on purpose, so a choice like this is made here and passed in.
+func variant(active bool) string {
+	if active {
+		return "primary"
+	}
+	return "default"
 }
 
 func join(values []int) string {
