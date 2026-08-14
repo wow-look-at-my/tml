@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -185,6 +186,70 @@ func TestDuplicateIDsAreRejected(t *testing.T) {
 	_, err = loaded.Render(nil, 20, 6)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), `id "go" is already used`)
+}
+
+// Geometry and output have to agree, or a click lands on nothing. These walk the
+// panels that place children at coordinates and check each control's rect
+// against where its label actually got painted.
+func TestPublishedRectsMatchWhereControlsArePainted(t *testing.T) {
+	for _, panel := range []struct {
+		name     string
+		template string
+	}{
+		{"grid", `<Grid columns="auto,1*" rows="auto,auto" gap="1">
+			<Button id="a" label="Aaa" Grid.row="0" Grid.column="0"/>
+			<Button id="b" label="Bbb" Grid.row="0" Grid.column="1"/>
+			<Button id="c" label="Ccc" Grid.row="1" Grid.column="1"/>
+		</Grid>`},
+		{"centered stack", `<Stack align="center" gap="1" width="40">
+			<Button id="a" label="Aaa"/>
+			<Button id="b" label="Bbbbbbbb"/>
+		</Stack>`},
+		{"horizontal stack", `<Stack orientation="horizontal" gap="3">
+			<Button id="a" label="Aaa"/>
+			<Button id="b" label="Bbb"/>
+		</Stack>`},
+	} {
+		t.Run(panel.name, func(t *testing.T) {
+			loaded := interactive(t, panel.template, 40, 12)
+			frame, err := loaded.Render(nil, 40, 12)
+			require.NoError(t, err)
+
+			for _, target := range loaded.UI().Targets() {
+				rect := target.Rect
+				assert.Contains(t, "╭╔", cellAt(t, frame, rect.X, rect.Y),
+					"%s: no button corner where its rect starts", target.ID)
+
+				// A stretched button centres its label, so where the text lands is
+				// only pinned to the rect it has to sit inside.
+				label := strings.ToUpper(target.ID) + strings.Repeat(strings.ToLower(target.ID), 2)
+				x, y := find(t, frame, label)
+				assert.Equal(t, rect.Y+1, y, "%s is drawn on a different row from its rect", target.ID)
+				assert.GreaterOrEqual(t, x, rect.X, "%s is drawn left of its rect", target.ID)
+				assert.Less(t, x, rect.X+rect.W, "%s is drawn past its rect", target.ID)
+			}
+		})
+	}
+}
+
+// cellAt is the character painted at one cell of a frame.
+func cellAt(t *testing.T, frame string, x, y int) string {
+	t.Helper()
+	lines := strings.Split(ansi.Strip(frame), "\n")
+	require.Less(t, y, len(lines), "row %d is off the frame", y)
+	return ansi.Cut(lines[y], x, x+1)
+}
+
+// find is where a string was painted in a frame, in cells.
+func find(t *testing.T, frame, needle string) (x, y int) {
+	t.Helper()
+	for row, line := range strings.Split(ansi.Strip(frame), "\n") {
+		if column := strings.Index(line, needle); column >= 0 {
+			return lipgloss.Width(line[:column]), row
+		}
+	}
+	t.Fatalf("%q is not in the frame:\n%s", needle, ansi.Strip(frame))
+	return 0, 0
 }
 
 func targetOf(t *testing.T, loaded *tml.View, id string) tml.Target {

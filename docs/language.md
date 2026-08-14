@@ -170,6 +170,10 @@ because it cannot say which of the tracks it covers should grow.
 
 Placing a child past the last declared track widens the grid with auto tracks rather than dropping the child.
 
+A grid child fills the cell it is placed in, so a `1*` track is how you say "as wide as there is room for". A `Stack` is
+the other way round: a child keeps its own size across the stack, and `align`/`valign` place it, unless it asks for
+`width="*"`. The difference is that a grid's tracks were declared by the author and a stack's cross axis was not.
+
 An attached property written on a child of anything other than a `Grid` is an error, as is an unknown one such as
 `Grid.depth`. Ignoring them would leave a layout that quietly disregards what was written.
 
