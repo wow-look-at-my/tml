@@ -6,9 +6,12 @@ import (
 	"path/filepath"
 	"testing"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/wow-look-at-my/tml"
 )
 
 var update = flag.Bool("update", false, "rewrite the golden files")
@@ -93,6 +96,93 @@ func TestAnUnknownActionIsRejected(t *testing.T) {
 
 	assert.False(t, m.act("nonsense"))
 	assert.True(t, m.act("save"))
+}
+
+// Clicking a tab is the whole loop: the click lands on a rect the last frame
+// published, the ring turns it into an action, and the model switches section.
+func TestClickingATabSwitchesSection(t *testing.T) {
+	m := gallery(t)
+	require.NotContains(t, m.frameOf(), "tml: ")
+
+	target := control(t, m, "tab-media")
+	press(m, target.Rect.X+1, target.Rect.Y+1)
+
+	assert.Equal(t, "media", m.tab)
+	assert.Contains(t, ansi.Strip(m.frameOf()), "Media ─", "the media section is the one drawn")
+}
+
+// Typing belongs to the field while the field has focus, so the ring's own keys
+// and the quit key both have to stand aside there.
+func TestTypingGoesToTheFocusedField(t *testing.T) {
+	m := gallery(t)
+	require.NotContains(t, m.frameOf(), "tml: ")
+	require.True(t, m.view.UI().Focus("search"))
+
+	for _, r := range "qq" {
+		m.Update(tea.KeyPressMsg{Code: r})
+	}
+	assert.Equal(t, "schedqq", m.query)
+
+	m.Update(tea.KeyPressMsg{Code: tea.KeyBackspace})
+	assert.Equal(t, "schedq", m.query)
+}
+
+func TestQuitKeysOnlyBindOutsideAField(t *testing.T) {
+	m := gallery(t)
+	require.NotContains(t, m.frameOf(), "tml: ")
+	require.True(t, m.view.UI().Focus("save"))
+
+	_, cmd := m.Update(tea.KeyPressMsg{Code: 'q'})
+	assert.NotNil(t, cmd, "q quits when the keyboard is not in a field")
+}
+
+// Escape backs out of the popup before it backs out of the program: a modal that
+// quits the whole thing on the key everyone presses to dismiss it is a trap.
+func TestEscapeClosesThePopupFirst(t *testing.T) {
+	m := gallery(t)
+	m.confirming = true
+
+	_, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyEscape})
+	assert.False(t, m.confirming)
+	assert.Nil(t, cmd)
+
+	_, cmd = m.Update(tea.KeyPressMsg{Code: tea.KeyEscape})
+	assert.NotNil(t, cmd, "with nothing left to dismiss it quits")
+}
+
+// Activating Quit and then Yes leaves through the popup, which is the one path
+// where an action has to reach the program rather than just the model.
+func TestConfirmingQuitEndsTheProgram(t *testing.T) {
+	m := gallery(t)
+	require.NotContains(t, m.frameOf(), "tml: ")
+
+	quit := control(t, m, "quit")
+	press(m, quit.Rect.X+1, quit.Rect.Y+1)
+	require.True(t, m.confirming)
+	require.NotContains(t, m.frameOf(), "tml: ")
+
+	yes := control(t, m, "yes")
+	_, cmd := press(m, yes.Rect.X+1, yes.Rect.Y+1)
+	assert.NotNil(t, cmd)
+}
+
+// press clicks and releases over one point, which is what actually activates a
+// control: a press alone is only the start of a click that can still be taken
+// back by releasing somewhere else.
+func press(m *model, x, y int) (tea.Model, tea.Cmd) {
+	m.Update(tea.MouseClickMsg{X: x, Y: y, Button: tea.MouseLeft})
+	return m.Update(tea.MouseReleaseMsg{X: x, Y: y, Button: tea.MouseLeft})
+}
+
+func control(t *testing.T, m *model, id string) tml.Target {
+	t.Helper()
+	for _, target := range m.view.UI().Targets() {
+		if target.ID == id {
+			return target
+		}
+	}
+	t.Fatalf("no control with id %q on this frame", id)
+	return tml.Target{}
 }
 
 func golden(t *testing.T, name, got string) {

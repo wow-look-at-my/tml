@@ -1,0 +1,24 @@
+ TML widget gallery   ready   ⠋                tab moves, enter or click activates, q quits 
+                                                                                            
+ ────────────────────────────────────────────────────────────────────────────────────────── 
+                                                                                            
+ ╔══════════╗ ╭──────╮ ╭───────╮                                                            
+ ║ Controls ║ │ Data │ │ Media │                                                            
+ ╚══════════╝ ╰──────╯ ╰───────╯                                                            
+                                                                                            
+ ┌ Data ──────────────────────────────────────────────────────────────────────────────────┐ 
+ │ > api           09:05 deploy step 1 finished                                         █ │ 
+ │   web           09:10 deploy step 2 finished                                         █ │ 
+ │   worker        09:15 deploy step 3 finished                                         │ │ 
+ │   scheduler     09:20 deploy step 4 finished                                         │ │ 
+ │   database      09:25 deploy step 5 finished                                         │ │ 
+ │   cache         09:30 deploy step 6 finished                                         │ │ 
+ │                 09:35 deploy step 7 finished                                         │ │ 
+ │                 09:40 deploy step 8 finished                                         │ │ 
+ └────────────────────────────────────────────────────────────────────────────────────────┘ 
+                                                                                            
+                                                                                            
+                                                                                            
+ ╭──────╮  ╭──────╮  ╭────────╮                                                             
+ │ Save │  │ Quit │  │ Locked │                                                             
+ ╰──────╯  ╰──────╯  ╰────────╯                                                             

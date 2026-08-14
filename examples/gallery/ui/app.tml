@@ -82,7 +82,7 @@
 				<Border title="Media" color="{theme.line}" width="*" if="{mediaTab}">
 					<Stack orientation="horizontal" gap="2">
 						<Image src="./logo.png" alt="the TML mark" width="16"/>
-						<Stack gap="1">
+						<Stack>
 							<Text>An image is drawn with the terminal's own graphics protocol</Text>
 							<Text>where there is one, out of half-block characters where</Text>
 							<Text>there is not, and as a link to the file where there is</Text>

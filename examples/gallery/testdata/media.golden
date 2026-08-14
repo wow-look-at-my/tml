@@ -1,0 +1,24 @@
+ TML widget gallery   ready   ⠋                tab moves, enter or click activates, q quits 
+                                                                                            
+ ────────────────────────────────────────────────────────────────────────────────────────── 
+                                                                                            
+ ╔══════════╗ ╭──────╮ ╭───────╮                                                            
+ ║ Controls ║ │ Data │ │ Media │                                                            
+ ╚══════════╝ ╰──────╯ ╰───────╯                                                            
+                                                                                            
+ ┌ Media ─────────────────────────────────────────────────────────────────────────────────┐ 
+ │ ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀  An image is drawn with the terminal's own graphics protocol          │ 
+ │ ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀  where there is one, out of half-block characters where               │ 
+ │ ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀  there is not, and as a link to the file where there is               │ 
+ │ ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀  no colour either.                                                    │ 
+ │ ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀  protocol="mosaic" forces one of them                                 │ 
+ │ ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀                                                                       │ 
+ │ ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀                                                                       │ 
+ │ ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀                                                                       │ 
+ └────────────────────────────────────────────────────────────────────────────────────────┘ 
+                                                                                            
+                                                                                            
+                                                                                            
+ ╭──────╮  ╭──────╮  ╭────────╮                                                             
+ │ Save │  │ Quit │  │ Locked │                                                             
+ ╰──────╯  ╰──────╯  ╰────────╯                                                             
