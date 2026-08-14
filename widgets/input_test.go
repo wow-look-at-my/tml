@@ -3,6 +3,7 @@ package widgets
 import (
 	"testing"
 
+	"github.com/charmbracelet/x/ansi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -12,19 +13,28 @@ import (
 func TestTextboxDrawsItsValuePaddedToTheField(t *testing.T) {
 	box := build(t, "Textbox", map[string]string{"value": "hi"})
 
-	assert.Equal(t, "hi        ", box.Render(10, 1))
+	assert.Equal(t, "hi        ", ansi.Strip(box.Render(10, 1)))
+}
+
+// The field is drawn whether or not there is anything in it, because an empty
+// box with no rule under it reads as a gap rather than as somewhere to type.
+func TestTextboxUnderlinesTheWholeField(t *testing.T) {
+	box := build(t, "Textbox", nil)
+
+	assert.Contains(t, box.Render(6, 1), "\x1b[4m", "the field is underlined")
+	assert.Equal(t, "      ", ansi.Strip(box.Render(6, 1)))
 }
 
 func TestTextboxFallsBackToItsPlaceholder(t *testing.T) {
 	box := build(t, "Textbox", map[string]string{"placeholder": "Search"})
 
-	assert.Contains(t, box.Render(10, 1), "Search")
+	assert.Contains(t, ansi.Strip(box.Render(10, 1)), "Search")
 }
 
 func TestTextboxMasksAPassword(t *testing.T) {
 	box := build(t, "Textbox", map[string]string{"value": "hunter2", "password": "true"})
 
-	out := box.Render(10, 1)
+	out := ansi.Strip(box.Render(10, 1))
 	assert.Contains(t, out, "•••••••")
 	assert.NotContains(t, out, "hunter2")
 }
@@ -33,10 +43,37 @@ func TestTextboxMasksAPassword(t *testing.T) {
 // with it, so what is being typed stays on screen.
 func TestTextboxWindowsAroundTheCursor(t *testing.T) {
 	end := build(t, "Textbox", map[string]string{"value": "abcdefghij"})
-	assert.Equal(t, "fghij", end.Render(5, 1))
+	assert.Equal(t, "fghij", ansi.Strip(end.Render(5, 1)))
 
 	early := build(t, "Textbox", map[string]string{"value": "abcdefghij", "cursor": "2"})
-	assert.Equal(t, "abcde", early.Render(5, 1))
+	assert.Equal(t, "abcde", ansi.Strip(early.Render(5, 1)))
+}
+
+// The caret is the only thing that says where typing lands, and it has to point
+// into the window rather than into the whole value, or it drifts off the field
+// the moment the text is longer than the box.
+func TestFocusedTextboxShowsACaretInsideItsWindow(t *testing.T) {
+	box := build(t, "Textbox", map[string]string{"value": "abcdefghij", "cursor": "9"})
+	box.(widget.Stateful).SetState(widget.State{Focused: true})
+
+	out := box.Render(5, 1)
+	assert.Equal(t, "fghij", ansi.Strip(out))
+	assert.Contains(t, out, "\x1b[7mj", "the caret sits on the last character, not past it")
+}
+
+func TestAnEmptyFocusedTextboxPutsTheCaretFirst(t *testing.T) {
+	box := build(t, "Textbox", map[string]string{"placeholder": "search"})
+	box.(widget.Stateful).SetState(widget.State{Focused: true})
+
+	assert.Contains(t, box.Render(8, 1), "\x1b[7ms", "the caret is where the first character will go")
+}
+
+// A field nobody can type into shows no caret, however the ring got there.
+func TestDisabledTextboxShowsNoCaret(t *testing.T) {
+	box := build(t, "Textbox", map[string]string{"value": "hi", "disabled": "true"})
+	box.(widget.Stateful).SetState(widget.State{Focused: true})
+
+	assert.NotContains(t, box.Render(6, 1), "\x1b[7m")
 }
 
 func TestTextboxFillsTheWidthItIsGiven(t *testing.T) {

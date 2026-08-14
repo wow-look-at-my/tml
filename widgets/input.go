@@ -64,24 +64,55 @@ func (t *textbox) Measure(maxW, _ int) (int, int) {
 func (t *textbox) Render(w, _ int) string {
 	shown, empty := t.text()
 
-	style := lipgloss.NewStyle()
-	switch {
-	case t.disabled:
+	// The whole field is underlined, not just the text in it: an empty box with
+	// nothing under it is indistinguishable from a gap, and a field nobody can
+	// see is a field nobody clicks.
+	style := lipgloss.NewStyle().Underline(true)
+	if t.disabled {
+		style = style.Faint(true).Underline(false)
+	} else if empty {
 		style = style.Faint(true)
-	case empty:
-		style = style.Faint(true)
-	}
-	if t.state.Focused && !t.disabled {
-		style = style.Underline(true)
 	}
 
 	// The window follows the cursor, so a value longer than the field still shows
 	// the part being typed rather than its beginning.
-	body := t.window(shown, w)
+	body, start := t.window(shown, w)
 	if gap := w - lipgloss.Width(body); gap > 0 {
 		body += strings.Repeat(" ", gap)
 	}
-	return style.Render(body)
+	if !t.state.Focused || t.disabled {
+		return style.Render(body)
+	}
+	return caret(style, body, t.column(shown)-start)
+}
+
+// column is where the caret sits in the value. An unset cursor means the end,
+// which is where a host that is only appending characters wants it.
+func (t *textbox) column(shown string) int {
+	if t.value == "" {
+		return 0
+	}
+	if t.cursor < 0 {
+		return lipgloss.Width(shown)
+	}
+	return min(t.cursor, lipgloss.Width(shown))
+}
+
+// caret draws one cell of the field reversed. The host owns the text, so this is
+// the only thing left that says where the next character will land.
+//
+// The caret cell is styled from scratch rather than from the field: lipgloss
+// drops Reverse from a whitespace-only render that also carries Underline, and
+// the caret sits on a blank cell whenever it is at the end of the value.
+// render/lipgloss_contract_test.go pins that.
+func caret(style lipgloss.Style, body string, col int) string {
+	width := lipgloss.Width(body)
+	if col < 0 || col >= width {
+		return style.Render(body)
+	}
+	return style.Render(ansi.Cut(body, 0, col)) +
+		lipgloss.NewStyle().Reverse(true).Render(ansi.Cut(body, col, col+1)) +
+		style.Render(ansi.Cut(body, col+1, width))
 }
 
 // text is what to draw and whether it is the placeholder rather than a value.
@@ -95,19 +126,21 @@ func (t *textbox) text() (string, bool) {
 	return t.value, false
 }
 
-func (t *textbox) window(s string, w int) string {
+// window is the slice of the text the field shows, and the column of the text
+// that slice starts at.
+func (t *textbox) window(s string, w int) (string, int) {
 	if w <= 0 {
-		return ""
+		return "", 0
 	}
 	width := lipgloss.Width(s)
 	if width <= w {
-		return s
+		return s, 0
 	}
 	end := width
 	if t.cursor >= 0 {
 		end = min(width, max(w, t.cursor+1))
 	}
-	return ansi.Cut(s, end-w, end)
+	return ansi.Cut(s, end-w, end), end - w
 }
 
 // ---------------------------------------------------------------- Checkbox and Radio

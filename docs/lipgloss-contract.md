@@ -59,3 +59,13 @@ must render each node to exactly its arranged size (via `Style.Width`/`Height`),
 `Style.Render` emits ANSI for any colour that is set, regardless of TTY; downsampling happens later at the writer. So
 golden files either avoid colour entirely or compare after stripping ANSI. An unstyled `Render` returns plain text, which
 is why layout goldens are colourless.
+
+## Reverse is dropped on blanks
+
+`Style.Render` strips the attributes that only decorate a glyph when the string is nothing but spaces, and once
+`Underline` is set on the same style `Reverse` goes with them: `Underline(true).Reverse(true).Render(" ")` comes back as
+plain `ESC[4m ESC[m`. `Reverse` alone survives, and both survive on a real character.
+
+This decides how a text caret is drawn. A caret at the end of a value sits on a blank cell of an underlined field, so
+`widgets.caret` styles that one cell from a fresh style instead of from the field's. `TestReverseIsLostOnBlanksThatAreAlsoUnderlined`
+pins it.

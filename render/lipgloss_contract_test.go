@@ -58,6 +58,19 @@ func TestStyleSizeIncludesTheBorder(t *testing.T) {
 		"two rows is impossible with a border: one content line is the floor")
 }
 
+// Rendering a run of spaces drops the attributes that only decorate a glyph, and
+// Reverse -- which paints the cell itself -- is dropped with them once Underline
+// is in the same style. A text caret is exactly this case: a reversed blank at
+// the end of a value, on an underlined field. It has to be styled on its own.
+func TestReverseIsLostOnBlanksThatAreAlsoUnderlined(t *testing.T) {
+	assert.Contains(t, lipgloss.NewStyle().Reverse(true).Render(" "), "7m",
+		"reverse alone survives a blank")
+
+	both := lipgloss.NewStyle().Underline(true).Reverse(true)
+	assert.Contains(t, both.Render("x"), "7", "reverse survives on a glyph")
+	assert.NotContains(t, both.Render(" "), "7", "but not on a blank")
+}
+
 // Inherit fills unset fields from a parent style but DELIBERATELY excludes padding
 // and margin. So <Style extends="..."> cannot be implemented as Inherit alone: TML
 // resolves the cascade in its own style model and emits a fully-resolved style here.
