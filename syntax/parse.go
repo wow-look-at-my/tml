@@ -69,6 +69,13 @@ func posOf(path string, el *validator.Element) Pos {
 	return Pos{File: path, Line: el.Line, Col: el.Col}
 }
 
+// attrPos locates an attribute rather than the element that owns it. Most
+// diagnostics are about an attribute's value, and on an element with several
+// attributes the element's position points at the wrong one.
+func attrPos(path string, a validator.Attr) Pos {
+	return Pos{File: path, Line: a.Line, Col: a.Col}
+}
+
 func parseComponent(path string, el *validator.Element) (*Component, error) {
 	pos := posOf(path, el)
 	if err := checkAttrs(path, el, "name"); err != nil {
@@ -152,8 +159,8 @@ func parseProperty(path string, el *validator.Element) (*Property, error) {
 	property := &Property{Name: name, Type: typ, Pos: pos}
 	property.Default, property.HasDefault = attr(el, "default")
 
-	if raw, ok := attr(el, "required"); ok {
-		required, err := parseBool(pos, "required", raw)
+	if a, ok := lookupAttr(el, "required"); ok {
+		required, err := parseBool(attrPos(path, a), "required", a.Value)
 		if err != nil {
 			return nil, err
 		}
@@ -244,7 +251,7 @@ func parseStyle(path string, el *validator.Element) (*Style, error) {
 		if isNamespaceDecl(a) || a.Name == "name" || a.Name == "extends" {
 			continue
 		}
-		style.Attrs = append(style.Attrs, Attr{Name: a.Name, Value: a.Value, Pos: pos})
+		style.Attrs = append(style.Attrs, Attr{Name: a.Name, Value: a.Value, Pos: attrPos(path, a)})
 	}
 	return style, nil
 }
@@ -267,7 +274,7 @@ func parseNodes(path string, el *validator.Element) []*Node {
 				if isNamespaceDecl(a) {
 					continue
 				}
-				node.Attrs = append(node.Attrs, Attr{Name: a.Name, Value: a.Value, Pos: node.Pos})
+				node.Attrs = append(node.Attrs, Attr{Name: a.Name, Value: a.Value, Pos: attrPos(path, a)})
 			}
 			node.Children = parseNodes(path, c)
 			out = append(out, node)
@@ -330,12 +337,19 @@ func isNamespaceDecl(a validator.Attr) bool {
 }
 
 func attr(el *validator.Element, name string) (string, bool) {
+	a, ok := lookupAttr(el, name)
+	return a.Value, ok
+}
+
+// lookupAttr returns the whole attribute, for callers that need its position as
+// well as its value.
+func lookupAttr(el *validator.Element, name string) (validator.Attr, bool) {
 	for _, a := range el.Attrs {
 		if a.Name == name {
-			return a.Value, true
+			return a, true
 		}
 	}
-	return "", false
+	return validator.Attr{}, false
 }
 
 // checkAttrs rejects any attribute the element does not define. An unknown
@@ -346,7 +360,7 @@ func checkAttrs(path string, el *validator.Element, allowed ...string) error {
 			continue
 		}
 		if !slices.Contains(allowed, a.Name) {
-			return errorf(posOf(path, el), "<%s> has no attribute %q", el.Local, a.Name)
+			return errorf(attrPos(path, a), "<%s> has no attribute %q", el.Local, a.Name)
 		}
 	}
 	return nil

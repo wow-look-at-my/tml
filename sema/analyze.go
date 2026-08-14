@@ -57,14 +57,18 @@ type tnode struct {
 	name     string
 	attrs    []tattr
 	cond     *Expr
+	condPos  syntax.Pos
 	children []*tnode
 	text     *Expr
 	pos      syntax.Pos
 }
 
+// tattr carries its own position so an attribute-scoped diagnostic points at the
+// attribute rather than at the element, which is several attributes to the left.
 type tattr struct {
 	name string
 	expr *Expr
+	pos  syntax.Pos
 }
 
 // Options control analysis.
@@ -197,13 +201,14 @@ func (p *Program) compileNode(node *syntax.Node) (*tnode, error) {
 	for _, attr := range node.Attrs {
 		expr, err := ParseExpr(attr.Value)
 		if err != nil {
-			return nil, &syntax.Error{Pos: node.Pos, Message: fmt.Sprintf("attribute %q: %v", attr.Name, err)}
+			return nil, &syntax.Error{Pos: attr.Pos, Message: fmt.Sprintf("attribute %q: %v", attr.Name, err)}
 		}
 		if attr.Name == "if" {
 			compiled.cond = expr
+			compiled.condPos = attr.Pos
 			continue
 		}
-		compiled.attrs = append(compiled.attrs, tattr{name: attr.Name, expr: expr})
+		compiled.attrs = append(compiled.attrs, tattr{name: attr.Name, expr: expr, pos: attr.Pos})
 	}
 
 	children, err := p.compileNodes(node.Children)
@@ -237,12 +242,12 @@ func (p *Program) checkNode(c *compiled, node *tnode, names map[string]bool) err
 		return p.checkRefs(c, node.text, node.pos, names)
 	}
 	if node.cond != nil {
-		if err := p.checkRefs(c, node.cond, node.pos, names); err != nil {
+		if err := p.checkRefs(c, node.cond, node.condPos, names); err != nil {
 			return err
 		}
 	}
 	for _, attr := range node.attrs {
-		if err := p.checkRefs(c, attr.expr, node.pos, names); err != nil {
+		if err := p.checkRefs(c, attr.expr, attr.pos, names); err != nil {
 			return err
 		}
 	}
