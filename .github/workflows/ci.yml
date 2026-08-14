@@ -36,7 +36,9 @@ jobs:
       - name: Publish the screenshots
         uses: wow-look-at-my/buildhost/.github/actions/buildhost-publish-site@master
         with:
-          project: tml-shots
+          # The project is the repository name, which is the one buildhost's
+          # OIDC trust covers -- naming anything else 404s with "project not
+          # found" rather than creating it.
           branch: ${{ github.ref_name }}
           source_dir: build/shots
           deployment_ref: ${{ github.ref_name }}

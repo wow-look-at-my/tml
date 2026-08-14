@@ -42,8 +42,12 @@ happened to open at.
 
 CI captures on every push and publishes `build/shots/` to a buildhost site, per branch:
 
-- `https://sites.pazer.build/tml-shots/` -- master
-- `https://sites.pazer.build/tml-shots/@<branch>/` -- any other branch
+- `https://sites.pazer.build/tml/` -- master
+- `https://sites.pazer.build/tml/@<branch>/` -- any other branch
+
+The project is the repository's name because that is what buildhost's OIDC trust covers -- a token minted for
+`repo:wow-look-at-my/tml` may write project `tml` and anything namespaced beneath it, and any other name answers
+`404 project not found` instead of being created.
 
 A branch build's index page shows each picture beside master's copy of it, so what a change did to the rendering is a
 scroll rather than an archaeology exercise. The README embeds master's, which is where the showcase comes from.

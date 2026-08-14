@@ -24,7 +24,7 @@ const out = path.join(repo, "build/shots");
 
 // The site the pictures are published to. A branch build shows its own picture
 // beside the default branch's, which is the whole diff check.
-const site = "https://sites.pazer.build/tml-shots";
+const site = "https://sites.pazer.build/tml";
 
 // The browser to drive: a Chromium already on the machine, or the one Playwright
 // installs for itself. /usr/bin/chromium-browser is deliberately not on the list
