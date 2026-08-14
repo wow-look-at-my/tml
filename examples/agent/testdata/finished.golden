@@ -1,0 +1,30 @@
+ tml agent   mockingbird-1                                            $0.01  ░░░░░░░░░░░░░░░░░░ 
+                                                                                                
+ ────────────────────────────────────────────────────────────────────────────────────────────── 
+                                                                                                
+ ┌ Context ─────────┐  ┌ Session ─────────────────────────────────────────────────────────────┐ 
+ │   cmd/report.go  │  │ │ +        return json.NewEncoder(os.Stdout).Encode(rows)         ││ │ 
+ │   report/table.… │  │ │ +    }                                                          ││ │ 
+ │ > report/json.go │  │ └─────────────────────────────────────────────────────────────────┘│ │ 
+ │   report/report… │  │                                                                    │ │ 
+ │                  │  │      allowed: go test ./...                                        │ │ 
+ │                  │  │                                                                    │ │ 
+ │                  │  │   ⚙  bash go test ./...                                            │ │ 
+ │                  │  │                                                                    │ │ 
+ │                  │  │ ┌ go test ./... ──────────────────────────────────────────────────┐│ │ 
+ │                  │  │ │ package      tests result                                       ││ │ 
+ │                  │  │ │                                                                 ││ │ 
+ │                  │  │ │ report       12    ok                                           │█ │ 
+ │                  │  │ │ report/table 8     ok                                           │█ │ 
+ │                  │  │ │ report/json  4     ok                                           │█ │ 
+ │                  │  │ └─────────────────────────────────────────────────────────────────┘█ │ 
+ │                  │  │                                                                    █ │ 
+ │                  │  │  tml Tests pass. --json prints the same rows through encoding/json,█ │ 
+ │                  │  │      and the table stays the default.                              █ │ 
+ └──────────────────┘  └──────────────────────────────────────────────────────────────────────┘ 
+                                                                                                
+                                                                                       ╭──────╮ 
+ ask for a change, or press space to step the script                                   │ Send │ 
+                                                                                       ╰──────╯ 
+                                                                                                
+ ready                                         space steps, tab moves, enter activates, q quits 

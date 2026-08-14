@@ -89,6 +89,21 @@ func BoolValue(b bool) Value {
 	return Value{typ: Type{Kind: KindBool}, flag: b}
 }
 
+// ListValue builds a list of strings.
+//
+// This is how a host passes a list, and the only way that survives its own
+// contents: joining the items into one string leaves them to be split on commas
+// again, so anything holding a comma -- a sentence, a CSV cell, a log line --
+// comes back as two items. Nothing escapes a comma in that spelling, and
+// nothing should have to.
+func ListValue(items []string) Value {
+	value := Value{typ: Type{Kind: KindString, IsList: true}}
+	for _, item := range items {
+		value.items = append(value.items, StringValue(item))
+	}
+	return value
+}
+
 // ParseValue reads raw as a literal of type t.
 //
 // A list splits on commas; an empty string is the empty list, which is what

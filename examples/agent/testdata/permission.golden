@@ -1,0 +1,30 @@
+ tml agent   mockingbird-1                                            $0.01  ░░░░░░░░░░░░░░░░░░ 
+                                                                                                
+ ────────────────────────────────────────────────────────────────────────────────────────────── 
+                                                                                                
+ ┌ Context ─────────┐  ┌ Session ─────────────────────────────────────────────────────────────┐ 
+ │   cmd/report.go  │  │  tml It writes the table straight to stdout, so the flag has to    │ │ 
+ │ > report/table.… │  │      pick the encoder rather than post-process the text.           │ │ 
+ │   report/json.go │  │                                                                    │ │ 
+ │   report/report… │  │                                                                    │ │ 
+ │                  │  │ ┌ cmd/report.go ──────────────────────────────────────────────────┐│ │ 
+ │                  │  ╭ Permission ────────────────────────────────────╮Command {         ││ │ 
+ │                  │  │ Run `go test ./...` in the working tree?       │rite to a file")  │█ │ 
+ │                  │  │                                                │e, "write the     │█ │ 
+ │                  │  │ a real harness would ask its user exactly here │                  │█ │ 
+ │                  │  │                                                │                  │█ │ 
+ │                  │  │ ╭───────╮  ╭──────╮                            │                  │█ │ 
+ │                  │  │ │ Allow │  │ Deny │                            │, args []string)  │█ │ 
+ │                  │  │ ╰───────╯  ╰──────╯                            │                  │█ │ 
+ │                  │  ╰────────────────────────────────────────────────╯                  │█ │ 
+ │                  │  │ │ +    if asJSON {                                                │█ │ 
+ │                  │  │ │ +        return json.NewEncoder(os.Stdout).Encode(rows)         │█ │ 
+ │                  │  │ │ +    }                                                          │█ │ 
+ │                  │  │ └─────────────────────────────────────────────────────────────────┘█ │ 
+ └──────────────────┘  └──────────────────────────────────────────────────────────────────────┘ 
+                                                                                                
+                                                                                       ╭──────╮ 
+ ask for a change, or press space to step the script                                   │ Send │ 
+                                                                                       ╰──────╯ 
+                                                                                                
+ waiting for you                               space steps, tab moves, enter activates, q quits 

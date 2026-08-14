@@ -83,6 +83,18 @@ func TestTableCanDropItsBorder(t *testing.T) {
 	assert.NotContains(t, table.Render(0, 0), "┌")
 }
 
+// Dropping the border drops the rules, not the gap between the columns: two
+// cells that fill their columns would otherwise run together into one word.
+func TestABorderlessTableStillSeparatesItsColumns(t *testing.T) {
+	table := build(t, "Table", map[string]string{
+		"columns": "tests,result",
+		"rows":    "12|ok",
+		"border":  "false",
+	})
+
+	assert.NotContains(t, table.Render(0, 0), "testsresult")
+}
+
 // The separator is the host's choice, because the host is what joined the cells
 // and its data may well contain a pipe.
 func TestTableTakesACustomSeparator(t *testing.T) {
@@ -112,4 +124,12 @@ func TestTableRejectsANonBooleanBorder(t *testing.T) {
 	_, err := tryBuild("Table", map[string]string{"border": "yes"})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "expected true or false")
+}
+
+// A row wider than the space is cut, not wrapped: wrapping would push every row
+// below it down a line, and the list's geometry would stop matching the screen.
+func TestListCutsRowsTooWideForIt(t *testing.T) {
+	l := build(t, "List", map[string]string{"items": "cmd/report.go,report/table.go", "selected": "1"})
+
+	assert.Equal(t, []string{"  cmd/repor…", "> report/ta…"}, plain(l.Render(12, 2)))
 }

@@ -36,6 +36,24 @@ func arrangement(box *Box) widget.Layout {
 	return arranger.Arrange()
 }
 
+// childrenHeight is how tall the children stack up, which is the content a
+// scrolling region is a window onto.
+func childrenHeight(box *Box) int {
+	total := 0
+	for _, child := range box.Children {
+		total += child.desired.H
+	}
+	return total
+}
+
+func childrenWidth(box *Box) int {
+	widest := 0
+	for _, child := range box.Children {
+		widest = max(widest, child.desired.W)
+	}
+	return widest
+}
+
 // measureComposer sizes a wrapping widget: its children measured against what is
 // left after its own inset, stacked down the page, plus the inset back on.
 //
@@ -83,6 +101,22 @@ func (e *Engine) arrangeComposer(box *Box, composer widget.Composer) {
 	width := max(0, box.Content.W-insetW)
 	height := max(0, box.Content.H-insetH)
 	want := arrangement(box)
+
+	// A scrolling region cannot scroll past its own content: the widget draws
+	// the last screenful rather than blank space, so the geometry has to stop in
+	// the same place or a click would land on the wrong line.
+	var scroll Scroll
+	if want.FreeH {
+		scroll.MaxY = max(0, childrenHeight(box)-height)
+		want.OffsetY = min(want.OffsetY, scroll.MaxY)
+	}
+	if want.FreeW {
+		scroll.MaxX = max(0, childrenWidth(box)-width)
+		want.OffsetX = min(want.OffsetX, scroll.MaxX)
+	}
+	want.OffsetX, want.OffsetY = max(0, want.OffsetX), max(0, want.OffsetY)
+	scroll.X, scroll.Y = want.OffsetX, want.OffsetY
+	box.scroll = scroll
 
 	y := -want.OffsetY
 	for _, child := range box.Children {

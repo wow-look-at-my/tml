@@ -150,6 +150,31 @@ type Factory interface {
 	Build(Context) (Native, error)
 }
 
+// NewFactory pairs the attribute names a widget reads with the function that
+// makes one, which is all a Factory is. The language's own library is built
+// through it, so a host binding its own widget writes the same line.
+func NewFactory(attrs []string, build func(Context) (Native, error)) Factory {
+	return declared{attrs: attrs, build: build}
+}
+
+// NewSlottedFactory is NewFactory for a widget that takes named content, so a
+// misspelt slot is rejected when the view loads rather than going nowhere.
+func NewSlottedFactory(attrs, slots []string, build func(Context) (Native, error)) Factory {
+	return declared{attrs: attrs, slots: slots, build: build}
+}
+
+type declared struct {
+	attrs []string
+	slots []string
+	build func(Context) (Native, error)
+}
+
+func (d declared) Attributes() []string { return d.attrs }
+
+func (d declared) Slots() []string { return d.slots }
+
+func (d declared) Build(ctx Context) (Native, error) { return d.build(ctx) }
+
 // Registry maps element names to the widgets behind them.
 //
 // Names are resolved by the analyzer, so a template referring to a widget the

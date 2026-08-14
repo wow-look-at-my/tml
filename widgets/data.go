@@ -5,6 +5,7 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/table"
+	"github.com/charmbracelet/x/ansi"
 
 	"github.com/wow-look-at-my/tml/widget"
 )
@@ -73,7 +74,10 @@ func (l *list) Render(w, _ int) string {
 				style = style.Reverse(true)
 			}
 		}
-		row := mark + item
+		// A row too wide for the space is cut, never wrapped: a wrapped row would
+		// take two lines, push every row below it down, and stop the list's own
+		// geometry from matching what is on the screen.
+		row := ansi.Truncate(mark+item, max(0, w), "…")
 		if gap := w - lipgloss.Width(row); gap > 0 {
 			row += strings.Repeat(" ", gap)
 		}
@@ -126,8 +130,10 @@ func (t *dataTable) build(w int) *table.Table {
 		built = built.Width(w)
 	}
 	if !t.bordered {
+		// The column rule stays on: hidden, it is the space that keeps two full
+		// cells from running together into one word.
 		built = built.Border(lipgloss.HiddenBorder()).BorderTop(false).BorderBottom(false).
-			BorderLeft(false).BorderRight(false).BorderColumn(false)
+			BorderLeft(false).BorderRight(false)
 	}
 	return built
 }

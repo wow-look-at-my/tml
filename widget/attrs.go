@@ -65,7 +65,7 @@ func (a Attrs) Int(name string, deflt int) (int, error) {
 	}
 	n, err := strconv.Atoi(strings.TrimSpace(value.String()))
 	if err != nil {
-		return 0, a.errorf(name, "expected a whole number, got %q", value.String())
+		return 0, a.Errorf(name, "expected a whole number, got %q", value.String())
 	}
 	return n, nil
 }
@@ -82,7 +82,7 @@ func (a Attrs) Float(name string, deflt float64) (float64, error) {
 	}
 	f, err := strconv.ParseFloat(strings.TrimSpace(value.String()), 64)
 	if err != nil {
-		return 0, a.errorf(name, "expected a number, got %q", value.String())
+		return 0, a.Errorf(name, "expected a number, got %q", value.String())
 	}
 	return f, nil
 }
@@ -102,7 +102,7 @@ func (a Attrs) Bool(name string, deflt bool) (bool, error) {
 	case "false":
 		return false, nil
 	default:
-		return false, a.errorf(name, "expected true or false, got %q", value.String())
+		return false, a.Errorf(name, "expected true or false, got %q", value.String())
 	}
 }
 
@@ -114,7 +114,7 @@ func (a Attrs) Enum(name, deflt string, allowed ...string) (string, error) {
 			return raw, nil
 		}
 	}
-	return "", a.errorf(name, "expected one of %s, got %q", strings.Join(allowed, ", "), raw)
+	return "", a.Errorf(name, "expected one of %s, got %q", strings.Join(allowed, ", "), raw)
 }
 
 // List reads a list attribute. A typed list keeps its elements; anything else
@@ -151,11 +151,15 @@ func (a Attrs) Rune(name string, deflt rune) (rune, error) {
 	}
 	runes := []rune(value.String())
 	if len(runes) != 1 {
-		return 0, a.errorf(name, "expected a single character, got %q", value.String())
+		return 0, a.Errorf(name, "expected a single character, got %q", value.String())
 	}
 	return runes[0], nil
 }
 
-func (a Attrs) errorf(name, format string, args ...any) error {
+// Errorf reports a problem with one attribute. It is exported because a widget
+// built outside this package validates its own attributes and should say so in
+// the same shape the accessors do: which element, which attribute, what was
+// wrong with it.
+func (a Attrs) Errorf(name, format string, args ...any) error {
 	return fmt.Errorf("<%s> %s: %s", a.element, name, fmt.Sprintf(format, args...))
 }

@@ -13,6 +13,10 @@ import (
 // what it does, and where on the screen it ended up.
 type Target = layout.Target
 
+// Scroll is how far a scrolling region's content is shifted, and how far it
+// could be.
+type Scroll = layout.Scroll
+
 // EventKind is what happened to an interactive element.
 type EventKind int
 
@@ -255,6 +259,18 @@ func (u *UI) Focused() (id, action string) {
 // Targets is every interactive element in the last frame, in document order:
 // the focus ring plus anything the pointer alone can reach.
 func (u *UI) Targets() []layout.Target { return u.targets }
+
+// Target is the element with the given id in the last frame. A host reads it to
+// find out where something landed -- how far a scrolling region actually
+// scrolled, say, which is a number only the frame knows.
+func (u *UI) Target(id string) (layout.Target, bool) {
+	for _, target := range u.targets {
+		if target.ID == id && id != "" {
+			return target, true
+		}
+	}
+	return layout.Target{}, false
+}
 
 func (u *UI) focusKey(key string) []Event {
 	index := u.indexOf(key)

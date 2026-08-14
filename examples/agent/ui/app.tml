@@ -1,0 +1,106 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<Component xmlns="urn:tml:v1" name="Agent">
+	<Import src="./theme.tml"/>
+
+	<Property name="model" type="string" default="mockingbird-1"/>
+	<Property name="status" type="string" default="ready"/>
+	<Property name="working" type="bool" default="false"/>
+	<Property name="frame" type="int" default="0"/>
+	<Property name="tokens" type="int" default="0"/>
+	<Property name="budget" type="int" default="200000"/>
+	<Property name="cost" type="string" default="$0.00"/>
+
+	<Property name="files" type="string[]" default=""/>
+	<Property name="file" type="int" default="0"/>
+
+	<!-- The transcript is written in three parts because the cards below sit in
+	     the middle of it: the host knows when each one arrived, the template
+	     knows where the regions go. -->
+	<Property name="before" type="string[]" default=""/>
+	<Property name="between" type="string[]" default=""/>
+	<Property name="after" type="string[]" default=""/>
+	<Property name="showBetween" type="bool" default="false"/>
+	<Property name="showAfter" type="bool" default="false"/>
+	<Property name="offset" type="int" default="0"/>
+
+	<Property name="patch" type="string[]" default=""/>
+	<Property name="patchFile" type="string" default=""/>
+	<Property name="showPatch" type="bool" default="false"/>
+
+	<Property name="results" type="string[]" default=""/>
+	<Property name="showResults" type="bool" default="false"/>
+
+	<Property name="prompt" type="string" default=""/>
+	<Property name="cursor" type="int" default="0"/>
+	<Property name="sendVariant" type="string" default="primary"/>
+
+	<Property name="asking" type="bool" default="false"/>
+	<Property name="ask" type="string" default=""/>
+
+	<Template>
+		<Canvas>
+			<Stack gap="1" style="page">
+				<Stack orientation="horizontal" gap="2">
+					<Text style="title">tml agent</Text>
+					<Badge label="{model}" style="model"/>
+					<Spinner kind="dots" frame="{frame}" color="{theme.accent}" if="{working}"/>
+					<Spacer width="*"/>
+					<Text style="muted">{cost}</Text>
+					<ProgressBar value="{tokens}" max="{budget}" width="18"
+						color="{theme.accent}" trackColor="{theme.line}"/>
+				</Stack>
+
+				<Rule color="{theme.line}"/>
+
+				<Grid columns="20,1*" rows="1*" gap="2" height="*">
+					<Border title="Context" color="{theme.line}" Grid.row="0" Grid.column="0">
+						<List id="files" items="{files}" selected="{file}"/>
+					</Border>
+
+					<Border title="Session" color="{theme.line}" Grid.row="0" Grid.column="1">
+						<Scrollbox id="session" offset="{offset}">
+							<Stack gap="1">
+								<Transcript entries="{before}" width="*"/>
+
+								<Border title="{patchFile}" color="{theme.warn}" width="*" if="{showPatch}">
+									<Diff lines="{patch}" width="*"/>
+								</Border>
+
+								<Transcript entries="{between}" width="*" if="{showBetween}"/>
+
+								<Border title="go test ./..." color="{theme.ok}" width="*" if="{showResults}">
+									<Table columns="package,tests,result" rows="{results}" border="false"/>
+								</Border>
+
+								<Transcript entries="{after}" width="*" if="{showAfter}"/>
+							</Stack>
+						</Scrollbox>
+					</Border>
+				</Grid>
+
+				<Stack orientation="horizontal" gap="2" valign="middle">
+					<Textbox id="prompt" value="{prompt}" cursor="{cursor}"
+						placeholder="ask for a change, or press space to step the script" width="*"/>
+					<Button id="send" action="send" label="Send" variant="{sendVariant}"/>
+				</Stack>
+
+				<Stack orientation="horizontal" gap="2">
+					<Text style="muted">{status}</Text>
+					<Spacer width="*"/>
+					<Text style="muted">space steps, tab moves, enter activates, q quits</Text>
+				</Stack>
+			</Stack>
+
+			<Popup title="Permission" color="{theme.warn}" if="{asking}">
+				<Stack gap="1">
+					<Text>{ask}</Text>
+					<Text style="muted">a real harness would ask its user exactly here</Text>
+					<Stack orientation="horizontal" gap="2">
+						<Button id="allow" action="allow" label="Allow" variant="primary"/>
+						<Button id="deny" action="deny" label="Deny" variant="danger"/>
+					</Stack>
+				</Stack>
+			</Popup>
+		</Canvas>
+	</Template>
+</Component>

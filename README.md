@@ -60,7 +60,8 @@ func (m *model) View() tea.View {
 ```
 
 Run the worked example: `go-toolchain && ./build/dashboard`, or `./build/dashboard -frame` for one frame without a
-terminal.
+terminal. `./build/agent` is a bigger one: a mock coding agent — a transcript that outgrows its viewport, tool output as
+cards, a permission prompt that interrupts — with two of its own widgets bound alongside the library's.
 
 ## Hot reload
 

@@ -57,6 +57,24 @@ if event.ID == "services" && event.Y >= 0 {
 }
 ```
 
+### Reading the frame back
+
+`view.UI().Target(id)` is where an element ended up in the last frame: its rect, and for a scrolling region, how far it
+actually scrolled.
+
+That last number matters because the host cannot work it out. How far a `Scrollbox`'s content runs depends on how the
+text inside it wrapped at the width the widget was given, so "the bottom" is only knowable once the frame exists. A host
+that wants to follow a growing transcript asks to go further than there is -- scrolling clamps to the content, in the
+drawing and in the geometry alike -- and reads back where that landed:
+
+```go
+m.offset = 1 << 20                                  // the end, wherever it is
+...
+if session, ok := m.view.UI().Target("session"); ok {
+    m.offset = min(session.Scroll.Y+event.Delta, session.Scroll.MaxY)   // one notch off it
+}
+```
+
 Focus is a rendering input, not something a widget stores. The engine hands each widget its `widget.State` before
 measuring, so a control that grows when focused is measured at the size it will actually draw at.
 
