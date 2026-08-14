@@ -46,6 +46,21 @@ function browserPath() {
 	return found;
 }
 
+// The binary a shot runs. go-toolchain names a local build build/gallery and a
+// cross-compiled one build/gallery_linux_amd64 -- CI produces the second -- so
+// this looks for both rather than assuming which build ran.
+const goos = { linux: "linux", darwin: "darwin", win32: "windows" }[process.platform] ?? process.platform;
+const goarch = { x64: "amd64", arm64: "arm64" }[process.arch] ?? process.arch;
+
+function binary(name) {
+	const tries = [path.join(repo, "build", name), path.join(repo, "build", `${name}_${goos}_${goarch}`)];
+	const found = tries.find((file) => existsSync(file));
+	if (!found) {
+		throw new Error(`no ${name} binary: looked for ${tries.join(", ")}. Build them with go-toolchain first.`);
+	}
+	return found;
+}
+
 async function freePort() {
 	const server = net.createServer();
 	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -66,7 +81,7 @@ async function serve(shot) {
 		"-t", "fontSize=15",
 		"-t", "fontFamily=DejaVu Sans Mono,monospace",
 		"-t", "theme={\"background\":\"#12131a\"}",
-		path.join(repo, shot.command),
+		binary(shot.command),
 		...(shot.args ?? []),
 	], { cwd: repo, stdio: "ignore" });
 
