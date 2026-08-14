@@ -9,6 +9,10 @@ import (
 	"github.com/wow-look-at-my/tml/widget"
 )
 
+// Target is one focusable control in the last rendered frame: what it is called,
+// what it does, and where on the screen it ended up.
+type Target = layout.Target
+
 // EventKind is what happened to an interactive element.
 type EventKind int
 
