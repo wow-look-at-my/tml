@@ -75,7 +75,12 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m *model) View() tea.View {
+func (m *model) View() tea.View { return tea.NewView(m.frame()) }
+
+// frame renders the view to a string. Splitting it out of View keeps the whole
+// UI reachable without a terminal, which is what -frame and any future golden
+// test need.
+func (m *model) frame() string {
 	out, err := m.view.Render(tml.Props{
 		"title":    sema.StringValue("Deployments"),
 		"query":    sema.StringValue(m.input.Value()),
@@ -84,9 +89,9 @@ func (m *model) View() tea.View {
 	if err != nil {
 		// A render failure is shown, never swallowed: a blank frame would look
 		// like an empty dashboard rather than a broken one.
-		return tea.NewView("tml: " + err.Error())
+		return "tml: " + err.Error()
 	}
-	return tea.NewView(out)
+	return out
 }
 
 func (m *model) matches() []string {
@@ -119,7 +124,7 @@ func main() {
 
 	if *frame {
 		m.width, m.height = *width, *height
-		fmt.Println(m.View().String())
+		fmt.Println(m.frame())
 		return
 	}
 	if _, err := tea.NewProgram(m).Run(); err != nil {

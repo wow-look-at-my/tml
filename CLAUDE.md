@@ -36,8 +36,11 @@ the proxy but declare a different module path and fail the build. Requires Go >=
 
 ## Layout
 
-Two-pass measure/arrange. Panels: `Stack`, `Grid`, `Dock`, `Overlay`, `Box`. Sizing is `auto`, fixed cells, or `*` star
-share; attached properties carry panel-specific placement (`Grid.row`, `Dock.side`).
+Two-pass measure/arrange. Implemented panels: `Stack`, `Box`, `Text`, `Spacer`. Sizing is `auto`, fixed cells, or `*` star
+share, and a star size propagates upward so an auto-sized ancestor cannot collapse it.
+
+`Grid`, `Dock` and `Overlay` are NOT implemented. They are deliberately absent from `sema.Builtins`, so using one is an
+unknown-element error rather than a silent blank. Add a panel to that list only once it lays out.
 
 ## Parsing
 
@@ -54,10 +57,23 @@ arbitrary user component names, which `processContents="strict"` cannot express.
 
 ## Project structure
 
+The root is the importable package, so a Bubble Tea app imports `github.com/wow-look-at-my/tml` directly and the binary
+lives under `cmd/`.
+
+- `tml.go` — the façade: `Load`, `View`, `Props`, `Options`
 - `syntax/` — AST, loader, `<Import>` resolution, diagnostics
-- `sema/` — property types, values, expressions, slot and component analysis
+- `sema/` — property types, values, expressions, slot and component analysis, expansion
 - `layout/` — constraints, measure/arrange, the panels
 - `style/` — theme tokens, named styles, resolution to `lipgloss.Style`
-- `render/` — layer tree construction, compositing, hit testing
-- `widget/` — native element registry and the bubbles adapter
-- `cmd/` — cobra CLI, one self-registering command per file
+- `render/` — composition of a laid-out tree into terminal output
+- `widget/` — host element registry and the bubbles adapter
+- `cli/` — cobra commands, one self-registering command per file
+- `cmd/tml/` — the CLI binary
+- `examples/dashboard/` — a Bubble Tea program whose whole view is TML
+
+## Testing
+
+Golden files live in `testdata/`. An empty golden seeds itself from the run and then FAILS, so a broken renderer can never
+bless its own output. Read the diff before trusting a reseeded golden.
+
+`examples/dashboard -frame` renders one frame without a terminal, which is how the example is checked headlessly.
