@@ -110,6 +110,7 @@ lives under `cmd/`.
 - `examples/dashboard/` — a Bubble Tea program whose whole view is TML
 - `examples/gallery/` — every library widget on one interactive screen
 - `examples/agent/` — a mock coding agent, the proving ground; see docs/agent.md for what it loads on and what it proved
+- `tools/shots/` — the ttyd screenshot capture, its shot list, and the index page the site serves
 
 ## Hot reload
 
@@ -126,3 +127,7 @@ bless its own output. Read the diff before trusting a reseeded golden.
 Either example renders one frame without a terminal with `-frame`, which is how they are checked headlessly. The
 gallery's goldens are the widget library's regression net: they are stripped of colour to stay readable, and the test
 pins the terminal to one with no graphics protocol so the image lands on half-blocks wherever it runs.
+
+`tools/shots` photographs the examples in a REAL terminal — ttyd on a PTY, xterm.js in Chromium — and CI publishes the
+pictures per branch to a buildhost site the README embeds. Goldens are the mechanical check; the pictures cover what a
+string cannot show, like which image protocol the terminal took. See docs/screenshots.md.

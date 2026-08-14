@@ -43,6 +43,13 @@ for _, event := range m.view.UI().Update(msg) {
 Tab and the arrows move, enter activates, and the pointer hovers, clicks and scrolls against the frame the user is
 actually looking at. `go-toolchain && ./build/gallery` is all of it on one screen.
 
+[![The widget gallery](https://sites.pazer.build/tml-shots/gallery-controls.png)](https://sites.pazer.build/tml-shots/)
+
+[![A mock coding agent built with tml](https://sites.pazer.build/tml-shots/agent-permission.png)](https://sites.pazer.build/tml-shots/)
+
+Both pictures are the examples running in a real terminal, retaken on every push — see `docs/screenshots.md` for the
+rest of them and how they are made.
+
 Your own widgets plug into the same seam the library uses — see `docs/widgets.md`.
 
 ## In a Bubble Tea program

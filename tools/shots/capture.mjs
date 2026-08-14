@@ -7,6 +7,7 @@
 // program draws in a terminal, answers a key press, or picks colours a terminal
 // can show. see docs/screenshots.md
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import net from "node:net";
 import path from "node:path";
@@ -16,8 +17,8 @@ import { chromium } from "playwright-core";
 
 import { shots } from "./shots.mjs";
 
-const cols = 96;
-const rows = 30;
+// The terminal every shot is taken in, unless it asks for its own.
+const terminal = { cols: 96, rows: 30 };
 const repo = path.resolve(import.meta.dirname, "../..");
 const out = path.join(repo, "build/shots");
 
@@ -25,9 +26,24 @@ const out = path.join(repo, "build/shots");
 // beside the default branch's, which is the whole diff check.
 const site = "https://sites.pazer.build/tml-shots";
 
-// chromePath is the browser to drive. The sandbox ships one; a machine that
-// does not have this exact path passes CHROME.
-const chromePath = process.env.CHROME || "/opt/pw-browsers/chromium";
+// The browser to drive. playwright-core ships no browser of its own, so this
+// uses whichever one the machine has -- and says which ones it looked for
+// rather than failing somewhere further in.
+const candidates = [
+	process.env.CHROME,
+	"/opt/pw-browsers/chromium",
+	"/usr/bin/chromium",
+	"/usr/bin/chromium-browser",
+	"/usr/bin/google-chrome",
+].filter(Boolean);
+
+function browserPath() {
+	const found = candidates.find((path) => existsSync(path));
+	if (!found) {
+		throw new Error(`no browser found; looked for ${candidates.join(", ")}. Install one, or point CHROME at it.`);
+	}
+	return found;
+}
 
 async function freePort() {
 	const server = net.createServer();
@@ -53,11 +69,6 @@ async function serve(shot) {
 		...(shot.args ?? []),
 	], { cwd: repo, stdio: "ignore" });
 
-	ttyd.on("exit", (code) => {
-		if (code !== null && code !== 0) {
-			throw new Error(`ttyd for ${shot.name} exited with ${code}`);
-		}
-	});
 	await waitFor(() => fetch(`http://127.0.0.1:${port}/`).then((r) => r.ok, () => false), `ttyd on ${port}`);
 	return { port, stop: () => ttyd.kill("SIGTERM") };
 }
@@ -78,7 +89,7 @@ async function waitFor(check, what, timeout = 15000) {
 // page puts around the terminal, then resize to fit. Anything else leaves the
 // picture at whatever size the browser happened to open at, and a layout that
 // fills its terminal would differ every run.
-async function size(page) {
+async function size(page, cols, rows) {
 	const metrics = async () => page.evaluate(() => {
 		const measure = document.querySelector(".xterm-char-measure-element");
 		const screen = document.querySelector(".xterm-screen");
@@ -111,22 +122,34 @@ async function size(page) {
 // terminal that has not drawn yet is a black rectangle, and a fixed sleep is a
 // guess that goes stale on a slower machine.
 async function capture(browser, shot) {
+	if (!shot.expect) {
+		throw new Error(`shot ${shot.name} has no expect: there would be nothing to check the picture against`);
+	}
 	const { port, stop } = await serve(shot);
 	const page = await browser.newPage({ viewport: { width: 1200, height: 700 }, deviceScaleFactor: 2 });
+	// xterm pads a row with non-breaking spaces, which read as ordinary spaces
+	// and match nothing. Everything here compares against what the picture
+	// looks like, so the text has to say what it looks like.
+	const screen = async () => (await page.locator(".xterm-rows").innerText()).replaceAll("\u00a0", " ");
 	try {
 		await page.goto(`http://127.0.0.1:${port}/`);
 		await page.waitForSelector(".xterm-rows");
-		await waitFor(async () => (await page.locator(".xterm-rows").innerText()).trim().length > 0, `${shot.name} to draw`);
-		await size(page);
+		await waitFor(async () => (await screen()).trim().length > 0, `${shot.name} to draw`);
+		await size(page, shot.cols ?? terminal.cols, shot.rows ?? terminal.rows);
 
 		for (const key of shot.keys ?? []) {
-			await page.keyboard.press(key.length === 1 ? key : key);
+			await page.keyboard.press(key);
 			await page.waitForTimeout(60);
 		}
 		// The examples animate on a tick, so a spinner is mid-frame whenever the
 		// picture is taken. One settled frame after the last key press is as still
 		// as this gets.
 		await page.waitForTimeout(400);
+		try {
+			await waitFor(async () => (await screen()).includes(shot.expect), shot.expect, 5000);
+		} catch {
+			throw new Error(`${shot.name} never showed ${JSON.stringify(shot.expect)}; the terminal held:\n${await screen()}`);
+		}
 
 		const file = path.join(out, `${shot.name}.png`);
 		await page.locator(".xterm-screen").screenshot({ path: file });
@@ -176,7 +199,7 @@ function index(taken, branch) {
 </style>
 <header>
 	<h1>tml screenshots</h1>
-	<p>Every picture is the example running in a real terminal -- ttyd, xterm.js, ${cols}x${rows} cells --
+	<p>Every picture is the example running in a real terminal -- ttyd serving a PTY, xterm.js in Chromium --
 	captured by <a href="https://github.com/wow-look-at-my/tml/blob/master/tools/shots/capture.mjs">tools/shots</a>.</p>
 </header>
 ${figures}
@@ -186,7 +209,7 @@ ${figures}
 
 const branch = process.env.SHOTS_BRANCH ?? "";
 await mkdir(out, { recursive: true });
-const browser = await chromium.launch({ executablePath: chromePath, args: ["--no-sandbox"] });
+const browser = await chromium.launch({ executablePath: browserPath(), args: ["--no-sandbox"] });
 try {
 	const taken = [];
 	for (const shot of shots) {
