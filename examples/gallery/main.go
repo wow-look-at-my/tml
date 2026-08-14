@@ -28,6 +28,13 @@ var uiFS embed.FS
 
 var services = []string{"api", "web", "worker", "scheduler", "database", "cache"}
 
+// steps are table rows: cells joined by the separator <Table> splits on.
+var steps = []string{
+	"build|09:05|done",
+	"test|09:12|done",
+	"deploy|09:20|running",
+}
+
 type model struct {
 	view *tml.View
 
@@ -225,6 +232,7 @@ func (m *model) frameOf() string {
 		"selected":    sema.StringValue(strconv.Itoa(m.selected)),
 		"offset":      sema.StringValue(strconv.Itoa(m.offset)),
 		"log":         sema.StringValue(strings.Join(m.log, ",")),
+		"steps":       sema.StringValue(strings.Join(steps, ",")),
 		"confirming":  sema.BoolValue(m.confirming),
 	}, m.width, m.height)
 	if err != nil {
@@ -246,7 +254,7 @@ func join(values []int) string {
 func main() {
 	frame := flag.Bool("frame", false, "render one frame to stdout and exit")
 	width := flag.Int("width", 90, "viewport width for -frame")
-	height := flag.Int("height", 30, "viewport height for -frame")
+	height := flag.Int("height", 26, "viewport height for -frame")
 	tab := flag.String("tab", "controls", "section to show for -frame: controls, data or media")
 	popup := flag.Bool("popup", false, "show the confirmation popup for -frame")
 	focus := flag.String("focus", "", "id of the control to put the keyboard on for -frame")

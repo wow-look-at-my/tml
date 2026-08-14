@@ -31,7 +31,7 @@ func gallery(t *testing.T) *model {
 
 	m, err := newModel()
 	require.NoError(t, err)
-	m.width, m.height = 92, 24
+	m.width, m.height = 92, 26
 	m.query = "sched"
 	m.progress = 62
 	return m

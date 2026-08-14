@@ -24,6 +24,7 @@
 	<Property name="selected" type="int" default="0"/>
 	<Property name="offset" type="int" default="0"/>
 	<Property name="log" type="string[]" default=""/>
+	<Property name="steps" type="string[]" default=""/>
 
 	<Property name="confirming" type="bool" default="false"/>
 
@@ -66,17 +67,21 @@
 					</Stack>
 				</Border>
 
-				<Border title="Data" color="{theme.line}" width="*" height="10" if="{dataTab}">
-					<Stack orientation="horizontal" gap="2">
-						<List id="services" items="{services}" selected="{selected}" width="14"/>
-						<Scrollbox id="log" offset="{offset}" width="*">
+				<Border title="Data" color="{theme.line}" width="*" height="12" if="{dataTab}">
+					<!-- An auto track sizes to the table; the star track is what is
+					     left, so the log takes the rest of the row. -->
+					<Grid columns="14,auto,1*" rows="1*" gap="2">
+						<List id="services" items="{services}" selected="{selected}"
+							Grid.row="0" Grid.column="0"/>
+						<Table columns="step,when,state" rows="{steps}" Grid.row="0" Grid.column="1"/>
+						<Scrollbox id="log" offset="{offset}" Grid.row="0" Grid.column="2">
 							<Stack>
 								<For each="{log}" as="line">
 									<Text>{line}</Text>
 								</For>
 							</Stack>
 						</Scrollbox>
-					</Stack>
+					</Grid>
 				</Border>
 
 				<Border title="Media" color="{theme.line}" width="*" if="{mediaTab}">
