@@ -11,8 +11,12 @@ import (
 // Builtins are the element names the language defines itself. A host adds its
 // own native elements on top; anything not in either set and not a component in
 // scope is an unknown element.
+//
+// This list is what the layout engine actually implements. A panel is added
+// here only once it lays out, so an unimplemented one is reported as an unknown
+// element rather than silently rendering nothing.
 var Builtins = []string{
-	"Stack", "Box", "Grid", "Dock", "Overlay", "Text", "Spacer",
+	"Stack", "Box", "Text", "Spacer",
 }
 
 // Directives are element names with meaning in the language rather than in the

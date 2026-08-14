@@ -1,0 +1,30 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<Component xmlns="urn:tml:v1" name="App">
+	<Import src="./theme.tml"/>
+	<Import src="./Card.tml"/>
+
+	<Property name="title" type="string" required="true"/>
+	<Property name="tags" type="string[]" default=""/>
+
+	<Template>
+		<Stack orientation="vertical" gap="1">
+			<Text style="heading">{title}</Text>
+
+			<Card label="Deploy" width="*">
+				<Text>Ready to ship.</Text>
+				<Card.actions>
+					<Stack orientation="horizontal" gap="1">
+						<Text style="button">Cancel</Text>
+						<Text style="button">OK</Text>
+					</Stack>
+				</Card.actions>
+			</Card>
+
+			<Card label="Rollback"/>
+
+			<For each="{tags}" as="tag" index="i">
+				<Text style="muted">{i}. {tag}</Text>
+			</For>
+		</Stack>
+	</Template>
+</Component>

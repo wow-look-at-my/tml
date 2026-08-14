@@ -94,6 +94,18 @@ func (p *Program) Expand(args map[string]Value, opts ExpandOptions) (*Node, erro
 	}, nil
 }
 
+// Tokens returns the theme tokens as plain text for the given mode. The style
+// package needs them before any component is instantiated, since a named style
+// may reference a token.
+func (p *Program) Tokens(opts ExpandOptions) map[string]string {
+	resolved, _ := p.resolveTokens(opts)
+	out := make(map[string]string, len(resolved))
+	for name, value := range resolved {
+		out[name] = value.String()
+	}
+	return out
+}
+
 // resolveTokens picks the light or dark half of every adaptive token.
 func (p *Program) resolveTokens(opts ExpandOptions) (map[string]Value, error) {
 	tokens := make(map[string]Value, len(p.tokens))
