@@ -7,6 +7,7 @@ import (
 
 	"github.com/wow-look-at-my/tml/layout"
 	"github.com/wow-look-at-my/tml/sema"
+	"github.com/wow-look-at-my/tml/widget"
 )
 
 // marginZero is the absent margin; setting a zero margin on a style is harmless
@@ -31,8 +32,10 @@ func Render(box *layout.Box) string {
 
 	content := box.Text
 	switch {
-	case box.Native != nil:
-		// The widget draws itself into the space layout settled on.
+	case box.Native != nil && len(box.Children) == 0:
+		// The widget draws itself into the space layout settled on. A widget with
+		// children is a composer and goes the other way, so its children are drawn
+		// before it wraps them.
 		content = box.Native.Render(box.Content.W, box.Content.H)
 	case box.Name != "Text":
 		content = renderChildren(box)
@@ -80,11 +83,23 @@ func renderChildren(box *layout.Box) string {
 		parts = append(parts, Render(child))
 	}
 
+	if composer := box.Composer(); composer != nil {
+		// The widget draws itself around its children, which reach it grouped by
+		// the slot they were written into.
+		slots := widget.Slots{}
+		for i, child := range box.Children {
+			slots[child.Slot()] = append(slots[child.Slot()], parts[i])
+		}
+		return composer.Compose(slots, box.Content.W, box.Content.H)
+	}
+
 	switch box.Name {
 	case "Stack":
 		return joinStack(box, parts)
 	case "Grid":
 		return compose(box, parts)
+	case "Canvas":
+		return canvas(box, parts)
 	default:
 		// A decorator holds a single child in practice; stacking any extras
 		// vertically keeps the output well-formed rather than silently dropping

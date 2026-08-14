@@ -127,12 +127,31 @@ Panels:
 
 - `Stack` — `orientation="vertical|horizontal"` (vertical is the default) and `gap`
 - `Grid` — `columns`, `rows`, `gap`, with placement declared per child
+- `Canvas` — free positioning: children sit where they are put, and overlap
 - `Box` — a single-child decorator for border, padding, background and alignment
 - `Text` — character data, wrapped to the width it is given
 - `Spacer` — occupies space and draws nothing
 
-`Dock` and `Overlay` are **not implemented yet**. They are deliberately absent from the builtin list, so using one is
-reported as an unknown element rather than silently rendering nothing.
+`Dock` is **not implemented yet**. It is deliberately absent from the builtin list, so using it is reported as an unknown
+element rather than silently rendering nothing.
+
+### Canvas
+
+```xml
+<Canvas>
+    <Stack>…the page…</Stack>
+    <Popup title="Confirm" if="{confirming}">…</Popup>
+    <Badge label="beta" Canvas.anchor="bottomRight" Canvas.x="-2" Canvas.y="-1"/>
+</Canvas>
+```
+
+A canvas takes all the space it is offered — one that shrank to its content would leave a child anchored to its
+bottom-right corner nowhere to sit — and each child is placed by attached properties: `Canvas.x`, `Canvas.y` and
+`Canvas.anchor` (`topLeft`, `topRight`, `bottomLeft`, `bottomRight`, `center`). The offsets are measured from the anchor,
+so a negative one moves back in from the edge it is pinned to.
+
+A child that says nothing sits where its own default anchor puts it, which is how `<Popup>` lands in the middle without
+being told to. Children paint in document order, so a dialog written last is the one on top.
 
 ### Grid
 
@@ -150,6 +169,10 @@ An auto track sizes to the widest child confined to it. A child spanning several
 because it cannot say which of the tracks it covers should grow.
 
 Placing a child past the last declared track widens the grid with auto tracks rather than dropping the child.
+
+A grid child fills the cell it is placed in, so a `1*` track is how you say "as wide as there is room for". A `Stack` is
+the other way round: a child keeps its own size across the stack, and `align`/`valign` place it, unless it asks for
+`width="*"`. The difference is that a grid's tracks were declared by the author and a stack's cross axis was not.
 
 An attached property written on a child of anything other than a `Grid` is an error, as is an unknown one such as
 `Grid.depth`. Ignoring them would leave a layout that quietly disregards what was written.
@@ -187,9 +210,13 @@ An element picks a named style with `style="card"` and overrides individual attr
 `extends` is resolved in TML's own attribute model, not by `lipgloss.Style.Inherit`, because Inherit deliberately drops
 padding and margin. See docs/lipgloss-contract.md.
 
-## Host widgets
+## Widgets
 
-A host binds its own elements, and TML measures, places and draws them without touching their state:
+Everything that is not a panel is a widget. The library in `widgets/` — buttons, fields, frames, popups, scrolling
+regions, images and the rest — is registered by default, and `id` and `action` on any element are what wire it to the
+host's `Update`. See docs/widgets.md for the reference and for writing your own.
+
+A host binds its own elements the same way, and TML measures, places and draws them without touching their state:
 
 ```go
 widgets := widget.NewRegistry().Bind("Search", widget.Bubble(&m.input))
@@ -202,4 +229,6 @@ copy and thrown away.
 Widget names are checked when the view loads, so a template naming a widget that was never bound fails there rather than
 rendering a blank.
 
-TML never routes messages: the host keeps its `Update` and its state. `examples/dashboard` shows the split.
+TML never routes messages: the host keeps its `Update` and its state. What it does report is what the user did —
+`view.UI().Update(msg)` hands back the id and action of whatever was activated, and nothing else. `examples/dashboard`
+shows the split with a bubbles component; `examples/gallery` shows it with the library.

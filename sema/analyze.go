@@ -16,7 +16,7 @@ import (
 // here only once it lays out, so an unimplemented one is reported as an unknown
 // element rather than silently rendering nothing.
 var Builtins = []string{
-	"Stack", "Grid", "Box", "Text", "Spacer",
+	"Stack", "Grid", "Canvas", "Box", "Text", "Spacer",
 }
 
 // Directives are element names with meaning in the language rather than in the
@@ -29,6 +29,7 @@ type Program struct {
 	root       *syntax.Component
 	rootFile   string
 	natives    map[string]bool
+	slots      map[string][]string
 	components map[string]*compiled
 	tokens     map[string]*syntax.Token
 }
@@ -73,8 +74,11 @@ type tattr struct {
 
 // Options control analysis.
 type Options struct {
-	// Natives are host-registered element names, on top of the builtins.
+	// Natives are widget element names, on top of the builtins.
 	Natives []string
+	// Slots are the slot names each widget accepts, keyed by element name. A
+	// widget that takes no slot content has no entry.
+	Slots map[string][]string
 }
 
 // Analyze checks a loaded unit and prepares it for expansion.
@@ -94,6 +98,7 @@ func Analyze(unit *syntax.Unit, opts Options) (*Program, error) {
 		root:       unit.Root.Component,
 		rootFile:   unit.Root.Path,
 		natives:    make(map[string]bool),
+		slots:      opts.Slots,
 		components: make(map[string]*compiled),
 		tokens:     make(map[string]*syntax.Token),
 	}
@@ -335,20 +340,40 @@ func (p *Program) checkElementName(c *compiled, node *tnode) error {
 	if contains(Directives, name) || p.natives[name] {
 		return nil
 	}
-	if owner, _, ok := strings.Cut(name, "."); ok {
+	if owner, slot, ok := strings.Cut(name, "."); ok {
 		// A property element is checked against its parent when the parent is
-		// walked; here only the owner has to be a real component.
+		// walked; here only the owner has to be something that has slots.
 		if _, found := p.unit.Lookup(c.file, owner); found {
 			return nil
 		}
+		if p.natives[owner] {
+			return p.checkSlotName(node, owner, slot)
+		}
 		return &syntax.Error{Pos: node.pos, Message: fmt.Sprintf(
-			"<%s> names a slot on %q, which is not a component in scope", name, owner)}
+			"<%s> names a slot on %q, which is not a component or widget in scope", name, owner)}
 	}
 	if _, found := p.unit.Lookup(c.file, name); found {
 		return nil
 	}
 	return &syntax.Error{Pos: node.pos, Message: fmt.Sprintf(
 		"unknown element <%s>%s", name, didYouMean(name, p.knownElements(c.file)))}
+}
+
+// checkSlotName rejects a slot a widget does not have. A component's slots are
+// declared in its own template and checked there; a widget's are declared by the
+// widget, and a misspelt one would otherwise be content that silently goes
+// nowhere.
+func (p *Program) checkSlotName(node *tnode, owner, slot string) error {
+	accepted := p.slots[owner]
+	if len(accepted) == 0 {
+		return &syntax.Error{Pos: node.pos, Message: fmt.Sprintf(
+			"<%s> takes no slot content", owner)}
+	}
+	if contains(accepted, slot) {
+		return nil
+	}
+	return &syntax.Error{Pos: node.pos, Message: fmt.Sprintf(
+		"<%s> has no slot %q; it has %s", owner, slot, strings.Join(accepted, ", "))}
 }
 
 func (p *Program) knownElements(file string) []string {

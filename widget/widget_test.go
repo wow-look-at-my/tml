@@ -77,5 +77,65 @@ func TestNilRegistryIsUsable(t *testing.T) {
 
 	_, ok := registry.Lookup("anything")
 	assert.False(t, ok)
+	_, ok = registry.Factory("anything")
+	assert.False(t, ok)
+	assert.False(t, registry.Bound("anything"))
 	assert.Empty(t, registry.Names())
+	assert.Empty(t, registry.Merge(nil).Names())
+}
+
+// stub is a factory that builds nothing, for testing the registry itself.
+type stub struct{ attrs []string }
+
+func (s stub) Attributes() []string { return s.attrs }
+
+func (s stub) Build(Context) (Native, error) { return Bubble(viewOnly{text: "stub"}), nil }
+
+func TestRegistryHoldsBothKindsOfBinding(t *testing.T) {
+	registry := NewRegistry().
+		Bind("Search", Bubble(&fakeInput{value: "q"})).
+		BindFactory("Rule", stub{attrs: []string{"char"}})
+
+	assert.Equal(t, []string{"Rule", "Search"}, registry.Names())
+	assert.True(t, registry.Bound("Search"))
+	assert.True(t, registry.Bound("Rule"))
+
+	factory, ok := registry.Factory("Rule")
+	require.True(t, ok)
+	assert.Equal(t, []string{"char"}, factory.Attributes())
+
+	_, ok = registry.Lookup("Rule")
+	assert.False(t, ok, "a factory is not a bound instance")
+}
+
+// Rebinding a name has to drop the other kind of binding, or the stale one wins
+// every lookup and the new binding silently does nothing.
+func TestRebindingReplacesTheOtherKind(t *testing.T) {
+	registry := NewRegistry().BindFactory("Button", stub{}).Bind("Button", Bubble(viewOnly{text: "host"}))
+	_, ok := registry.Factory("Button")
+	assert.False(t, ok)
+
+	registry.BindFactory("Button", stub{})
+	_, ok = registry.Lookup("Button")
+	assert.False(t, ok)
+}
+
+// A host binding its own <Button> keeps the rest of the library rather than
+// having to shadow every name to get one of its own.
+func TestMergeLetsTheHostWin(t *testing.T) {
+	library := NewRegistry().BindFactory("Button", stub{attrs: []string{"label"}}).BindFactory("Rule", stub{})
+	host := NewRegistry().Bind("Button", Bubble(viewOnly{text: "host"}))
+
+	merged := host.Merge(library)
+	assert.Equal(t, []string{"Button", "Rule"}, merged.Names())
+
+	native, ok := merged.Lookup("Button")
+	require.True(t, ok, "the host's binding survived")
+	assert.Equal(t, "host", native.Render(0, 0))
+
+	_, ok = merged.Factory("Rule")
+	assert.True(t, ok, "the library's other widgets came along")
+
+	_, ok = library.Lookup("Button")
+	assert.False(t, ok, "merging left the inputs alone")
 }
