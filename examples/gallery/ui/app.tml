@@ -1,0 +1,115 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<Component xmlns="urn:tml:v1" name="Gallery">
+	<Import src="./theme.tml"/>
+
+	<Property name="status" type="string" default="ready"/>
+	<Property name="frame" type="int" default="0"/>
+
+	<!-- Which section is showing. The host owns the choice; the template only
+	     reads it, because a conditional is all the language offers. -->
+	<Property name="controlsTab" type="bool" default="true"/>
+	<Property name="dataTab" type="bool" default="false"/>
+	<Property name="mediaTab" type="bool" default="false"/>
+
+	<Property name="query" type="string" default=""/>
+	<Property name="cursor" type="int" default="0"/>
+	<Property name="notify" type="bool" default="true"/>
+	<Property name="small" type="bool" default="false"/>
+	<Property name="medium" type="bool" default="true"/>
+	<Property name="large" type="bool" default="false"/>
+	<Property name="progress" type="int" default="0"/>
+	<Property name="load" type="string[]" default=""/>
+
+	<Property name="services" type="string[]" default=""/>
+	<Property name="selected" type="int" default="0"/>
+	<Property name="offset" type="int" default="0"/>
+	<Property name="log" type="string[]" default=""/>
+
+	<Property name="confirming" type="bool" default="false"/>
+
+	<Template>
+		<Canvas>
+			<Stack gap="1" style="page">
+				<Stack orientation="horizontal" gap="2">
+					<Text style="title">TML widget gallery</Text>
+					<Badge label="{status}" style="chip"/>
+					<Spinner kind="dots" frame="{frame}" color="{theme.accent}"/>
+					<Spacer width="*"/>
+					<Text style="muted">tab moves, enter or click activates, q quits</Text>
+				</Stack>
+
+				<Rule color="{theme.line}"/>
+
+				<Stack orientation="horizontal" gap="1">
+					<Button id="tab-controls" action="tab:controls" label="Controls"/>
+					<Button id="tab-data" action="tab:data" label="Data"/>
+					<Button id="tab-media" action="tab:media" label="Media"/>
+				</Stack>
+
+				<Border title="Controls" color="{theme.line}" width="*" if="{controlsTab}">
+					<Stack gap="1">
+						<Stack orientation="horizontal" gap="2">
+							<Textbox id="search" action="focus:search" value="{query}"
+								cursor="{cursor}" placeholder="type to filter" width="26"/>
+							<Checkbox id="notify" action="toggle:notify" label="Notify me" checked="{notify}"/>
+						</Stack>
+						<Stack orientation="horizontal" gap="2">
+							<Radio id="small" action="size:small" label="Small" checked="{small}"/>
+							<Radio id="medium" action="size:medium" label="Medium" checked="{medium}"/>
+							<Radio id="large" action="size:large" label="Large" checked="{large}"/>
+						</Stack>
+						<Stack orientation="horizontal" gap="2">
+							<ProgressBar value="{progress}" max="100" percent="true" width="30"
+								color="{theme.accent}" trackColor="{theme.line}"/>
+							<Sparkline values="{load}" color="{theme.accent}"/>
+						</Stack>
+					</Stack>
+				</Border>
+
+				<Border title="Data" color="{theme.line}" width="*" height="10" if="{dataTab}">
+					<Stack orientation="horizontal" gap="2">
+						<List id="services" items="{services}" selected="{selected}" width="14"/>
+						<Scrollbox id="log" offset="{offset}" width="*">
+							<Stack>
+								<For each="{log}" as="line">
+									<Text>{line}</Text>
+								</For>
+							</Stack>
+						</Scrollbox>
+					</Stack>
+				</Border>
+
+				<Border title="Media" color="{theme.line}" width="*" if="{mediaTab}">
+					<Stack orientation="horizontal" gap="2">
+						<Image src="./logo.png" alt="the TML mark" width="16"/>
+						<Stack gap="1">
+							<Text>An image is drawn with the terminal's own graphics protocol</Text>
+							<Text>where there is one, out of half-block characters where</Text>
+							<Text>there is not, and as a link to the file where there is</Text>
+							<Text>no colour either.</Text>
+							<Text style="muted">protocol="mosaic" forces one of them</Text>
+						</Stack>
+					</Stack>
+				</Border>
+
+				<Spacer height="*"/>
+
+				<Stack orientation="horizontal" gap="2">
+					<Button id="save" action="save" label="Save" variant="primary"/>
+					<Button id="quit" action="confirm-quit" label="Quit" variant="danger"/>
+					<Button id="locked" label="Locked" disabled="true"/>
+				</Stack>
+			</Stack>
+
+			<Popup title="Confirm" color="{theme.danger}" if="{confirming}">
+				<Stack gap="1">
+					<Text>Really quit?</Text>
+					<Stack orientation="horizontal" gap="2">
+						<Button id="yes" action="quit" label="Yes" variant="danger"/>
+						<Button id="no" action="cancel" label="No"/>
+					</Stack>
+				</Stack>
+			</Popup>
+		</Canvas>
+	</Template>
+</Component>

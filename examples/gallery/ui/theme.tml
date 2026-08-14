@@ -1,0 +1,12 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<Theme xmlns="urn:tml:v1" name="gallery">
+	<Token name="accent" light="#5f5fd7" dark="#7aa2f7"/>
+	<Token name="danger" light="#c4314b" dark="#f7768e"/>
+	<Token name="line" light="#9ca0b0" dark="#3b4261"/>
+	<Token name="dim" light="#6c6f85" dark="#565f89"/>
+
+	<Style name="title" bold="true" fg="{theme.accent}"/>
+	<Style name="muted" faint="true" fg="{theme.dim}"/>
+	<Style name="chip" bg="{theme.accent}" fg="#101014"/>
+	<Style name="page" padding="0 1"/>
+</Theme>
