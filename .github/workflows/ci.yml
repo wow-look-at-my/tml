@@ -20,10 +20,14 @@ jobs:
 
       # The screenshots are taken from the binaries this job just built, in a
       # real terminal. see docs/screenshots.md
-      - name: Install ttyd and a browser
-        run: sudo apt-get update && sudo apt-get install -y ttyd chromium
+      - name: Install ttyd
+        run: sudo apt-get update && sudo apt-get install -y ttyd
       - name: Install the capture tool
-        run: npm install --prefix tools/shots --no-audit --no-fund
+        run: npm install --no-audit --no-fund
+        working-directory: tools/shots
+      - name: Install the browser
+        run: npx playwright install --with-deps chromium
+        working-directory: tools/shots
       - name: Capture the screenshots
         run: node tools/shots/capture.mjs
         env:

@@ -13,7 +13,7 @@ import net from "node:net";
 import path from "node:path";
 import process from "node:process";
 
-import { chromium } from "playwright-core";
+import { chromium } from "playwright";
 
 import { shots } from "./shots.mjs";
 
@@ -26,22 +26,23 @@ const out = path.join(repo, "build/shots");
 // beside the default branch's, which is the whole diff check.
 const site = "https://sites.pazer.build/tml-shots";
 
-// The browser to drive. playwright-core ships no browser of its own, so this
-// uses whichever one the machine has -- and says which ones it looked for
-// rather than failing somewhere further in.
+// The browser to drive: a Chromium already on the machine, or the one Playwright
+// installs for itself. /usr/bin/chromium-browser is deliberately not on the list
+// -- on Ubuntu it is a stub that tells you to install a snap, and it launches
+// far enough to look like a browser before saying so.
 const candidates = [
 	process.env.CHROME,
 	"/opt/pw-browsers/chromium",
 	"/usr/bin/chromium",
-	"/usr/bin/chromium-browser",
 	"/usr/bin/google-chrome",
 ].filter(Boolean);
 
+// browserPath is undefined when none of them is there, which leaves Playwright
+// to find its own -- `npx playwright install chromium` is the other way to have
+// one, and how CI gets it.
 function browserPath() {
 	const found = candidates.find((path) => existsSync(path));
-	if (!found) {
-		throw new Error(`no browser found; looked for ${candidates.join(", ")}. Install one, or point CHROME at it.`);
-	}
+	console.log(found ? `browser: ${found}` : "browser: Playwright's own");
 	return found;
 }
 
