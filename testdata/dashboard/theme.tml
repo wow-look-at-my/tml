@@ -1,0 +1,11 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<Theme xmlns="urn:tml:v1" name="default">
+	<Token name="accent" light="#5f5fd7" dark="#e0af68"/>
+	<Token name="gutter" value="1"/>
+
+	<Style name="card" border="rounded" padding="0 1"/>
+	<Style name="card.title" bold="true"/>
+	<Style name="heading" bold="true" underline="true"/>
+	<Style name="button" border="normal" padding="0 1"/>
+	<Style name="muted" faint="true"/>
+</Theme>
