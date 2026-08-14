@@ -36,10 +36,14 @@ the proxy but declare a different module path and fail the build. Requires Go >=
 
 ## Layout
 
-Two-pass measure/arrange. Implemented panels: `Stack`, `Box`, `Text`, `Spacer`. Sizing is `auto`, fixed cells, or `*` star
-share, and a star size propagates upward so an auto-sized ancestor cannot collapse it.
+Two-pass measure/arrange. Implemented panels: `Stack`, `Grid`, `Box`, `Text`, `Spacer`. Sizing is `auto`, fixed cells, or
+`*` star share, and a star size propagates upward so an auto-sized ancestor cannot collapse it.
 
-`Grid`, `Dock` and `Overlay` are NOT implemented. They are deliberately absent from `sema.Builtins`, so using one is an
+`Grid` declares tracks and each child declares placement through attached properties (`Grid.row`, `Grid.column`, and the
+two span variants). Track solving is fixed, then auto, then star. Grid children are composited through lipgloss layers
+rather than joined, since they sit at coordinates.
+
+`Dock` and `Overlay` are NOT implemented. They are deliberately absent from `sema.Builtins`, so using one is an
 unknown-element error rather than a silent blank. Add a panel to that list only once it lays out.
 
 ## Parsing

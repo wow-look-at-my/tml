@@ -80,13 +80,34 @@ func renderChildren(box *layout.Box) string {
 		parts = append(parts, Render(child))
 	}
 
-	if box.Name != "Stack" {
+	switch box.Name {
+	case "Stack":
+		return joinStack(box, parts)
+	case "Grid":
+		return compose(box, parts)
+	default:
 		// A decorator holds a single child in practice; stacking any extras
 		// vertically keeps the output well-formed rather than silently dropping
 		// them.
 		return lipgloss.JoinVertical(lipgloss.Left, parts...)
 	}
-	return joinStack(box, parts)
+}
+
+// compose places children at the coordinates arrange gave them, which joining
+// cannot express once children sit on a grid rather than in a line.
+//
+// Every layer gets a distinct, increasing z in document order. The compositor
+// sorts on each layer's own z with an unstable sort, so equal values would leave
+// the paint order of overlapping cells undefined. See docs/lipgloss-contract.md.
+func compose(box *layout.Box, parts []string) string {
+	layers := make([]*lipgloss.Layer, 0, len(parts))
+	for i, child := range box.Children {
+		layers = append(layers, lipgloss.NewLayer(parts[i]).
+			X(child.Rect.X).
+			Y(child.Rect.Y).
+			Z(i+1))
+	}
+	return lipgloss.NewCompositor(layers...).Render()
 }
 
 func joinStack(box *layout.Box, parts []string) string {

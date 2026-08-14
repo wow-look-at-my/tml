@@ -51,12 +51,19 @@ tml render app.tml --width 80 --height 24
 ## What it does
 
 Typed properties with defaults, slots with fallback content, imports, `if` and `For`, themes with light/dark tokens and
-named styles, and a measure/arrange layout engine with `auto`, fixed and star sizing.
+named styles, and a measure/arrange layout engine with `auto`, fixed and star sizing across `Stack`, `Grid` and `Box`.
+`Grid` takes XAML-style attached properties:
+
+```xml
+<Grid columns="auto,1*,2*" gap="1">
+    <Text Grid.row="0" Grid.column="1" Grid.columnSpan="2">spans two columns</Text>
+</Grid>
+```
 
 Everything that can be checked without call-site values is checked when the view loads — unknown elements, bad types,
 unresolved references, even inside a branch that never runs.
 
-`Grid`, `Dock` and `Overlay` are not implemented yet and are reported as unknown elements rather than silently ignored.
+`Dock` and `Overlay` are not implemented yet and are reported as unknown elements rather than silently ignored.
 
 ## Build
 

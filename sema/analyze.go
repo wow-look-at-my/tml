@@ -16,7 +16,7 @@ import (
 // here only once it lays out, so an unimplemented one is reported as an unknown
 // element rather than silently rendering nothing.
 var Builtins = []string{
-	"Stack", "Box", "Text", "Spacer",
+	"Stack", "Grid", "Box", "Text", "Spacer",
 }
 
 // Directives are element names with meaning in the language rather than in the

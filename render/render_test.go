@@ -81,6 +81,30 @@ func TestTextStillWrapsWithinItsOwnBox(t *testing.T) {
 	}
 }
 
+// A grid cannot be produced by joining: its children sit at coordinates, so the
+// renderer composites them through lipgloss layers instead.
+func TestGridComposesChildrenAtTheirCoordinates(t *testing.T) {
+	grid := el("Grid", map[string]string{"columns": "6,6", "rows": "1,1"},
+		gridCell("aa", "0", "0"),
+		gridCell("bb", "0", "1"),
+		gridCell("cc", "1", "0"),
+		gridCell("dd", "1", "1"),
+	)
+
+	out := renderTree(t, grid, 12, 2)
+	lines := strings.Split(out, "\n")
+	require.Len(t, lines, 2)
+
+	assert.Equal(t, "aa    bb", strings.TrimRight(lines[0], " "), "columns are placed side by side")
+	assert.Equal(t, "cc    dd", strings.TrimRight(lines[1], " "), "the second row lands underneath")
+}
+
+func gridCell(content, row, column string) *sema.Node {
+	node := el("Text", map[string]string{"Grid.row": row, "Grid.column": column})
+	node.Children = append(node.Children, &sema.Node{Kind: syntax.TextNode, Text: content})
+	return node
+}
+
 func TestBorderAndPaddingSurroundTheContent(t *testing.T) {
 	// 2 cells of border, 2 of padding, 2 of content.
 	box := el("Box", map[string]string{"border": "normal", "padding": "0 1", "width": "6"}, text("hi"))

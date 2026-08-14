@@ -126,12 +126,37 @@ otherwise the container would shrink to its content and the star would have noth
 Panels:
 
 - `Stack` — `orientation="vertical|horizontal"` (vertical is the default) and `gap`
+- `Grid` — `columns`, `rows`, `gap`, with placement declared per child
 - `Box` — a single-child decorator for border, padding, background and alignment
 - `Text` — character data, wrapped to the width it is given
 - `Spacer` — occupies space and draws nothing
 
-`Grid`, `Dock` and `Overlay` are **not implemented yet**. They are deliberately absent from the builtin list, so using one is
+`Dock` and `Overlay` are **not implemented yet**. They are deliberately absent from the builtin list, so using one is
 reported as an unknown element rather than silently rendering nothing.
+
+### Grid
+
+```xml
+<Grid columns="auto,1*,2*" rows="1,*" gap="1">
+    <Text Grid.row="0" Grid.column="1" Grid.columnSpan="2">spans two columns</Text>
+</Grid>
+```
+
+Tracks are declared on the grid; placement is declared on each child with XAML-style attached properties: `Grid.row`,
+`Grid.column`, `Grid.rowSpan`, `Grid.columnSpan`. Track solving runs fixed, then auto, then star, so a star track only ever
+divides what the other two left behind, and the last star track absorbs the rounding so the grid fills exactly.
+
+An auto track sizes to the widest child confined to it. A child spanning several tracks is excluded from that measurement,
+because it cannot say which of the tracks it covers should grow.
+
+Placing a child past the last declared track widens the grid with auto tracks rather than dropping the child.
+
+An attached property written on a child of anything other than a `Grid` is an error, as is an unknown one such as
+`Grid.depth`. Ignoring them would leave a layout that quietly disregards what was written.
+
+Grid children sit at coordinates rather than in a line, so the renderer composites them through lipgloss layers instead of
+joining. Each layer gets a distinct, increasing z in document order — see docs/lipgloss-contract.md for why equal z values
+would be unsafe.
 
 Layout attributes are not forwarded through a component instance: every attribute on `<Card .../>` is a property. A
 component that wants to be sized declares a `length` property and puts it on its own root, which is what `Card.tml` in

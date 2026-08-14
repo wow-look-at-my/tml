@@ -52,6 +52,12 @@ type Box struct {
 	desired Size
 	width   sema.Length
 	height  sema.Length
+
+	// Grid state: the track definitions, the sizes auto tracks measured, and
+	// this box's own placement within its parent grid.
+	cols, rows              []sema.Length
+	autoWidths, autoHeights []int
+	place                   placement
 }
 
 // Engine lays out expanded trees against a stylesheet.
@@ -67,8 +73,14 @@ func New(sheet *style.Sheet, registry *widget.Registry) *Engine {
 }
 
 // layoutAttrs are consumed by the engine; every other attribute is styling.
+// Attached properties are recognised by their dot and handled separately.
 var layoutAttrs = map[string]bool{
 	"width": true, "height": true, "orientation": true, "gap": true, "style": true,
+	"columns": true, "rows": true,
+}
+
+func isLayoutAttr(name string) bool {
+	return layoutAttrs[name] || strings.Contains(name, ".")
 }
 
 // Layout measures and arranges the tree inside a viewport.
@@ -102,7 +114,7 @@ func (e *Engine) build(node *sema.Node) (*Box, error) {
 	inline := map[string]string{}
 	for name, value := range node.Attrs {
 		attrs[name] = value.String()
-		if !layoutAttrs[name] {
+		if !isLayoutAttr(name) {
 			inline[name] = value.String()
 		}
 	}
@@ -136,7 +148,32 @@ func (e *Engine) build(node *sema.Node) (*Box, error) {
 		}
 		box.Children = append(box.Children, built)
 	}
+
+	if box.Name == "Grid" {
+		if err := initGrid(box); err != nil {
+			return nil, err
+		}
+	} else if err := rejectAttachedProperties(box); err != nil {
+		return nil, err
+	}
 	return box, nil
+}
+
+// rejectAttachedProperties catches Grid.row and friends written on a child of
+// something that is not a Grid. Ignoring them would leave the author staring at
+// a layout that quietly disregards what they wrote.
+func rejectAttachedProperties(box *Box) error {
+	for _, child := range box.Children {
+		for name := range child.attrs {
+			owner, _, dotted := strings.Cut(name, ".")
+			if !dotted {
+				continue
+			}
+			return &syntax.Error{Pos: child.Pos, Message: fmt.Sprintf(
+				"attached property %q only applies to a child of <%s>, but this is inside <%s>", name, owner, box.Name)}
+		}
+	}
+	return nil
 }
 
 func textOf(node *sema.Node) string {
@@ -218,6 +255,8 @@ func (e *Engine) measureContent(box *Box, inner Constraints) Size {
 		content = Size{}
 	case "Stack":
 		content = e.measureStack(box, inner)
+	case "Grid":
+		content = e.measureGrid(box, inner)
 	default:
 		content = e.measureChildren(box, inner)
 	}
@@ -306,6 +345,8 @@ func (e *Engine) arrange(box *Box, rect Rect) {
 		return
 	case "Stack":
 		e.arrangeStack(box)
+	case "Grid":
+		e.arrangeGrid(box)
 	default:
 		// A decorator gives each child the whole content box, clamped to what
 		// the child asked for unless it is star-sized and wants to fill.
