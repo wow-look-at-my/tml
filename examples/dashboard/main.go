@@ -9,6 +9,7 @@ package main
 
 import (
 	"embed"
+	"flag"
 	"fmt"
 	"io/fs"
 	"os"
@@ -103,10 +104,23 @@ func (m *model) matches() []string {
 }
 
 func main() {
+	// -frame renders a single frame and exits, so the example can be smoke
+	// tested without a terminal. Bubble Tea needs a TTY; the view does not.
+	frame := flag.Bool("frame", false, "render one frame to stdout and exit")
+	width := flag.Int("width", 60, "viewport width for -frame")
+	height := flag.Int("height", 18, "viewport height for -frame")
+	flag.Parse()
+
 	m, err := newModel()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
+	}
+
+	if *frame {
+		m.width, m.height = *width, *height
+		fmt.Println(m.View().String())
+		return
 	}
 	if _, err := tea.NewProgram(m).Run(); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
