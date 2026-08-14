@@ -37,6 +37,15 @@ func (r Resolved) Frame() (horizontal, vertical int) {
 	return r.Style.GetHorizontalFrameSize(), r.Style.GetVerticalFrameSize()
 }
 
+// ContentOffset is the distance from a box's outer top-left corner to the first
+// cell of its content. A child's rect is relative to that point, so this is what
+// turns nested rects into screen coordinates.
+func (r Resolved) ContentOffset() (x, y int) {
+	x = r.Margin.Left + r.Style.GetPaddingLeft() + r.Style.GetBorderLeftSize()
+	y = r.Margin.Top + r.Style.GetPaddingTop() + r.Style.GetBorderTopSize()
+	return x, y
+}
+
 // Sheet holds the named styles declared across every theme in scope, with each
 // extends chain already flattened.
 type Sheet struct {

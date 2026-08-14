@@ -12,6 +12,8 @@ package layout
 
 import (
 	"fmt"
+	"io/fs"
+	"path"
 	"strconv"
 	"strings"
 
@@ -35,18 +37,30 @@ type Constraints struct{ MaxW, MaxH int }
 // Box is a laid-out node.
 type Box struct {
 	Name string
-	// Rect is the box's outer rect, margin included.
+	// Rect is the box's outer rect, margin included, relative to the parent's
+	// content origin.
 	Rect Rect
+	// Screen is the same box in viewport coordinates, with margin excluded so it
+	// covers the cells the box actually paints. This is what a pointer is tested
+	// against.
+	Screen Rect
 	// Content is the size available inside margin, border and padding. It is
 	// what a bound widget is told to render into.
 	Content Size
 	Style   style.Resolved
 	Text    string
-	// Native is the host widget behind this element, if any. Layout measures it
-	// and the renderer asks it to draw; TML never touches its state.
+	// Native is the widget behind this element, if any. Layout measures it and
+	// the renderer asks it to draw; TML never touches its state.
 	Native   widget.Native
 	Children []*Box
 	Pos      syntax.Pos
+
+	// ID and Action identify an interactive element to the host: ID names it,
+	// Action is what it reports when activated.
+	ID     string
+	Action string
+	// State is how this element renders in this frame -- focused, hovered, held.
+	State widget.State
 
 	attrs   map[string]string
 	desired Size
@@ -60,23 +74,40 @@ type Box struct {
 	place                   placement
 }
 
+// Options configure an engine.
+type Options struct {
+	// Widgets resolves element names to widgets.
+	Widgets *widget.Registry
+	// FS is the filesystem the view was loaded from, handed to any widget that
+	// reads a file.
+	FS fs.FS
+	// Dark reports whether the view renders against a dark theme.
+	Dark bool
+	// Interaction carries focus and pointer state across frames. A nil one means
+	// nothing is focusable, which is what a static render wants.
+	Interaction Interaction
+}
+
 // Engine lays out expanded trees against a stylesheet.
 type Engine struct {
-	sheet    *style.Sheet
-	registry *widget.Registry
+	sheet *style.Sheet
+	opts  Options
 }
 
-// New returns an engine that resolves named styles through sheet and host
-// widgets through registry. A nil registry means the view uses no widgets.
-func New(sheet *style.Sheet, registry *widget.Registry) *Engine {
-	return &Engine{sheet: sheet, registry: registry}
+// New returns an engine that resolves named styles through sheet and widgets
+// through opts.
+func New(sheet *style.Sheet, opts Options) *Engine {
+	return &Engine{sheet: sheet, opts: opts}
 }
 
-// layoutAttrs are consumed by the engine; every other attribute is styling.
-// Attached properties are recognised by their dot and handled separately.
+// layoutAttrs are consumed by the engine; every other attribute is styling,
+// unless a widget claims it. Attached properties are recognised by their dot and
+// handled separately.
 var layoutAttrs = map[string]bool{
 	"width": true, "height": true, "orientation": true, "gap": true, "style": true,
-	"columns": true, "rows": true,
+	"columns": true, "rows": true, "id": true, "action": true,
+	"offset": true, "offsetX": true, "scrollbar": true,
+	"title": true, "titleAlign": true, "open": true, "anchor": true,
 }
 
 func isLayoutAttr(name string) bool {
@@ -85,10 +116,13 @@ func isLayoutAttr(name string) bool {
 
 // Layout measures and arranges the tree inside a viewport.
 func (e *Engine) Layout(node *sema.Node, width, height int) (*Box, error) {
-	box, err := e.build(node)
+	p := &pass{e: e}
+	box, err := p.build(node)
 	if err != nil {
 		return nil, err
 	}
+	p.syncState()
+
 	e.measure(box, Constraints{MaxW: width, MaxH: height})
 
 	// The root fills the viewport unless it asked for a specific size. Filling
@@ -102,19 +136,30 @@ func (e *Engine) Layout(node *sema.Node, width, height int) (*Box, error) {
 		rect.H = min(box.desired.H, height)
 	}
 	e.arrange(box, rect)
+	setScreen(box, 0, 0)
+	p.publish()
 	return box, nil
 }
 
-func (e *Engine) build(node *sema.Node) (*Box, error) {
+func (p *pass) build(node *sema.Node) (*Box, error) {
+	e := p.e
 	if node.Kind == syntax.TextNode {
 		return &Box{Name: "#text", Text: node.Text, Pos: node.Pos, attrs: map[string]string{}}, nil
+	}
+
+	factory, hasFactory := e.opts.Widgets.Factory(node.Name)
+	claimed := map[string]bool{}
+	if hasFactory {
+		for _, name := range factory.Attributes() {
+			claimed[name] = true
+		}
 	}
 
 	attrs := make(map[string]string, len(node.Attrs))
 	inline := map[string]string{}
 	for name, value := range node.Attrs {
 		attrs[name] = value.String()
-		if !isLayoutAttr(name) {
+		if !isLayoutAttr(name) && !claimed[name] {
 			inline[name] = value.String()
 		}
 	}
@@ -123,7 +168,14 @@ func (e *Engine) build(node *sema.Node) (*Box, error) {
 		return nil, &syntax.Error{Pos: node.Pos, Message: fmt.Sprintf("<%s>: %v", node.Name, err)}
 	}
 
-	box := &Box{Name: node.Name, Style: resolved, Pos: node.Pos, attrs: attrs}
+	box := &Box{
+		Name:   node.Name,
+		Style:  resolved,
+		Pos:    node.Pos,
+		attrs:  attrs,
+		ID:     attrs["id"],
+		Action: attrs["action"],
+	}
 	if box.width, err = lengthAttr(node, "width"); err != nil {
 		return nil, err
 	}
@@ -137,24 +189,46 @@ func (e *Engine) build(node *sema.Node) (*Box, error) {
 		box.Text = textOf(node)
 		return box, nil
 	}
-	if native, ok := e.registry.Lookup(node.Name); ok {
+	if native, ok := e.opts.Widgets.Lookup(node.Name); ok {
 		box.Native = native
+		if err := p.track(box); err != nil {
+			return nil, err
+		}
+		return box, nil
+	}
+	if hasFactory {
+		native, err := factory.Build(widget.Context{
+			Attrs: widget.NewAttrs(node.Name, node.Attrs, node.Order),
+			FS:    e.opts.FS,
+			Dir:   path.Dir(node.Pos.File),
+			Dark:  e.opts.Dark,
+		})
+		if err != nil {
+			return nil, &syntax.Error{Pos: node.Pos, Message: err.Error()}
+		}
+		box.Native = native
+		if err := p.track(box); err != nil {
+			return nil, err
+		}
 		return box, nil
 	}
 	for _, child := range node.Children {
-		built, err := e.build(child)
+		built, err := p.build(child)
 		if err != nil {
 			return nil, err
 		}
 		box.Children = append(box.Children, built)
 	}
 
-	if box.Name == "Grid" {
+	switch box.Name {
+	case "Grid":
 		if err := initGrid(box); err != nil {
 			return nil, err
 		}
-	} else if err := rejectAttachedProperties(box); err != nil {
-		return nil, err
+	default:
+		if err := rejectAttachedProperties(box); err != nil {
+			return nil, err
+		}
 	}
 	return box, nil
 }
@@ -424,10 +498,19 @@ func (e *Engine) arrangeStack(box *Box) {
 		}
 		cross = min(cross, crossAvailable)
 
+		// The renderer joins these parts with the same alignment, so the rects
+		// have to carry the same offset or the geometry and the output disagree
+		// -- and a pointer would land on nothing.
+		align := box.Style.Align
+		if !vertical {
+			align = box.Style.VAlign
+		}
+		crossOffset := alignOffset(align, cross, crossAvailable)
+
 		if vertical {
-			e.arrange(child, Rect{X: 0, Y: offset, W: cross, H: main})
+			e.arrange(child, Rect{X: crossOffset, Y: offset, W: cross, H: main})
 		} else {
-			e.arrange(child, Rect{X: offset, Y: 0, W: main, H: cross})
+			e.arrange(child, Rect{X: offset, Y: crossOffset, W: main, H: cross})
 		}
 
 		offset += main
@@ -435,6 +518,14 @@ func (e *Engine) arrangeStack(box *Box) {
 			offset += gap
 		}
 	}
+}
+
+// alignOffset is where a child of the given size starts along the cross axis.
+// lipgloss positions are a 0-to-1 fraction, so the arithmetic is the same for
+// both axes.
+func alignOffset(pos lipgloss.Position, size, available int) int {
+	slack := max(0, available-size)
+	return min(slack, max(0, int(float64(slack)*float64(pos)+0.5)))
 }
 
 // Vertical reports the stack direction. Vertical is the default because a

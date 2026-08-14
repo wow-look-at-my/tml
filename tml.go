@@ -15,6 +15,7 @@ import (
 	"github.com/wow-look-at-my/tml/style"
 	"github.com/wow-look-at-my/tml/syntax"
 	"github.com/wow-look-at-my/tml/widget"
+	"github.com/wow-look-at-my/tml/widgets"
 )
 
 // Props are the arguments passed to the entry component.
@@ -24,10 +25,15 @@ type Props = map[string]sema.Value
 type Options struct {
 	// Dark selects the dark half of every adaptive theme token.
 	Dark bool
-	// Widgets are the host's own elements. Their names are checked when the view
-	// loads, so a template naming a widget that was never bound fails there
-	// rather than rendering a blank.
+	// Widgets are the host's own elements, layered over the built-in library.
+	// A name bound here wins, so a host can replace <Button> and keep the rest.
+	// Every name is checked when the view loads, so a template naming a widget
+	// nobody bound fails there rather than rendering a blank.
 	Widgets *widget.Registry
+	// Bare drops the built-in widget library, leaving only the host's own
+	// bindings. A view that never uses the library does not need it, and a host
+	// replacing the lot should not have to shadow every name to prove it.
+	Bare bool
 }
 
 // View is a loaded, checked view ready to render.
@@ -35,7 +41,13 @@ type View struct {
 	program *sema.Program
 	engine  *layout.Engine
 	dark    bool
+	ui      *UI
 }
+
+// UI is the view's interaction state: which element has focus, which one the
+// pointer is over, and what the last frame's geometry was. Feed it messages and
+// the view's controls come alive; ignore it and they render unfocused.
+func (v *View) UI() *UI { return v.ui }
 
 // Load parses, checks and prepares the view rooted at entry.
 //
@@ -48,7 +60,11 @@ func Load(fsys fs.FS, entry string, opts Options) (*View, error) {
 	if err != nil {
 		return nil, err
 	}
-	program, err := sema.Analyze(unit, sema.Options{Natives: opts.Widgets.Names()})
+	registry := opts.Widgets
+	if !opts.Bare {
+		registry = opts.Widgets.Merge(widgets.Library())
+	}
+	program, err := sema.Analyze(unit, sema.Options{Natives: registry.Names()})
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +72,14 @@ func Load(fsys fs.FS, entry string, opts Options) (*View, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &View{program: program, engine: layout.New(sheet, opts.Widgets), dark: opts.Dark}, nil
+	view := &View{program: program, dark: opts.Dark, ui: NewUI()}
+	view.engine = layout.New(sheet, layout.Options{
+		Widgets:     registry,
+		FS:          fsys,
+		Dark:        opts.Dark,
+		Interaction: view.ui,
+	})
+	return view, nil
 }
 
 // Expand instantiates the view and returns the expanded element tree, with
