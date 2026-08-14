@@ -157,7 +157,10 @@ func (p *pass) build(node *sema.Node) (*Box, error) {
 		return &Box{Name: "#text", Text: node.Text, Pos: node.Pos, attrs: map[string]string{}}, nil
 	}
 
+	// A node carrying a component's name is never a widget, however the component
+	// happens to be called.
 	factory, hasFactory := e.opts.Widgets.Factory(node.Name)
+	hasFactory = hasFactory && !node.Component
 	claimed := map[string]bool{}
 	if hasFactory {
 		for _, name := range factory.Attributes() {
@@ -200,7 +203,7 @@ func (p *pass) build(node *sema.Node) (*Box, error) {
 		box.Text = textOf(node)
 		return box, nil
 	}
-	if native, ok := e.opts.Widgets.Lookup(node.Name); ok {
+	if native, ok := e.opts.Widgets.Lookup(node.Name); ok && !node.Component {
 		box.Native = native
 	} else if hasFactory {
 		native, err := factory.Build(widget.Context{

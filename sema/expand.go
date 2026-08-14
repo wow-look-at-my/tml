@@ -23,6 +23,10 @@ type Node struct {
 	// for the default one. A component's slots are resolved during expansion; a
 	// widget's are not, because only the widget knows what to do with them.
 	Slot string
+	// Component marks a node that carries a component's name rather than an
+	// element's. Nothing downstream may resolve it as a widget: a component is
+	// free to be called Table without becoming one.
+	Component bool
 }
 
 // Attr reads an evaluated attribute.
@@ -95,6 +99,10 @@ func (p *Program) Expand(args map[string]Value, opts ExpandOptions) (*Node, erro
 		Attrs:    map[string]Value{},
 		Children: children,
 		Pos:      entry.def.Pos,
+		// The root wears the component's name, which is what makes a dumped tree
+		// readable. Marking it keeps that name from being mistaken for a widget's
+		// later on: a component may legitimately be called Table.
+		Component: true,
 	}, nil
 }
 
