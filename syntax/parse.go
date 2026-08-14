@@ -10,10 +10,18 @@ import (
 
 // Parse reads one .tml source file into a [File].
 //
-// Well-formedness, namespace correctness and the XML 1.1 rules are enforced by
-// xml-validator before any TML-specific structure is examined, so a malformed
-// file fails with a precise XML diagnostic rather than a confusing TML one.
+// The source is validated before it is interpreted, so a malformed file fails
+// with a precise XML diagnostic rather than a confusing TML one.
+//
+// Both validator entry points are needed. ParseTree is the version-agnostic tree
+// parser: it accepts XML 1.0 and a missing declaration. Validate is what enforces
+// the XML 1.1 rules TML relies on -- required declaration, UTF-8 without a BOM,
+// no DOCTYPE, no entities beyond the predefined five. Parsing twice is the cost
+// of getting both the tree and the strictness.
 func Parse(path string, src []byte) (*File, error) {
+	if err := validator.Validate(bytes.NewReader(src)); err != nil {
+		return nil, xmlError(path, err)
+	}
 	doc, err := validator.ParseTree(bytes.NewReader(src))
 	if err != nil {
 		return nil, xmlError(path, err)

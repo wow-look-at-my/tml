@@ -5,6 +5,7 @@ go 1.25.0
 require (
 	charm.land/lipgloss/v2 v2.0.6
 	github.com/stretchr/testify v1.11.1
+	github.com/wow-look-at-my/xml-validator v0.0.0-20260607034402-2fa82e7a0ae5
 )
 
 require (
