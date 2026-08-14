@@ -4,13 +4,16 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+	"testing/fstest"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/wow-look-at-my/tml"
 	"github.com/wow-look-at-my/tml/sema"
+	"github.com/wow-look-at-my/tml/widget"
 )
 
 var update = flag.Bool("update", false, "rewrite the golden files")
@@ -96,6 +99,58 @@ func TestStarSizingFillsTheViewport(t *testing.T) {
 		assert.Equal(t, width, filled.Rect.W, "the star-sized card takes the full width")
 		assert.Less(t, natural.Rect.W, width, "the auto-sized card takes only what it needs")
 	}
+}
+
+// fakeInput stands in for a bubbles component: it draws itself and accepts a
+// width, exactly the two things TML asks of one.
+type fakeInput struct{ width int }
+
+func (f *fakeInput) View() string {
+	if f.width <= 0 {
+		return "[]"
+	}
+	return "[" + strings.Repeat("_", f.width-2) + "]"
+}
+
+func (f *fakeInput) SetWidth(w int) { f.width = w }
+
+func widgetFS() fstest.MapFS {
+	const header = "<?xml version=\"1.1\" encoding=\"UTF-8\"?>\n"
+	return fstest.MapFS{
+		"app.tml": {Data: []byte(header + `<Component xmlns="urn:tml:v1" name="App">
+	<Template>
+		<Stack orientation="horizontal" gap="1">
+			<Text>find</Text>
+			<Search width="*"/>
+		</Stack>
+	</Template>
+</Component>`)},
+	}
+}
+
+// A bound widget is laid out like any other element: it is told the width the
+// star share gave it and renders into exactly that.
+func TestBoundWidgetIsSizedByLayout(t *testing.T) {
+	input := &fakeInput{}
+	widgets := widget.NewRegistry().Bind("Search", widget.Bubble(input))
+
+	view, err := tml.Load(widgetFS(), "app.tml", tml.Options{Widgets: widgets})
+	require.NoError(t, err)
+
+	out, err := view.Render(nil, 20, 3)
+	require.NoError(t, err)
+
+	// "find" is 4 cells, the gap is 1, so the star widget gets the other 15.
+	assert.Equal(t, 15, input.width, "the widget was told the width layout computed")
+	assert.Contains(t, out, "find [_____________]")
+}
+
+// A template naming a widget the host never bound must fail when the view
+// loads, not render a silent blank.
+func TestUnboundWidgetIsRejectedAtLoad(t *testing.T) {
+	_, err := tml.Load(widgetFS(), "app.tml", tml.Options{})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unknown element <Search>")
 }
 
 func TestLoadReportsDiagnosticsWithPositions(t *testing.T) {

@@ -1,0 +1,16 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<Component xmlns="urn:tml:v1" name="Panel">
+	<Property name="heading" type="string" required="true"/>
+	<Property name="width" type="length" default="auto"/>
+
+	<Template>
+		<Box style="panel" width="{width}">
+			<Stack orientation="vertical">
+				<Text style="title">{heading}</Text>
+				<Slot>
+					<Text style="muted">empty</Text>
+				</Slot>
+			</Stack>
+		</Box>
+	</Template>
+</Component>

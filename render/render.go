@@ -30,7 +30,11 @@ func Render(box *layout.Box) string {
 	}
 
 	content := box.Text
-	if box.Name != "Text" {
+	switch {
+	case box.Native != nil:
+		// The widget draws itself into the space layout settled on.
+		content = box.Native.Render(box.Content.W, box.Content.H)
+	case box.Name != "Text":
 		content = renderChildren(box)
 	}
 
@@ -55,7 +59,7 @@ func Render(box *layout.Box) string {
 	// Width alone would make lipgloss WRAP the block, which folds a too-wide row
 	// onto the next line and shreds the arranged geometry. Text is the one place
 	// wrapping is wanted, so it keeps Width on its own.
-	if box.Name != "Text" {
+	if box.Name != "Text" || box.Native != nil {
 		if w > 0 {
 			st = st.MaxWidth(w)
 		}

@@ -30,7 +30,7 @@ func renderTree(t *testing.T, node *sema.Node, w, h int) string {
 	t.Helper()
 	sheet, err := style.NewSheet(nil, nil)
 	require.NoError(t, err)
-	box, err := layout.New(sheet).Layout(node, w, h)
+	box, err := layout.New(sheet, nil).Layout(node, w, h)
 	require.NoError(t, err)
 	return Render(box)
 }

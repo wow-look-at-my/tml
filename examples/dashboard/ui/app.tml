@@ -1,0 +1,33 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<Component xmlns="urn:tml:v1" name="App">
+	<Import src="./theme.tml"/>
+	<Import src="./Panel.tml"/>
+
+	<Property name="title" type="string" required="true"/>
+	<Property name="query" type="string" default=""/>
+	<Property name="services" type="string[]" default=""/>
+
+	<Template>
+		<Stack orientation="vertical" gap="1">
+			<Text style="title">{title}</Text>
+
+			<Panel heading="Filter" width="*">
+				<Stack orientation="horizontal" gap="1">
+					<Text style="label">search</Text>
+					<Search width="*"/>
+				</Stack>
+			</Panel>
+
+			<Panel heading="Services" width="*">
+				<Stack orientation="vertical">
+					<Text if="{not services}" style="muted">nothing matches {query}</Text>
+					<For each="{services}" as="service">
+						<Text>- {service}</Text>
+					</For>
+				</Stack>
+			</Panel>
+
+			<Text style="muted">esc to quit</Text>
+		</Stack>
+	</Template>
+</Component>

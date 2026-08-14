@@ -20,6 +20,7 @@ import (
 	"github.com/wow-look-at-my/tml/sema"
 	"github.com/wow-look-at-my/tml/style"
 	"github.com/wow-look-at-my/tml/syntax"
+	"github.com/wow-look-at-my/tml/widget"
 )
 
 // Size is a measurement in terminal cells.
@@ -38,9 +39,12 @@ type Box struct {
 	Rect Rect
 	// Content is the size available inside margin, border and padding. It is
 	// what a bound widget is told to render into.
-	Content  Size
-	Style    style.Resolved
-	Text     string
+	Content Size
+	Style   style.Resolved
+	Text    string
+	// Native is the host widget behind this element, if any. Layout measures it
+	// and the renderer asks it to draw; TML never touches its state.
+	Native   widget.Native
 	Children []*Box
 	Pos      syntax.Pos
 
@@ -52,11 +56,15 @@ type Box struct {
 
 // Engine lays out expanded trees against a stylesheet.
 type Engine struct {
-	sheet *style.Sheet
+	sheet    *style.Sheet
+	registry *widget.Registry
 }
 
-// New returns an engine that resolves named styles through sheet.
-func New(sheet *style.Sheet) *Engine { return &Engine{sheet: sheet} }
+// New returns an engine that resolves named styles through sheet and host
+// widgets through registry. A nil registry means the view uses no widgets.
+func New(sheet *style.Sheet, registry *widget.Registry) *Engine {
+	return &Engine{sheet: sheet, registry: registry}
+}
 
 // layoutAttrs are consumed by the engine; every other attribute is styling.
 var layoutAttrs = map[string]bool{
@@ -117,6 +125,10 @@ func (e *Engine) build(node *sema.Node) (*Box, error) {
 		box.Text = textOf(node)
 		return box, nil
 	}
+	if native, ok := e.registry.Lookup(node.Name); ok {
+		box.Native = native
+		return box, nil
+	}
 	for _, child := range node.Children {
 		built, err := e.build(child)
 		if err != nil {
@@ -165,17 +177,14 @@ func (e *Engine) measure(box *Box, c Constraints) Size {
 	inner := Constraints{MaxW: max(0, c.MaxW-outerW), MaxH: max(0, c.MaxH-outerH)}
 
 	var content Size
-	switch box.Name {
-	case "#text":
-		content = Size{W: lipgloss.Width(box.Text), H: lipgloss.Height(box.Text)}
-	case "Text":
-		content = measureText(box, inner)
-	case "Spacer":
-		content = Size{}
-	case "Stack":
-		content = e.measureStack(box, inner)
+	switch {
+	case box.Native != nil:
+		// A host widget measures itself. TML supplies the space and takes the
+		// answer, so a bubbles component keeps deciding its own shape.
+		w, h := box.Native.Measure(inner.MaxW, inner.MaxH)
+		content = Size{W: w, H: h}
 	default:
-		content = e.measureChildren(box, inner)
+		content = e.measureContent(box, inner)
 	}
 
 	// An explicit size overrides what the content asked for. A star size cannot
@@ -196,6 +205,23 @@ func (e *Engine) measure(box *Box, c Constraints) Size {
 
 	box.desired = Size{W: content.W + outerW, H: content.H + outerH}
 	return box.desired
+}
+
+func (e *Engine) measureContent(box *Box, inner Constraints) Size {
+	var content Size
+	switch box.Name {
+	case "#text":
+		content = Size{W: lipgloss.Width(box.Text), H: lipgloss.Height(box.Text)}
+	case "Text":
+		content = measureText(box, inner)
+	case "Spacer":
+		content = Size{}
+	case "Stack":
+		content = e.measureStack(box, inner)
+	default:
+		content = e.measureChildren(box, inner)
+	}
+	return content
 }
 
 // measureText reports the height the text needs once wrapped, because lipgloss
@@ -272,6 +298,9 @@ func (e *Engine) arrange(box *Box, rect Rect) {
 	outerW, outerH := box.outer()
 	box.Content = Size{W: max(0, rect.W-outerW), H: max(0, rect.H-outerH)}
 
+	if box.Native != nil {
+		return
+	}
 	switch box.Name {
 	case "Text", "Spacer", "#text":
 		return

@@ -1,0 +1,10 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<Theme xmlns="urn:tml:v1" name="default">
+	<Token name="accent" light="#5f5fd7" dark="#e0af68"/>
+	<Token name="dim" light="#6c6f85" dark="#565f89"/>
+
+	<Style name="panel" border="rounded" borderColor="{theme.accent}" padding="0 1"/>
+	<Style name="title" bold="true" fg="{theme.accent}"/>
+	<Style name="muted" faint="true" fg="{theme.dim}"/>
+	<Style name="label" bold="true"/>
+</Theme>

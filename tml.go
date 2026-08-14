@@ -14,6 +14,7 @@ import (
 	"github.com/wow-look-at-my/tml/sema"
 	"github.com/wow-look-at-my/tml/style"
 	"github.com/wow-look-at-my/tml/syntax"
+	"github.com/wow-look-at-my/tml/widget"
 )
 
 // Props are the arguments passed to the entry component.
@@ -23,8 +24,10 @@ type Props = map[string]sema.Value
 type Options struct {
 	// Dark selects the dark half of every adaptive theme token.
 	Dark bool
-	// Natives are host-registered element names, on top of the builtins.
-	Natives []string
+	// Widgets are the host's own elements. Their names are checked when the view
+	// loads, so a template naming a widget that was never bound fails there
+	// rather than rendering a blank.
+	Widgets *widget.Registry
 }
 
 // View is a loaded, checked view ready to render.
@@ -45,7 +48,7 @@ func Load(fsys fs.FS, entry string, opts Options) (*View, error) {
 	if err != nil {
 		return nil, err
 	}
-	program, err := sema.Analyze(unit, sema.Options{Natives: opts.Natives})
+	program, err := sema.Analyze(unit, sema.Options{Natives: opts.Widgets.Names()})
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +56,7 @@ func Load(fsys fs.FS, entry string, opts Options) (*View, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &View{program: program, engine: layout.New(sheet), dark: opts.Dark}, nil
+	return &View{program: program, engine: layout.New(sheet, opts.Widgets), dark: opts.Dark}, nil
 }
 
 // Expand instantiates the view and returns the expanded element tree, with

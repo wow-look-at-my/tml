@@ -27,7 +27,7 @@ func engine(t *testing.T) *Engine {
 	t.Helper()
 	sheet, err := style.NewSheet(nil, nil)
 	require.NoError(t, err)
-	return New(sheet)
+	return New(sheet, nil)
 }
 
 func layoutTree(t *testing.T, node *sema.Node, w, h int) *Box {
