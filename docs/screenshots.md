@@ -45,6 +45,9 @@ CI captures on every push and publishes `build/shots/` to a buildhost site, per 
 - `https://sites.pazer.build/tml/` -- master
 - `https://sites.pazer.build/tml/@<branch>/` -- any other branch
 
+Until master has published once, the bare project URL falls back to whichever branch does have a site, so the README's
+pictures work before the first merge and switch to master's afterwards.
+
 The project is the repository's name because that is what buildhost's OIDC trust covers -- a token minted for
 `repo:wow-look-at-my/tml` may write project `tml` and anything namespaced beneath it, and any other name answers
 `404 project not found` instead of being created.
