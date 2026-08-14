@@ -40,15 +40,23 @@ func TestStyleWidthWrapsToCellWidth(t *testing.T) {
 	assert.Greater(t, lipgloss.Height(out), 1, "overflowing text wraps instead of truncating")
 }
 
-// Inherit is the cascade primitive behind <Style extends="...">: unset fields are
-// filled in from the parent, explicitly set fields win.
-func TestInheritFillsOnlyUnsetFields(t *testing.T) {
-	base := lipgloss.NewStyle().Bold(true).Padding(1, 2)
+// Inherit fills unset fields from a parent style but DELIBERATELY excludes padding
+// and margin. So <Style extends="..."> cannot be implemented as Inherit alone: TML
+// resolves the cascade in its own style model and emits a fully-resolved style here.
+// That is required regardless, because layout needs padding and margin at measure
+// time, well before any lipgloss.Style exists.
+func TestInheritSkipsTheBoxModel(t *testing.T) {
+	base := lipgloss.NewStyle().Bold(true).Italic(true).Padding(1, 2).Margin(3)
 	derived := lipgloss.NewStyle().Bold(false).Inherit(base)
 
 	assert.False(t, derived.GetBold(), "an explicitly set field survives Inherit")
+	assert.True(t, derived.GetItalic(), "an unset text field is inherited")
+
 	top, right, bottom, left := derived.GetPadding()
-	assert.Equal(t, []int{1, 2, 1, 2}, []int{top, right, bottom, left}, "unset fields come from the parent")
+	assert.Equal(t, []int{0, 0, 0, 0}, []int{top, right, bottom, left}, "padding is never inherited")
+
+	top, right, bottom, left = derived.GetMargin()
+	assert.Equal(t, []int{0, 0, 0, 0}, []int{top, right, bottom, left}, "margin is never inherited")
 }
 
 // Layer coordinates are relative to the parent layer. This is why arrange can emit
