@@ -49,7 +49,8 @@ unknown-element error rather than a silent blank. Add a panel to that list only 
 ## Parsing
 
 Delegated to `github.com/wow-look-at-my/xml-validator` — strict XML 1.1, namespace validation, UTF-8/BOM rejection and
-line/col positions. TML contains no XML parser. XSD self-validation is deliberately unused: a template body holds
+line/col positions on elements and attributes alike, so an attribute-scoped diagnostic points at the attribute rather
+than at the element several columns to its left. TML contains no XML parser. XSD self-validation is deliberately unused: a template body holds
 arbitrary user component names, which `processContents="strict"` cannot express.
 
 ## Gotchas that decide the design
