@@ -8,9 +8,10 @@ const Namespace = "urn:tml:v1"
 
 // Pos locates a construct in a source file.
 //
-// Line and Col come from the underlying XML parser, which records positions per
-// element. Attributes do not carry their own position, so an attribute-level
-// diagnostic reports the position of the element that owns it.
+// Line and Col come from the underlying XML parser, which records positions for
+// elements and attributes alike. An attribute-scoped diagnostic points at the
+// attribute, not at the element that owns it -- on an element with several
+// attributes those are different places.
 type Pos struct {
 	File string
 	Line int

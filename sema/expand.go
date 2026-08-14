@@ -243,7 +243,7 @@ func (p *Program) expandNative(node *tnode, scope *evalScope, file string, slots
 	for _, attr := range node.attrs {
 		value, err := attr.expr.Eval(scope)
 		if err != nil {
-			return nil, &syntax.Error{Pos: node.pos, Message: fmt.Sprintf("attribute %q: %v", attr.name, err)}
+			return nil, &syntax.Error{Pos: attr.pos, Message: fmt.Sprintf("attribute %q: %v", attr.name, err)}
 		}
 		out.Attrs[attr.name] = value
 		out.Order = append(out.Order, attr.name)
@@ -266,7 +266,7 @@ func (p *Program) expandInstance(c *compiled, node *tnode, scope *evalScope, fil
 	for _, attr := range node.attrs {
 		value, err := attr.expr.Eval(scope)
 		if err != nil {
-			return nil, &syntax.Error{Pos: node.pos, Message: fmt.Sprintf("attribute %q: %v", attr.name, err)}
+			return nil, &syntax.Error{Pos: attr.pos, Message: fmt.Sprintf("attribute %q: %v", attr.name, err)}
 		}
 		args[attr.name] = value
 	}
