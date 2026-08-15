@@ -27,12 +27,14 @@ type textbox struct {
 	disabled    bool
 	password    bool
 	state       widget.State
+	measure     widget.Measurer
 }
 
 func newTextbox(ctx widget.Context) (widget.Native, error) {
 	box := &textbox{
 		value:       ctx.Attrs.String("value", ""),
 		placeholder: ctx.Attrs.String("placeholder", ""),
+		measure:     ctx.Measure,
 	}
 	var err error
 	if box.cursor, err = ctx.Attrs.Int("cursor", -1); err != nil {
@@ -77,13 +79,13 @@ func (t *textbox) Render(w, _ int) string {
 	// The window follows the cursor, so a value longer than the field still shows
 	// the part being typed rather than its beginning.
 	body, start := t.window(shown, w)
-	if gap := w - lipgloss.Width(body); gap > 0 {
+	if gap := w - t.measure.Width(body); gap > 0 {
 		body += strings.Repeat(" ", gap)
 	}
 	if !t.state.Focused || t.disabled {
 		return style.Render(body)
 	}
-	return caret(style, body, t.column(shown)-start)
+	return caret(style, body, t.column(shown)-start, t.measure)
 }
 
 // column is where the caret sits in the value. An unset cursor means the end,
@@ -93,9 +95,9 @@ func (t *textbox) column(shown string) int {
 		return 0
 	}
 	if t.cursor < 0 {
-		return lipgloss.Width(shown)
+		return t.measure.Width(shown)
 	}
-	return min(t.cursor, lipgloss.Width(shown))
+	return min(t.cursor, t.measure.Width(shown))
 }
 
 // caret draws one cell of the field reversed. The host owns the text, so this is
@@ -105,8 +107,8 @@ func (t *textbox) column(shown string) int {
 // drops Reverse from a whitespace-only render that also carries Underline, and
 // the caret sits on a blank cell whenever it is at the end of the value.
 // render/lipgloss_contract_test.go pins that.
-func caret(style lipgloss.Style, body string, col int) string {
-	width := lipgloss.Width(body)
+func caret(style lipgloss.Style, body string, col int, measure widget.Measurer) string {
+	width := measure.Width(body)
 	if col < 0 || col >= width {
 		return style.Render(body)
 	}
@@ -132,7 +134,7 @@ func (t *textbox) window(s string, w int) (string, int) {
 	if w <= 0 {
 		return "", 0
 	}
-	width := lipgloss.Width(s)
+	width := t.measure.Width(s)
 	if width <= w {
 		return s, 0
 	}
@@ -162,11 +164,12 @@ type check struct {
 	checked  bool
 	disabled bool
 	state    widget.State
+	measure  widget.Measurer
 }
 
 func newCheck(kind string) builder {
 	return func(ctx widget.Context) (widget.Native, error) {
-		c := &check{kind: kind, label: ctx.Attrs.String("label", "")}
+		c := &check{kind: kind, label: ctx.Attrs.String("label", ""), measure: ctx.Measure}
 		var err error
 		if c.checked, err = ctx.Attrs.Bool("checked", false); err != nil {
 			return nil, err
@@ -197,7 +200,7 @@ func (c *check) body() string {
 	return c.mark() + " " + c.label
 }
 
-func (c *check) Measure(_, _ int) (int, int) { return lipgloss.Width(c.body()), 1 }
+func (c *check) Measure(_, _ int) (int, int) { return c.measure.Width(c.body()), 1 }
 
 func (c *check) Render(_, _ int) string {
 	style := lipgloss.NewStyle()

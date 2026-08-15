@@ -59,6 +59,7 @@ type imageWidget struct {
 	alt      string
 	protocol string
 	dark     bool
+	measure  widget.Measurer
 }
 
 func newImage(ctx widget.Context) (widget.Native, error) {
@@ -78,6 +79,7 @@ func newImage(ctx widget.Context) (widget.Native, error) {
 		src:      src,
 		alt:      ctx.Attrs.String("alt", path.Base(src)),
 		protocol: protocol,
+		measure:  ctx.Measure,
 		dark:     ctx.Dark,
 	}
 	// A link needs no pixels, which is what makes it the fallback that always
@@ -137,7 +139,7 @@ func detectProtocol(env func(string) string) string {
 // Measure fits the image into the space on offer, keeping its shape.
 func (i *imageWidget) Measure(maxW, maxH int) (int, int) {
 	if i.img == nil {
-		return lipgloss.Width(i.alt), 1
+		return i.measure.Width(i.alt), 1
 	}
 	bounds := i.img.Bounds()
 	if bounds.Dx() == 0 || bounds.Dy() == 0 {

@@ -34,6 +34,15 @@ type Options struct {
 	// bindings. A view that never uses the library does not need it, and a host
 	// replacing the lot should not have to shadow every name to prove it.
 	Bare bool
+	// Measure is how wide a string is, in cells, for a host that negotiated a
+	// width method with its terminal and needs this view's geometry to agree with
+	// the rest of its screen. Nil means lipgloss.Width.
+	//
+	// It governs layout: what is measured, where a box lands, and therefore what a
+	// click hits. Lip Gloss still measures internally while it paints, and that is
+	// not reachable from here, so a pathological grapheme can be padded a cell
+	// differently inside a styled block.
+	Measure widget.Measurer
 }
 
 // View is a loaded, checked view ready to render.
@@ -81,6 +90,7 @@ func Load(fsys fs.FS, entry string, opts Options) (*View, error) {
 		FS:          fsys,
 		Dark:        opts.Dark,
 		Interaction: view.ui,
+		Measure:     opts.Measure,
 	})
 	return view, nil
 }

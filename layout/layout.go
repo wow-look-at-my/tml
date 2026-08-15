@@ -97,6 +97,8 @@ type Options struct {
 	// Interaction carries focus and pointer state across frames. A nil one means
 	// nothing is focusable, which is what a static render wants.
 	Interaction Interaction
+	// Measure is how wide a string is, in cells. Nil means lipgloss.Width.
+	Measure widget.Measurer
 }
 
 // Engine lays out expanded trees against a stylesheet.
@@ -208,10 +210,11 @@ func (p *pass) build(node *sema.Node) (*Box, error) {
 		box.Native = native
 	} else if hasFactory {
 		native, err := factory.Build(widget.Context{
-			Attrs: widget.NewAttrs(node.Name, node.Attrs, node.Order),
-			FS:    e.opts.FS,
-			Dir:   path.Dir(node.Pos.File),
-			Dark:  e.opts.Dark,
+			Attrs:   widget.NewAttrs(node.Name, node.Attrs, node.Order),
+			FS:      e.opts.FS,
+			Dir:     path.Dir(node.Pos.File),
+			Dark:    e.opts.Dark,
+			Measure: e.opts.Measure,
 		})
 		if err != nil {
 			return nil, &syntax.Error{Pos: node.Pos, Message: err.Error()}

@@ -26,10 +26,11 @@ type list struct {
 	cursor   rune
 	disabled bool
 	state    widget.State
+	measure  widget.Measurer
 }
 
 func newList(ctx widget.Context) (widget.Native, error) {
-	l := &list{items: ctx.Attrs.List("items")}
+	l := &list{items: ctx.Attrs.List("items"), measure: ctx.Measure}
 	var err error
 	if l.selected, err = ctx.Attrs.Int("selected", -1); err != nil {
 		return nil, err
@@ -54,7 +55,7 @@ const gutter = 2
 func (l *list) Measure(maxW, _ int) (int, int) {
 	width := 0
 	for _, item := range l.items {
-		width = max(width, lipgloss.Width(item)+gutter)
+		width = max(width, l.measure.Width(item)+gutter)
 	}
 	if maxW > 0 {
 		width = min(width, maxW)
@@ -78,7 +79,7 @@ func (l *list) Render(w, _ int) string {
 		// take two lines, push every row below it down, and stop the list's own
 		// geometry from matching what is on the screen.
 		row := ansi.Truncate(mark+item, max(0, w), "…")
-		if gap := w - lipgloss.Width(row); gap > 0 {
+		if gap := w - l.measure.Width(row); gap > 0 {
 			row += strings.Repeat(" ", gap)
 		}
 		rows = append(rows, style.Render(row))

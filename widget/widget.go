@@ -125,6 +125,27 @@ type Context struct {
 	Dir string
 	// Dark reports whether the view is rendering against a dark theme.
 	Dark bool
+	// Measure is how wide a string is, in cells. A host that negotiated a width
+	// method with its terminal supplies its own, so that geometry here agrees
+	// with geometry there; a nil one means lipgloss.Width.
+	Measure Measurer
+}
+
+// Measurer reports the width of a string in display cells.
+//
+// Which method is right depends on what the terminal agreed to, and only the
+// host had that conversation. lipgloss.Width answers with the grapheme method
+// unconditionally, which is one answer among several -- the disagreement is real
+// and it is a few cells on emoji, which is enough to put a click on the wrong
+// element.
+type Measurer func(string) int
+
+// Width measures s, falling back to lipgloss when the host had no opinion.
+func (m Measurer) Width(s string) int {
+	if m == nil {
+		return lipgloss.Width(s)
+	}
+	return m(s)
 }
 
 // Slots are a composer's children, already drawn, grouped by the slot they were
@@ -314,12 +335,19 @@ type Sizer interface {
 // without one the width TML computes would be set on a copy and thrown away.
 func Bubble(v Viewer) Native { return bubble{v: v} }
 
-type bubble struct{ v Viewer }
+// BubbleMeasured is Bubble with the host's own width method, for a host that
+// negotiated one with its terminal.
+func BubbleMeasured(v Viewer, m Measurer) Native { return bubble{v: v, m: m} }
+
+type bubble struct {
+	v Viewer
+	m Measurer
+}
 
 func (b bubble) Measure(maxW, _ int) (int, int) {
 	b.resize(maxW)
 	out := b.v.View()
-	return lipgloss.Width(out), lipgloss.Height(out)
+	return b.m.Width(out), lipgloss.Height(out)
 }
 
 func (b bubble) Render(w, _ int) string {

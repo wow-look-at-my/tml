@@ -170,3 +170,41 @@ func TestLoadReportsDiagnosticsWithPositions(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "cannot read")
 }
+
+// measuredFS is one Text and one Badge, so the assertion covers both the
+// language's own measurement and a widget's.
+func measuredFS() fstest.MapFS {
+	const header = "<?xml version=\"1.1\" encoding=\"UTF-8\"?>\n"
+	return fstest.MapFS{
+		"app.tml": {Data: []byte(header + `<Component xmlns="urn:tml:v1" name="App">
+	<Template>
+		<Stack>
+			<Text>abcd</Text>
+			<Badge label="abcd"/>
+		</Stack>
+	</Template>
+</Component>`)},
+	}
+}
+
+// Which width method is right depends on what the terminal agreed to, and only
+// the host had that conversation. A view measured the host's way puts its boxes
+// where the host would put them -- which is what decides where a click lands.
+func TestOptionsMeasureGovernsGeometry(t *testing.T) {
+	layoutWith := func(m widget.Measurer) (text, badge int) {
+		view, err := tml.Load(measuredFS(), "app.tml", tml.Options{Measure: m})
+		require.NoError(t, err)
+		box, err := view.Layout(nil, 40, 6)
+		require.NoError(t, err)
+		stack := box.Children[0]
+		return stack.Children[0].Rect.W, stack.Children[1].Rect.W
+	}
+
+	text, badge := layoutWith(nil)
+	assert.Equal(t, 4, text, "lipgloss is the default and counts four cells")
+	assert.Equal(t, 6, badge, "the badge pads its label with a space either side")
+
+	wideText, wideBadge := layoutWith(func(s string) int { return len([]rune(s)) * 2 })
+	assert.Equal(t, 8, wideText, "the host's measurer reaches the language's own text")
+	assert.Equal(t, 12, wideBadge, "and reaches a widget, through its Context")
+}

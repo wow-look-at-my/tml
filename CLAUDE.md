@@ -3,8 +3,12 @@
 XML-based declarative language for defining reusable terminal components: typed properties, slots, layout panels and
 themes. XAML-flavoured. Compiles to a laid-out tree rendered with Lip Gloss and dropped into a Bubble Tea `View()`.
 
-TML solves layout constraints and produces rects; Lip Gloss owns measurement, styling and compositing. TML emits no ANSI
-and does no text wrapping.
+TML solves layout constraints and produces rects; Lip Gloss owns styling and compositing. TML emits no ANSI and does no
+text wrapping.
+
+Width is `Options.Measure`, defaulting to `lipgloss.Width`. A host that negotiated a width method with its terminal
+supplies its own so this view's geometry agrees with the rest of its screen; it governs layout, and Lip Gloss still
+measures internally while it paints.
 
 ## Build & Test
 

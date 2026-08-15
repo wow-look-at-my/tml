@@ -40,6 +40,7 @@ type rule struct {
 	char     rune
 	title    string
 	color    string
+	measure  widget.Measurer
 }
 
 func newRule(ctx widget.Context) (widget.Native, error) {
@@ -47,7 +48,11 @@ func newRule(ctx widget.Context) (widget.Native, error) {
 	if err != nil {
 		return nil, err
 	}
-	r := &rule{vertical: orientation == "vertical", title: ctx.Attrs.String("title", "")}
+	r := &rule{
+		vertical: orientation == "vertical",
+		title:    ctx.Attrs.String("title", ""),
+		measure:  ctx.Measure,
+	}
 	deflt := '─'
 	if r.vertical {
 		deflt = '│'
@@ -63,7 +68,7 @@ func (r *rule) Measure(maxW, maxH int) (int, int) {
 	if r.vertical {
 		return 1, max(1, maxH)
 	}
-	return max(lipgloss.Width(r.title), maxW), 1
+	return max(r.measure.Width(r.title), maxW), 1
 }
 
 func (r *rule) Render(w, h int) string {
@@ -81,8 +86,8 @@ func (r *rule) Render(w, h int) string {
 	// The title sits one cell in from the left with a space either side, which
 	// is what keeps it from touching the line it interrupts.
 	label := " " + r.title + " "
-	lead := min(1, max(0, w-lipgloss.Width(label)))
-	trail := max(0, w-lead-lipgloss.Width(label))
+	lead := min(1, max(0, w-r.measure.Width(label)))
+	trail := max(0, w-lead-r.measure.Width(label))
 	return style.Render(repeat(r.char, lead)) + label + style.Render(repeat(r.char, trail))
 }
 
@@ -96,10 +101,11 @@ type progressBar struct {
 	filled, empty rune
 	color, track  string
 	percent       bool
+	measure       widget.Measurer
 }
 
 func newProgressBar(ctx widget.Context) (widget.Native, error) {
-	bar := &progressBar{}
+	bar := &progressBar{measure: ctx.Measure}
 	var err error
 	if bar.value, err = ctx.Attrs.Float("value", 0); err != nil {
 		return nil, err
@@ -143,14 +149,14 @@ func (b *progressBar) Measure(maxW, _ int) (int, int) {
 	// enough room for the label when there is one.
 	width := maxW
 	if width <= 0 {
-		width = 20 + lipgloss.Width(b.label())
+		width = 20 + b.measure.Width(b.label())
 	}
 	return width, 1
 }
 
 func (b *progressBar) Render(w, _ int) string {
 	label := b.label()
-	track := max(0, w-lipgloss.Width(label))
+	track := max(0, w-b.measure.Width(label))
 	full := int(float64(track)*b.ratio() + 0.5)
 	return paint(b.color).Render(repeat(b.filled, full)) +
 		paint(b.track).Render(repeat(b.empty, track-full)) + label
@@ -176,9 +182,10 @@ var spinnerKinds = []string{"arrow", "bar", "circle", "dot", "dots", "line"}
 // spinner shows one frame of an animation. Which frame is the host's business:
 // TML has no clock, and a widget that animated itself would have to own one.
 type spinner struct {
-	frames []string
-	frame  int
-	color  string
+	frames  []string
+	frame   int
+	color   string
+	measure widget.Measurer
 }
 
 func newSpinner(ctx widget.Context) (widget.Native, error) {
@@ -194,11 +201,16 @@ func newSpinner(ctx widget.Context) (widget.Native, error) {
 	// A frame counter is normally a tick count that only goes up, so it wraps
 	// here rather than making every caller do the modulo.
 	frame = ((frame % len(frames)) + len(frames)) % len(frames)
-	return &spinner{frames: frames, frame: frame, color: ctx.Attrs.String("color", "")}, nil
+	return &spinner{
+		frames:  frames,
+		frame:   frame,
+		color:   ctx.Attrs.String("color", ""),
+		measure: ctx.Measure,
+	}, nil
 }
 
 func (s *spinner) Measure(_, _ int) (int, int) {
-	return lipgloss.Width(s.frames[s.frame]), 1
+	return s.measure.Width(s.frames[s.frame]), 1
 }
 
 func (s *spinner) Render(_, _ int) string {
@@ -285,12 +297,15 @@ var badgeAttrs = []string{"label"}
 // badge is a short label with breathing room, for a status chip or a count. Its
 // colours come from the element's own style attributes, so a badge is themed the
 // same way anything else is.
-type badge struct{ label string }
-
-func newBadge(ctx widget.Context) (widget.Native, error) {
-	return &badge{label: " " + ctx.Attrs.String("label", "") + " "}, nil
+type badge struct {
+	label   string
+	measure widget.Measurer
 }
 
-func (b *badge) Measure(_, _ int) (int, int) { return lipgloss.Width(b.label), 1 }
+func newBadge(ctx widget.Context) (widget.Native, error) {
+	return &badge{label: " " + ctx.Attrs.String("label", "") + " ", measure: ctx.Measure}, nil
+}
+
+func (b *badge) Measure(_, _ int) (int, int) { return b.measure.Width(b.label), 1 }
 
 func (b *badge) Render(_, _ int) string { return b.label }
