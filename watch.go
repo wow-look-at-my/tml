@@ -30,10 +30,14 @@ const DefaultWatchInterval = 250 * time.Millisecond
 // that silently keeps the last good version hides the very typo it exists to
 // surface.
 func Watch(ctx context.Context, dir, entry string, opts Options, onChange func(*View, error)) {
-	watchInterval(ctx, dir, entry, opts, DefaultWatchInterval, onChange)
+	WatchInterval(ctx, dir, entry, opts, DefaultWatchInterval, onChange)
 }
 
-func watchInterval(ctx context.Context, dir, entry string, opts Options, interval time.Duration, onChange func(*View, error)) {
+// WatchInterval is Watch at a rate the caller picks. How fast a save should show
+// up is the caller's judgement, not ours: a tree being iterated on wants the
+// default, and a program that keeps the watcher armed all session wants seconds
+// rather than four directory walks of it.
+func WatchInterval(ctx context.Context, dir, entry string, opts Options, interval time.Duration, onChange func(*View, error)) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
