@@ -34,9 +34,8 @@ type Options struct {
 	// bindings. A view that never uses the library does not need it, and a host
 	// replacing the lot should not have to shadow every name to prove it.
 	Bare bool
-	// Measure is how wide a string is, in cells, for a host that negotiated a
-	// width method with its terminal and needs this view's geometry to agree with
-	// the rest of its screen. Nil means lipgloss.Width.
+	// Measure is how wide a string is, in cells; nil means lipgloss.Width. See
+	// widget.Measurer for why a host would have its own answer.
 	//
 	// It governs layout: what is measured, where a box lands, and therefore what a
 	// click hits. Lip Gloss still measures internally while it paints, and that is

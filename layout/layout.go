@@ -97,7 +97,8 @@ type Options struct {
 	// Interaction carries focus and pointer state across frames. A nil one means
 	// nothing is focusable, which is what a static render wants.
 	Interaction Interaction
-	// Measure is how wide a string is, in cells. Nil means lipgloss.Width.
+	// Measure is how wide a string is, in cells; nil means lipgloss.Width. See
+	// widget.Measurer.
 	Measure widget.Measurer
 }
 
