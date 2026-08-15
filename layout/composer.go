@@ -107,18 +107,37 @@ func (e *Engine) arrangeComposer(box *Box, composer widget.Composer) {
 	// the same place or a click would land on the wrong line.
 	var scroll Scroll
 	if want.FreeH {
-		scroll.MaxY = max(0, childrenHeight(box)-height)
+		total := childrenHeight(box)
+		if want.ContentH > 0 {
+			total = want.ContentH
+		}
+		scroll.MaxY = max(0, total-height)
 		want.OffsetY = min(want.OffsetY, scroll.MaxY)
 	}
 	if want.FreeW {
-		scroll.MaxX = max(0, childrenWidth(box)-width)
+		total := childrenWidth(box)
+		if want.ContentW > 0 {
+			total = want.ContentW
+		}
+		scroll.MaxX = max(0, total-width)
 		want.OffsetX = min(want.OffsetX, scroll.MaxX)
 	}
 	want.OffsetX, want.OffsetY = max(0, want.OffsetX), max(0, want.OffsetY)
 	scroll.X, scroll.Y = want.OffsetX, want.OffsetY
 	box.scroll = scroll
 
-	y := -want.OffsetY
+	// Children that are a window start at the top of it: the host sliced at the
+	// offset, so shifting by it again would scroll the window out of its own
+	// region and put a click on the wrong row.
+	shiftX, shiftY := want.OffsetX, want.OffsetY
+	if want.ContentH > 0 {
+		shiftY = 0
+	}
+	if want.ContentW > 0 {
+		shiftX = 0
+	}
+
+	y := -shiftY
 	for _, child := range box.Children {
 		w, h := child.desired.W, child.desired.H
 		if child.width.Kind == sema.LengthStar {
@@ -136,7 +155,7 @@ func (e *Engine) arrangeComposer(box *Box, composer widget.Composer) {
 		if !want.FreeH {
 			h = min(h, height)
 		}
-		e.arrange(child, Rect{X: -want.OffsetX, Y: y, W: w, H: h})
+		e.arrange(child, Rect{X: -shiftX, Y: y, W: w, H: h})
 		y += h
 	}
 }

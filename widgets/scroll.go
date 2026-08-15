@@ -9,7 +9,7 @@ import (
 	"github.com/wow-look-at-my/tml/widget"
 )
 
-var scrollboxAttrs = []string{"offset", "offsetX", "scrollbar"}
+var scrollboxAttrs = []string{"offset", "offsetX", "scrollbar", "contentHeight"}
 
 // scrollbox shows part of content that is taller than the space it has, with a
 // scrollbar beside it when there is more than fits.
@@ -17,8 +17,15 @@ var scrollboxAttrs = []string{"offset", "offsetX", "scrollbar"}
 // The offset is a property, not state: the host owns how far it has scrolled, the
 // same way it owns everything else a view is rendered from. Wheel events come
 // back through the UI as Scrolled events for the host to act on.
+//
+// contentHeight says the children are a window rather than the whole content:
+// the rows handed over start at offset and there are contentHeight of them in
+// all. A host whose content is longer than it can afford to lay out every frame
+// needs this, and without it the scrollbar and the maximum offset would describe
+// the window instead. See docs/widgets.md.
 type scrollbox struct {
 	offsetX, offsetY int
+	contentHeight    int
 	bar              string
 }
 
@@ -34,8 +41,12 @@ func newScrollbox(ctx widget.Context) (widget.Native, error) {
 	if box.offsetX, err = ctx.Attrs.Int("offsetX", 0); err != nil {
 		return nil, err
 	}
+	if box.contentHeight, err = ctx.Attrs.Int("contentHeight", 0); err != nil {
+		return nil, err
+	}
 	box.offsetX = max(0, box.offsetX)
 	box.offsetY = max(0, box.offsetY)
+	box.contentHeight = max(0, box.contentHeight)
 	return box, nil
 }
 
@@ -47,7 +58,13 @@ func newScrollbox(ctx widget.Context) (widget.Native, error) {
 // The offset goes back to layout as well, so a control scrolled halfway off the
 // top is clicked where it is drawn.
 func (s *scrollbox) Arrange() widget.Layout {
-	return widget.Layout{FreeH: true, FillW: true, OffsetX: s.offsetX, OffsetY: s.offsetY}
+	return widget.Layout{
+		FreeH:    true,
+		FillW:    true,
+		OffsetX:  s.offsetX,
+		OffsetY:  s.offsetY,
+		ContentH: s.contentHeight,
+	}
 }
 
 // Inset reserves the scrollbar column. Auto cannot know yet whether there is
@@ -76,9 +93,19 @@ func (s *scrollbox) Compose(slots widget.Slots, w, h int) string {
 	// screenful instead of running off into blank space -- and a host that wants
 	// the end of a growing transcript can just ask for a big number. Layout
 	// clamps its copy the same way, or a click would land a line off.
-	offset := clamp(s.offsetY, 0, max(0, len(all)-h))
+	total := len(all)
+	offset := clamp(s.offsetY, 0, max(0, total-h))
+	from := offset
+	if s.contentHeight > 0 {
+		// The children ARE the window: the host cut it at the offset, so cutting
+		// again here would show the rows after the ones it meant. The bar still
+		// describes the whole content, which is the point of being told its size.
+		total = s.contentHeight
+		offset = clamp(s.offsetY, 0, max(0, total-h))
+		from = 0
+	}
 
-	lines := window(all, offset, h)
+	lines := window(all, from, h)
 	for i, line := range lines {
 		lines[i] = columns(line, s.offsetX, viewW)
 	}
@@ -86,7 +113,7 @@ func (s *scrollbox) Compose(slots widget.Slots, w, h int) string {
 		return strings.Join(lines, "\n")
 	}
 
-	bar := s.scrollbar(offset, len(all), h)
+	bar := s.scrollbar(offset, total, h)
 	for i := range lines {
 		if i < len(bar) {
 			lines[i] += bar[i]
