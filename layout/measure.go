@@ -60,9 +60,9 @@ func (e *Engine) measureContent(box *Box, inner Constraints) Size {
 	var content Size
 	switch box.Name {
 	case "#text":
-		content = Size{W: lipgloss.Width(box.Text), H: lipgloss.Height(box.Text)}
+		content = Size{W: e.opts.Measure.Width(box.Text), H: lipgloss.Height(box.Text)}
 	case "Text":
-		content = measureText(box, inner)
+		content = e.measureText(box, inner)
 	case "Spacer":
 		content = Size{}
 	case "Stack":
@@ -79,11 +79,11 @@ func (e *Engine) measureContent(box *Box, inner Constraints) Size {
 
 // measureText reports the height the text needs once wrapped, because lipgloss
 // wraps rather than truncates and the parent has to budget for the extra lines.
-func measureText(box *Box, inner Constraints) Size {
+func (e *Engine) measureText(box *Box, inner Constraints) Size {
 	if box.Text == "" {
 		return Size{}
 	}
-	natural := lipgloss.Width(box.Text)
+	natural := e.opts.Measure.Width(box.Text)
 	if inner.MaxW <= 0 || natural <= inner.MaxW {
 		return Size{W: natural, H: lipgloss.Height(box.Text)}
 	}

@@ -35,6 +35,7 @@ type button struct {
 	disabled bool
 	accent   string
 	state    widget.State
+	measure  widget.Measurer
 }
 
 func newButton(ctx widget.Context) (widget.Native, error) {
@@ -46,7 +47,12 @@ func newButton(ctx widget.Context) (widget.Native, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &button{label: ctx.Attrs.String("label", ""), disabled: disabled, accent: variants[variant]}, nil
+	return &button{
+		label:    ctx.Attrs.String("label", ""),
+		disabled: disabled,
+		accent:   variants[variant],
+		measure:  ctx.Measure,
+	}, nil
 }
 
 // AcceptsFocus is false while disabled, which is what keeps tab from stopping on
@@ -62,7 +68,7 @@ func (b *button) Slots() []string { return buttonSlots }
 
 func (b *button) Measure(maxW, _ int) (int, int) {
 	insetW, insetH := b.Inset()
-	width := lipgloss.Width(b.label) + insetW
+	width := b.measure.Width(b.label) + insetW
 	if maxW > 0 {
 		width = min(width, maxW)
 	}

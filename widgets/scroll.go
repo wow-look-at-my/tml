@@ -27,6 +27,7 @@ type scrollbox struct {
 	offsetX, offsetY int
 	contentHeight    int
 	bar              string
+	measure          widget.Measurer
 }
 
 func newScrollbox(ctx widget.Context) (widget.Native, error) {
@@ -34,7 +35,7 @@ func newScrollbox(ctx widget.Context) (widget.Native, error) {
 	if err != nil {
 		return nil, err
 	}
-	box := &scrollbox{bar: bar}
+	box := &scrollbox{bar: bar, measure: ctx.Measure}
 	if box.offsetY, err = ctx.Attrs.Int("offset", 0); err != nil {
 		return nil, err
 	}
@@ -107,7 +108,7 @@ func (s *scrollbox) Compose(slots widget.Slots, w, h int) string {
 
 	lines := window(all, from, h)
 	for i, line := range lines {
-		lines[i] = columns(line, s.offsetX, viewW)
+		lines[i] = columns(line, s.offsetX, viewW, s.measure)
 	}
 	if gutter == 0 {
 		return strings.Join(lines, "\n")
@@ -174,12 +175,12 @@ func window(lines []string, offset, height int) []string {
 
 // columns takes width cells starting at offset, measured in display cells so an
 // escape sequence is carried along rather than counted.
-func columns(line string, offset, width int) string {
+func columns(line string, offset, width int, measure widget.Measurer) string {
 	if width <= 0 {
 		return ""
 	}
 	cut := ansi.Cut(line, offset, offset+width)
-	if gap := width - lipgloss.Width(cut); gap > 0 {
+	if gap := width - measure.Width(cut); gap > 0 {
 		cut += strings.Repeat(" ", gap)
 	}
 	return cut

@@ -41,7 +41,8 @@ type frame struct {
 	pad        int
 	// dialog marks the popup spelling, which sits in the middle of a canvas
 	// rather than in its corner.
-	dialog bool
+	dialog  bool
+	measure widget.Measurer
 }
 
 func newFrame(dialog bool) builder {
@@ -74,6 +75,7 @@ func newFrame(dialog bool) builder {
 			color:      ctx.Attrs.String("color", ""),
 			pad:        pad,
 			dialog:     dialog,
+			measure:    ctx.Measure,
 		}, nil
 	}
 }
@@ -95,7 +97,7 @@ func (f *frame) DefaultAnchor() string {
 func (f *frame) Measure(_, _ int) (int, int) {
 	insetW, insetH := f.Inset()
 	if f.title != "" {
-		insetW = max(insetW, lipgloss.Width(f.title)+4)
+		insetW = max(insetW, f.measure.Width(f.title)+4)
 	}
 	return insetW, insetH
 }
@@ -116,14 +118,14 @@ func (f *frame) Compose(slots widget.Slots, w, h int) string {
 	if f.color != "" {
 		style = style.BorderForeground(lipgloss.Color(f.color))
 	}
-	return title(style.Render(body), f.title, f.titleAlign)
+	return title(style.Render(body), f.title, f.titleAlign, f.measure)
 }
 
 // title writes a label into the top edge of an already-bordered block.
 //
 // It runs after the border is drawn because that is the only point at which the
 // edge exists as characters.
-func title(rendered, label, align string) string {
+func title(rendered, label, align string, measure widget.Measurer) string {
 	if label == "" {
 		return rendered
 	}
@@ -132,22 +134,22 @@ func title(rendered, label, align string) string {
 		return rendered
 	}
 	top := lines[0]
-	width := lipgloss.Width(top)
+	width := measure.Width(top)
 
 	text := " " + label + " "
 	// The corners are not edge, so the label can only go between them.
 	room := width - 2
-	if room <= 0 || lipgloss.Width(text) > room {
+	if room <= 0 || measure.Width(text) > room {
 		return rendered
 	}
 
 	offset := 1
 	switch align {
 	case "center":
-		offset = 1 + (room-lipgloss.Width(text))/2
+		offset = 1 + (room-measure.Width(text))/2
 	case "right":
-		offset = 1 + room - lipgloss.Width(text)
+		offset = 1 + room - measure.Width(text)
 	}
-	lines[0] = ansi.Cut(top, 0, offset) + text + ansi.Cut(top, offset+lipgloss.Width(text), width)
+	lines[0] = ansi.Cut(top, 0, offset) + text + ansi.Cut(top, offset+measure.Width(text), width)
 	return strings.Join(lines, "\n")
 }
