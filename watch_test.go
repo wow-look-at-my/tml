@@ -134,3 +134,27 @@ func TestWatchStopsWhenTheContextIsCancelled(t *testing.T) {
 		t.Fatal("watch did not stop on cancellation")
 	}
 }
+
+// How fast a save should show up is the caller's judgement. A program that keeps
+// the watcher armed for a whole session wants seconds, not four directory walks
+// of every one, and the only way to prove the interval is honoured is to pick one
+// nothing could fire inside of.
+func TestWatchIntervalIsTheCallersToChoose(t *testing.T) {
+	dir := t.TempDir()
+	writeApp(t, dir, `<Text>before</Text>`)
+
+	ctx, cancel := context.WithCancel(t.Context())
+	defer cancel()
+
+	got := newReloads()
+	go tml.WatchInterval(ctx, dir, "app.tml", tml.Options{}, time.Hour, got.onChange)
+
+	writeApp(t, dir, `<Text>after</Text>`)
+	select {
+	case <-got.views:
+		t.Fatal("reloaded inside an hour-long interval")
+	case <-got.errs:
+		t.Fatal("reported inside an hour-long interval")
+	case <-time.After(750 * time.Millisecond):
+	}
+}

@@ -87,7 +87,11 @@ func measureText(box *Box, inner Constraints) Size {
 	if inner.MaxW <= 0 || natural <= inner.MaxW {
 		return Size{W: natural, H: lipgloss.Height(box.Text)}
 	}
-	wrapped := lipgloss.NewStyle().Width(inner.MaxW).Render(box.Text)
+	// lipgloss.Wrap is the call Style.Render makes to wrap, so this counts the
+	// lines the paint will produce. Rendering a whole styled block to throw it
+	// away costs padding, alignment and border work that measuring never needs,
+	// and every wrapping leaf pays it on every frame.
+	wrapped := lipgloss.Wrap(box.Text, inner.MaxW, "")
 	return Size{W: inner.MaxW, H: lipgloss.Height(wrapped)}
 }
 

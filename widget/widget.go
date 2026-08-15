@@ -88,6 +88,16 @@ type Layout struct {
 	// know because a control scrolled halfway off the top is clicked where it is
 	// drawn, not where it would otherwise have been.
 	OffsetX, OffsetY int
+	// ContentW and ContentH are the size of the whole content when the children
+	// are only a window over it, and zero when they are all of it.
+	//
+	// A host with more rows than a frame can afford to lay out hands over the
+	// visible ones and says how many there are in total. Without that the extent
+	// is whatever arrived, so the scrollbar would measure the window rather than
+	// the content and the maximum offset reported back would be nearly zero. The
+	// children are placed from the top in this mode, because the host sliced at
+	// the offset already; Offset stays the position to report.
+	ContentW, ContentH int
 }
 
 // Arranger is the optional half of a composer whose children need measuring or

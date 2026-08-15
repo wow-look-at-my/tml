@@ -89,10 +89,24 @@ claim goes to the stylesheet, so `<Badge label="new" bg="#f00"/>` means both thi
 | --- | --- | --- |
 | `Border` | `kind`, `title`, `titleAlign`, `color`, `pad` | A frame around its children. `kind` is a lipgloss border name; the title is spliced into the top edge. |
 | `Popup` | as `Border` | A dialog. Defaults to a rounded border and centres itself on a `Canvas`. |
-| `Scrollbox` | `offset`, `offsetX`, `scrollbar` | A viewport onto taller content. The host owns the offset; the wheel reports `Scrolled` and the host moves it. `scrollbar` is `auto`, `always` or `never`. |
+| `Scrollbox` | `offset`, `offsetX`, `scrollbar`, `contentHeight` | A viewport onto taller content. The host owns the offset; the wheel reports `Scrolled` and the host moves it. `scrollbar` is `auto`, `always` or `never`. `contentHeight` says the children are a window over content that long -- see below. |
 
 `Scrollbox` is where the pointer-only rule earns itself: it never takes focus, and clipping is real -- a control
 scrolled out of view is not in the frame's geometry, so it cannot be clicked where it used to be.
+
+**`contentHeight` is for content too long to lay out.** Laying out a whole conversation to show fifty rows of it costs
+what the conversation costs, every frame: measured at 200x50, a transcript of 10 000 rows is 758 ms and one of 1 000 is
+80 ms, against a 16 ms frame. Hand over the rows on screen instead and say how many there are altogether:
+
+```xml
+<Scrollbox id="transcript" offset="{scroll}" contentHeight="{lines}">
+```
+
+The same measurement windowed is **7.2 ms and flat** -- 7.1 at 100 rows, 7.2 at 1 000, 7.5 at 10 000 -- because the cost
+is now the viewport rather than the content. In this mode the children are drawn from the top, since the host already cut
+at the offset; `offset` remains the position, and both the scrollbar and the maximum reported through `UI().Target`
+describe the whole content, which is the only reason to be told its size. Slicing is the host's: it owns the content, so
+only it can say which rows the offset selects.
 
 ### Controls
 

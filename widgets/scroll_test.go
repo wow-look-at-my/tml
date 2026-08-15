@@ -122,3 +122,47 @@ func TestEmptyScrollboxFillsItsSpace(t *testing.T) {
 }
 
 func split(s string) []string { return strings.Split(s, "\n") }
+
+// A host with more content than it can afford to lay out every frame hands over
+// the rows on screen and says how many there are altogether. The widget draws
+// what it was given rather than cutting into it again: the host already cut at
+// the offset, so a second cut would show the rows after the ones it meant.
+func TestScrollboxDrawsTheWindowItWasHanded(t *testing.T) {
+	box := composer(t, "Scrollbox", map[string]string{
+		"offset":        "500",
+		"contentHeight": "1000",
+		"scrollbar":     "never",
+	})
+
+	assert.Equal(t, "a\nb\nc", box.Compose(content(lines(3)...), 1, 3))
+}
+
+// The bar describes the whole content, which is the only reason to be told its
+// size: a thumb sized against the window would fill the track and say the
+// conversation was three lines long.
+func TestScrollboxBarMeasuresTheContentNotTheWindow(t *testing.T) {
+	windowed := composer(t, "Scrollbox", map[string]string{
+		"offset":        "0",
+		"contentHeight": "100",
+		"scrollbar":     "always",
+	})
+	whole := composer(t, "Scrollbox", map[string]string{"offset": "0", "scrollbar": "always"})
+
+	thumb := strings.Count(windowed.Compose(content(lines(4)...), 2, 4), "█")
+	assert.Equal(t, 1, thumb, "4 rows of 100 is the smallest thumb there is")
+	assert.Equal(t, 0, strings.Count(whole.Compose(content(lines(4)...), 2, 4), "█"),
+		"4 rows of 4 does not scroll, so there is no thumb at all")
+}
+
+// contentHeight is what the maximum offset is derived from, so a host can ask
+// for the end of the content rather than the end of the window.
+func TestScrollboxClampsToTheContentItWasToldAbout(t *testing.T) {
+	box := composer(t, "Scrollbox", map[string]string{
+		"offset":        "9999",
+		"contentHeight": "1000",
+		"scrollbar":     "always",
+	})
+
+	out := box.Compose(content(lines(3)...), 2, 3)
+	assert.Equal(t, "a│\nb│\nc█", out, "clamped to 997, which is the bottom of 1000 in a 3-row view")
+}
