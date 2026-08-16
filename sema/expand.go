@@ -78,6 +78,9 @@ const defaultSlot = ""
 
 // Expand instantiates the entry component with the given arguments.
 func (p *Program) Expand(args map[string]Value, opts ExpandOptions) (*Node, error) {
+	if p.root == nil {
+		return nil, fmt.Errorf("this file declares a theme, not a component; there is nothing to expand or render")
+	}
 	tokens, err := p.resolveTokens(opts)
 	if err != nil {
 		return nil, err
