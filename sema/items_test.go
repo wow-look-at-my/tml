@@ -57,12 +57,17 @@ func TestAnItemsControlDrawsOneTemplatePerItem(t *testing.T) {
 App
   Stack
     Stack
-      Text "user "
-      Text "do the thing"
+      Text
+        "user "
+      Text
+        "do the thing"
     Stack
-      Text "assistant opus"
-      Text "done"
-      Text "here is how"`), strings.TrimSpace(got))
+      Text
+        "assistant opus"
+      Text
+        "done"
+      Text
+        "here is how"`), strings.TrimSpace(got))
 }
 
 func TestTheItemsControlAttributesNeverReachTheWidget(t *testing.T) {
