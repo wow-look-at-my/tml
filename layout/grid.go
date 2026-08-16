@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/wow-look-at-my/go-containers/set"
+
 	"github.com/wow-look-at-my/tml/sema"
 	"github.com/wow-look-at-my/tml/syntax"
 )
@@ -24,9 +26,7 @@ import (
 // arrange cannot fail and need no error path.
 
 // attachedGrid are the placement properties a Grid reads off its children.
-var attachedGrid = map[string]bool{
-	"Grid.row": true, "Grid.column": true, "Grid.rowSpan": true, "Grid.columnSpan": true,
-}
+var attachedGrid = set.Of("Grid.row", "Grid.column", "Grid.rowSpan", "Grid.columnSpan")
 
 // placement is where a child sits on the grid. It defaults to the first cell,
 // spanning one track each way.
@@ -51,7 +51,7 @@ func readPlacement(box *Box, parent string) (placement, error) {
 			return p, &syntax.Error{Pos: box.Pos, Message: fmt.Sprintf(
 				"attached property %q only applies to a child of <%s>, but this is inside <%s>", name, owner, parent)}
 		}
-		if !attachedGrid[name] {
+		if !attachedGrid.Contains(name) {
 			return p, &syntax.Error{Pos: box.Pos, Message: fmt.Sprintf(
 				"unknown attached property %q; want Grid.row, Grid.column, Grid.rowSpan or Grid.columnSpan", name)}
 		}

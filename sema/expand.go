@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/wow-look-at-my/go-containers/set"
+
 	"github.com/wow-look-at-my/tml/syntax"
 )
 
@@ -284,14 +286,13 @@ func (p *Program) expandNative(node *tnode, scope *evalScope, file string, slots
 // children come out in the sequence they were written.
 func slotOrder(node *tnode, content map[string][]*tnode) []string {
 	order := make([]string, 0, len(content))
-	seen := map[string]bool{}
+	seen := set.New[string]()
 	for _, child := range node.children {
 		name := defaultSlot
 		if owner, slot, isProperty := strings.Cut(child.name, "."); isProperty && owner == node.name {
 			name = slot
 		}
-		if _, filled := content[name]; filled && !seen[name] {
-			seen[name] = true
+		if _, filled := content[name]; filled && seen.Add(name) {
 			order = append(order, name)
 		}
 	}
