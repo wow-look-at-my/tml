@@ -36,7 +36,7 @@ const transcript = `<Component xmlns="urn:tml:v1" name="App">
 	</DataTemplate>
 
 	<Template>
-		<Scrollbox itemsSource="{messages}" itemTemplate="Message"/>
+		<Stack itemsSource="{messages}" itemTemplate="Message"/>
 	</Template>
 </Component>`
 
@@ -55,7 +55,7 @@ func TestAnItemsControlDrawsOneTemplatePerItem(t *testing.T) {
 	// two pre-rendered strings.
 	assert.Equal(t, strings.TrimSpace(`
 App
-  Scrollbox
+  Stack
     Stack
       Text "user "
       Text "do the thing"
@@ -79,7 +79,7 @@ func TestAnEmptyListDrawsNothingRatherThanFailing(t *testing.T) {
 	got, err := expand(t, map[string]string{"app.tml": transcript},
 		map[string]Value{"messages": RecordListValue(nil)})
 	require.NoError(t, err)
-	assert.Equal(t, strings.TrimSpace("App\n  Scrollbox"), strings.TrimSpace(got))
+	assert.Equal(t, strings.TrimSpace("App\n  Stack"), strings.TrimSpace(got))
 }
 
 // TestAFieldNobodyDeclaredIsAnError is the failure XAML answers with a blank
