@@ -78,6 +78,20 @@ func TestParsePreservesDottedNames(t *testing.T) {
 	assert.Equal(t, "1", row)
 }
 
+// A file defines exactly one component; a nested <Component> is a second
+// definition and is refused with the file and both names.
+func TestParseRefusesANestedComponent(t *testing.T) {
+	_, err := parseSource(t, `<Component xmlns="urn:tml:v1" name="App">
+	<Component name="Row"><Template/></Component>
+	<Template/>
+</Component>`)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "test.tml")
+	assert.Contains(t, err.Error(), `"App"`)
+	assert.Contains(t, err.Error(), `"Row"`)
+	assert.Contains(t, err.Error(), "one component per file")
+}
+
 func TestParseTheme(t *testing.T) {
 	file := mustParse(t, `<Theme xmlns="urn:tml:v1" name="default">
 	<Token name="accent" light="#5f5fd7" dark="#e0af68"/>

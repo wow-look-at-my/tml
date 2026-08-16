@@ -1,0 +1,12 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<!--
+	A file defines exactly one component. Two definitions in one file —
+	the root and a nested <Component> — must be refused, not treated as a
+	file-private helper.
+-->
+<Component xmlns="urn:tml:v1" name="App">
+	<Component name="Row">
+		<Template/>
+	</Component>
+	<Template/>
+</Component>

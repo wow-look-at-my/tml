@@ -8,14 +8,18 @@ type File struct {
 	Theme     *Theme
 }
 
-// Component is a reusable element definition. Helpers are nested definitions,
-// visible only inside this file.
+// Component is a reusable element definition.
+//
+// DataTemplates are the file's <DataTemplate> declarations: the same shape as
+// a component, but instantiated per item by an items control instead of being
+// written as an element. They are the only nested definitions a file may hold
+// — a file defines exactly one <Component>.
 type Component struct {
-	Name       string
-	Imports    []*Import
-	Properties []*Property
-	Template   *Node
-	Helpers    []*Component
+	Name          string
+	Imports       []*Import
+	Properties    []*Property
+	Template      *Node
+	DataTemplates []*Component
 	// IsData marks a <DataTemplate>: a component instantiated once per item by
 	// an items control, with the item supplying its property values, rather than
 	// written as an element with attributes.

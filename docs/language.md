@@ -26,7 +26,8 @@ A file holds exactly one definition, rooted at `<Component>` or `<Theme>`.
 </Component>
 ```
 
-A `<Component>` nested inside another is a file-private helper: visible in that file, never importable.
+A file defines exactly one component, rooted at `<Component>` (or exactly one theme, rooted at `<Theme>`). A component
+that shares its file with a second one is refused: one file, one component. Reuse is `<Import>`, never nesting.
 
 ### Properties
 
@@ -47,7 +48,7 @@ declaration order.
 ### Imports
 
 `<Import src="./Badge.tml"/>` resolves relative to the importing file and brings that file's definition into scope under its
-own name. **Imports are not transitive**: a component sees its own definition, its file-private helpers, and only what it
+own name. **Imports are not transitive**: a component sees its own definition, its data templates, and only what it
 imported itself.
 
 An import cycle is harmless and terminates, because importing only makes a name visible. A component that instantiates
