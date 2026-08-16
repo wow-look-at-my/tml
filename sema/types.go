@@ -17,6 +17,10 @@ const (
 	KindLength
 	KindThickness
 	KindEnum
+	// KindRecord is a value with named fields. It is the only kind a host can
+	// build but a document cannot write as a literal: a record comes from the
+	// program, and the document reads its fields.
+	KindRecord
 )
 
 func (k Kind) String() string {
@@ -35,6 +39,8 @@ func (k Kind) String() string {
 		return "thickness"
 	case KindEnum:
 		return "enum"
+	case KindRecord:
+		return "record"
 	default:
 		return "invalid"
 	}
@@ -94,6 +100,12 @@ func ParseType(src string) (Type, error) {
 		t.Kind = KindLength
 	case "thickness":
 		t.Kind = KindThickness
+	case "record":
+		// A record has no literal spelling: `default="..."` cannot write one, and
+		// an attribute cannot either. It is the type of a value the PROGRAM
+		// supplies, which is what `record[]` on a property means -- the items an
+		// items control repeats a template over.
+		t.Kind = KindRecord
 	default:
 		return Type{}, fmt.Errorf("unknown type %q", src)
 	}

@@ -36,6 +36,9 @@ the proxy but declare a different module path and fail the build. Requires Go >=
 - Call sites fill named slots with XAML property-element syntax: `<Card.actions>…</Card.actions>`.
 - Expressions are `{name}`, `{name.path}`, `{theme.token}`, `{not name}`, interpolated in text and attribute values.
   Unknown names are a hard error at analysis time. No arithmetic, no calls.
+- `itemsSource`/`itemTemplate` on any element repeat a `<DataTemplate>` over a list the host supplies, so a repeated thing
+  is a widget rather than a line somebody else already drew. An item's fields are the template's property values, by name;
+  a field nobody declared is an error rather than a blank cell.
 - See docs/language.md for the full grammar and the built-in element reference.
 
 ## Layout

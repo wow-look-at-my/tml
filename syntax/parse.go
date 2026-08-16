@@ -83,7 +83,7 @@ func parseComponent(path string, el *validator.Element) (*Component, error) {
 	}
 	name, ok := attr(el, "name")
 	if !ok || name == "" {
-		return nil, errorf(pos, "<Component> requires a name attribute")
+		return nil, errorf(pos, "<%s> requires a name attribute", el.Local)
 	}
 
 	component := &Component{Name: name, Pos: pos}
@@ -107,7 +107,7 @@ func parseComponent(path string, el *validator.Element) (*Component, error) {
 			component.Properties = append(component.Properties, property)
 		case "Template":
 			if component.Template != nil {
-				return nil, errorf(childPos, "<Component> has more than one <Template>")
+				return nil, errorf(childPos, "<%s> has more than one <Template>", el.Local)
 			}
 			if err := checkAttrs(path, child); err != nil {
 				return nil, err
@@ -119,13 +119,26 @@ func parseComponent(path string, el *validator.Element) (*Component, error) {
 				return nil, err
 			}
 			component.Helpers = append(component.Helpers, helper)
+		case "DataTemplate":
+			// Same shape as a component -- properties and a template -- and a
+			// different way in. A component is written as an element and handed
+			// its values by whoever writes it; a data template is instantiated
+			// once per item by an items control, and the ITEM supplies them.
+			// That is the whole distinction, and it is why one message can be a
+			// widget rather than a line of text somebody rendered elsewhere.
+			data, err := parseComponent(path, child)
+			if err != nil {
+				return nil, err
+			}
+			data.IsData = true
+			component.Helpers = append(component.Helpers, data)
 		default:
 			return nil, errorf(childPos,
-				"unexpected <%s> in <Component>; expected Import, Property, Template or a nested Component", child.Local)
+				"unexpected <%s> in <Component>; expected Import, Property, Template, DataTemplate or a nested Component", child.Local)
 		}
 	}
 	if component.Template == nil {
-		return nil, errorf(pos, "<Component> %q has no <Template>", name)
+		return nil, errorf(pos, "<%s> %q has no <Template>", el.Local, name)
 	}
 	return component, nil
 }
