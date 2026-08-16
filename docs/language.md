@@ -115,6 +115,47 @@ in an `if` is an error rather than a silent "non-zero".
 
 `<For>` itself renders nothing; its children repeat. The loop variable and index are visible only inside it.
 
+## Items controls
+
+`<For>` repeats markup the document already wrote. An items control repeats a TEMPLATE over items the PROGRAM supplies, so
+what a row looks like is the document's business and what a row contains is the host's.
+
+Two attributes make any element an items control. `itemsSource` takes a list; `itemTemplate` names a `<DataTemplate>`.
+Neither reaches the rendered element: they say what it contains, not what it is.
+
+```xml
+<Component xmlns="urn:tml:v1" name="App">
+    <Property name="messages" type="record[]" default=""/>
+
+    <DataTemplate name="Message">
+        <Property name="role" type="string" required="true"/>
+        <Property name="body" type="string[]" default=""/>
+        <Template>
+            <Stack>
+                <MessageHeader role="{role}"/>
+                <For each="{body}" as="line"><Text>{line}</Text></For>
+            </Stack>
+        </Template>
+    </DataTemplate>
+
+    <Template>
+        <Scrollbox itemsSource="{messages}" itemTemplate="Message"/>
+    </Template>
+</Component>
+```
+
+A `<DataTemplate>` is written exactly like a `<Component>` and differs in one way: nobody writes it as an element, so its
+property values come from an item instead of from a call site. That is why an `itemTemplate` naming a `<Component>` is an
+error — a component whose values nothing supplies would draw its defaults, once per item, forever.
+
+- A `record` is a value with named fields. It has no literal spelling, because it comes from the program; the document
+  reads its fields. `record[]` is the type of a property an items control repeats over.
+- Each item's fields ARE the template's property values, matched by name. A field the template never declared is an error
+  naming both sides, and so is a required property no item supplied. A binding that silently renders nothing is the
+  failure this replaces: a column blank forever because one side called it `spend` and the other `cost`.
+- A plain string item supplies one property, `value`, so a list of strings needs no wrapping.
+- A template that declares `index` is handed its position. One that does not is not handed a property it never declared.
+
 ## Layout
 
 Every element takes `width` and `height`: `auto` (default), a cell count, or a star share.
