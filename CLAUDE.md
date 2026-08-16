@@ -30,7 +30,8 @@ the proxy but declare a different module path and fail the build. Requires Go >=
 
 ## Language
 
-- One definition per file, rooted at `<Component>` or `<Theme>`; nested `<Component>` elements are file-private helpers.
+- One component per file, rooted at `<Component>` (or one theme, rooted at `<Theme>`); a nested `<Component>` is an error —
+  sharing is `<Import>`, never nesting. DataTemplates may still be nested in their file's component.
 - Strict XML 1.1 — every file opens with the XML declaration. Inherited from xml-validator, see below.
 - `<Slot>` declares and marks the insertion point in one element; its children are fallback content.
 - Call sites fill named slots with XAML property-element syntax: `<Card.actions>…</Card.actions>`.

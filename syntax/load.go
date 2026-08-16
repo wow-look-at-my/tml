@@ -19,7 +19,7 @@ type Unit struct {
 }
 
 // Lookup resolves a component name as it is visible from the given file. The
-// name resolves against that file's own definition, its file-private helpers and
+// name resolves against that file's own definition, its data templates and
 // whatever it imports -- imports are not transitive, so a component sees only
 // what it imported itself.
 func (u *Unit) Lookup(fromFile, name string) (*Component, bool) {
@@ -95,8 +95,8 @@ func (u *Unit) loadFile(fsys fs.FS, filePath string, from Pos) (*File, error) {
 		if err := declare(scope, file.Component, file.Component.Pos); err != nil {
 			return nil, err
 		}
-		for _, helper := range file.Component.Helpers {
-			if err := declare(scope, helper, helper.Pos); err != nil {
+		for _, data := range file.Component.DataTemplates {
+			if err := declare(scope, data, data.Pos); err != nil {
 				return nil, err
 			}
 		}

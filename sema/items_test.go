@@ -9,17 +9,12 @@ import (
 )
 
 // transcript is the shape this whole mechanism exists for: a scrolling region
-// whose items are widgets, not lines somebody else already drew.
+// whose items are widgets, not lines somebody else already drew. One component
+// per file: MessageHeader lives in its own file and is imported; the Message
+// data template is nested, which a component's file may still hold.
 const transcript = `<Component xmlns="urn:tml:v1" name="App">
 	<Property name="messages" type="record[]" default=""/>
-
-	<Component name="MessageHeader">
-		<Property name="role" type="string"/>
-		<Property name="model" type="string" default=""/>
-		<Template>
-			<Text>{role} {model}</Text>
-		</Template>
-	</Component>
+	<Import src="./MessageHeader.tml"/>
 
 	<DataTemplate name="Message">
 		<Property name="role" type="string" required="true"/>
@@ -40,6 +35,19 @@ const transcript = `<Component xmlns="urn:tml:v1" name="App">
 	</Template>
 </Component>`
 
+const messageHeader = `<Component xmlns="urn:tml:v1" name="MessageHeader">
+	<Property name="role" type="string"/>
+	<Property name="model" type="string" default=""/>
+	<Template>
+		<Text>{role} {model}</Text>
+	</Template>
+</Component>`
+
+// transcriptFiles is the message fixture as files the loader actually sees.
+func transcriptFiles() map[string]string {
+	return map[string]string{"app.tml": transcript, "MessageHeader.tml": messageHeader}
+}
+
 func messages() Value {
 	return RecordListValue([]map[string]Value{
 		{"role": StringValue("user"), "model": StringValue(""), "body": ListValue([]string{"do the thing"})},
@@ -48,7 +56,7 @@ func messages() Value {
 }
 
 func TestAnItemsControlDrawsOneTemplatePerItem(t *testing.T) {
-	got, err := expand(t, map[string]string{"app.tml": transcript}, map[string]Value{"messages": messages()})
+	got, err := expand(t, transcriptFiles(), map[string]Value{"messages": messages()})
 	require.NoError(t, err)
 
 	// Two messages, each a Stack of a header and its body lines -- a tree, not
@@ -71,7 +79,7 @@ App
 }
 
 func TestTheItemsControlAttributesNeverReachTheWidget(t *testing.T) {
-	got, err := expand(t, map[string]string{"app.tml": transcript}, map[string]Value{"messages": messages()})
+	got, err := expand(t, transcriptFiles(), map[string]Value{"messages": messages()})
 	require.NoError(t, err)
 
 	// A widget handed `itemsSource` would be holding a list it has no idea what
@@ -81,7 +89,7 @@ func TestTheItemsControlAttributesNeverReachTheWidget(t *testing.T) {
 }
 
 func TestAnEmptyListDrawsNothingRatherThanFailing(t *testing.T) {
-	got, err := expand(t, map[string]string{"app.tml": transcript},
+	got, err := expand(t, transcriptFiles(),
 		map[string]Value{"messages": RecordListValue(nil)})
 	require.NoError(t, err)
 	assert.Equal(t, strings.TrimSpace("App\n  Stack"), strings.TrimSpace(got))
@@ -91,7 +99,7 @@ func TestAnEmptyListDrawsNothingRatherThanFailing(t *testing.T) {
 // cell. A message whose cost is called `spend` on one side and `cost` on the
 // other must not render an empty column forever.
 func TestAFieldNobodyDeclaredIsAnError(t *testing.T) {
-	_, err := expand(t, map[string]string{"app.tml": transcript}, map[string]Value{
+	_, err := expand(t, transcriptFiles(), map[string]Value{
 		"messages": RecordListValue([]map[string]Value{
 			{"role": StringValue("user"), "spend": StringValue("$1")},
 		}),
@@ -103,7 +111,7 @@ func TestAFieldNobodyDeclaredIsAnError(t *testing.T) {
 
 // TestAnItemMissingARequiredPropertyIsAnError: absent is not empty.
 func TestAnItemMissingARequiredPropertyIsAnError(t *testing.T) {
-	_, err := expand(t, map[string]string{"app.tml": transcript}, map[string]Value{
+	_, err := expand(t, transcriptFiles(), map[string]Value{
 		"messages": RecordListValue([]map[string]Value{{"model": StringValue("opus")}}),
 	})
 	require.Error(t, err)
@@ -111,16 +119,20 @@ func TestAnItemMissingARequiredPropertyIsAnError(t *testing.T) {
 }
 
 func TestAnItemTemplateMustBeADataTemplate(t *testing.T) {
+	// A component is one per file, so "Row" lives in its own file. Using a
+	// component's name as an itemTemplate is still the same error: an items
+	// control repeats a data template, and a component has no item fields.
 	_, err := expand(t, map[string]string{
 		"app.tml": `<Component xmlns="urn:tml:v1" name="App">
 	<Property name="rows" type="record[]" default=""/>
-	<Component name="Row">
-		<Property name="text" type="string" default=""/>
-		<Template><Text>{text}</Text></Template>
-	</Component>
+	<Import src="./Row.tml"/>
 	<Template>
 		<Stack itemsSource="{rows}" itemTemplate="Row"/>
 	</Template>
+</Component>`,
+		"Row.tml": `<Component xmlns="urn:tml:v1" name="Row">
+	<Property name="text" type="string" default=""/>
+	<Template><Text>{text}</Text></Template>
 </Component>`,
 	}, map[string]Value{"rows": RecordListValue([]map[string]Value{{"text": StringValue("x")}})})
 	require.Error(t, err)
