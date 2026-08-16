@@ -6,9 +6,9 @@ themes. XAML-flavoured. Compiles to a laid-out tree rendered with Lip Gloss and 
 TML solves layout constraints and produces rects; Lip Gloss owns styling and compositing. TML emits no ANSI and does no
 text wrapping.
 
-Width is `Options.Measure`, defaulting to `lipgloss.Width`. A host that negotiated a width method with its terminal
-supplies its own so this view's geometry agrees with the rest of its screen; it governs layout, and Lip Gloss still
-measures internally while it paints.
+Width is `Options.Measure`, defaulting to `lipgloss.Width`. A terminal draws a ZWJ emoji in 2 cells or 6 depending on
+whether it agreed to mode 2027, so a host that had that conversation supplies its own answer and this view's geometry
+agrees with the rest of its screen. It governs layout; Lip Gloss still measures internally while it paints.
 
 ## Build & Test
 
