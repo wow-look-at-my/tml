@@ -7,14 +7,30 @@
 //
 // see docs/inspector.md
 import { spawn, execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 
 const root = process.env.TML_ROOT ?? process.cwd();
-const agent = join(root, 'build/agent');
-const cli = join(root, 'build/tml-test');
+
+// go-toolchain names a local build build/agent and a cross-compiled one
+// build/agent_linux_amd64. CI produces the second, so both are looked for
+// rather than assuming which build ran.
+const goos = { linux: 'linux', darwin: 'darwin', win32: 'windows' }[process.platform] ?? process.platform;
+const goarch = { x64: 'amd64', arm64: 'arm64' }[process.arch] ?? process.arch;
+
+function binary(name) {
+	const tries = [join(root, 'build', name), join(root, 'build', `${name}_${goos}_${goarch}`)];
+	const found = tries.find(existsSync);
+	if (!found) {
+		throw new Error(`no ${name} binary: looked for ${tries.join(', ')}. Build them with go-toolchain first.`);
+	}
+	return found;
+}
+
+const agent = binary('agent');
+const cli = binary('tml-test');
 const work = mkdtempSync(join(tmpdir(), 'tml-inspect-'));
 const sock = join(work, 'agent.sock');
 
@@ -53,13 +69,21 @@ async function settled(read) {
 function startAgent() {
 	const p = spawn('script', ['-q', '-c', `stty rows 30 cols 100; exec ${agent} -inspect ${sock}`,
 		join(work, 'typescript')], { stdio: 'ignore', detached: true });
+	// A program that dies at startup must say so now. Waiting for it to paint
+	// would spend the whole timeout and then report the wrong thing.
+	p.on('exit', (code) => { p.died = `the program exited with ${code} before it painted`; });
 	kids.push(p);
 	return p;
 }
 
-async function waitFor(what, fn, ms = 15000) {
+// waitFor retries fn, because most of what this checks is a program catching
+// up. abort is the exception: it names a state no amount of waiting fixes, and
+// it is reported the round it happens rather than at the deadline.
+async function waitFor(what, fn, abort = () => null, ms = 15000) {
 	const until = Date.now() + ms;
 	for (;;) {
+		const stop = abort();
+		if (stop) throw new Error(`${what}: ${stop}`);
 		try {
 			const got = await fn();
 			if (got) return got;
@@ -79,8 +103,11 @@ function cleanup() {
 }
 
 try {
-	startAgent();
-	await waitFor('the program to paint', () => tml('ids').length > 0);
+	const program = startAgent();
+	await waitFor('the program to paint', () => {
+		if (program.died) throw new Error(program.died);
+		return tml('ids').length > 0;
+	});
 
 	// 1. One element by name, with the geometry and the text it drew.
 	const prompt = JSON.parse(tml('query', '--id', 'prompt'));
