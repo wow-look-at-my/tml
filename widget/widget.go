@@ -125,19 +125,20 @@ type Context struct {
 	Dir string
 	// Dark reports whether the view is rendering against a dark theme.
 	Dark bool
-	// Measure is how wide a string is, in cells. A host that negotiated a width
-	// method with its terminal supplies its own, so that geometry here agrees
-	// with geometry there; a nil one means lipgloss.Width.
+	// Measure is how wide a string is, in cells; nil means lipgloss.Width. A
+	// widget measures with this rather than with lipgloss.Width directly, or it
+	// sizes itself by one rule inside a layout solved by another.
 	Measure Measurer
 }
 
 // Measurer reports the width of a string in display cells.
 //
-// Which method is right depends on what the terminal agreed to, and only the
-// host had that conversation. lipgloss.Width answers with the grapheme method
-// unconditionally, which is one answer among several -- the disagreement is real
-// and it is a few cells on emoji, which is enough to put a click on the wrong
-// element.
+// A terminal draws a ZWJ sequence like a family emoji in 2 cells if it agreed to
+// mode 2027 and in 6 if it did not, so the width of one string depends on a
+// negotiation only the host took part in. lipgloss.Width always answers 2. A
+// host that got the other answer and cannot say so measures its own screen one
+// way and gets this view laid out the other, four columns apart on that string:
+// a row it sized to fit wraps anyway, and a click lands on the wrong element.
 type Measurer func(string) int
 
 // Width measures s, falling back to lipgloss when the host had no opinion.
