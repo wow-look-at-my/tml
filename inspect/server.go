@@ -38,6 +38,11 @@ type Server struct {
 	waiters []chan struct{}
 }
 
+// frameWait is how long op=frame parks before answering that nothing new was
+// painted. It is short on purpose: the caller asks again, so a stream stays
+// warm and a shutdown is never held up by a parked request.
+const frameWait = 2 * time.Second
+
 // NewServer returns a server reading from source. When source also implements
 // Controller, the driving operations are enabled.
 func NewServer(source Source) *Server {
@@ -274,7 +279,7 @@ func (s *Server) tree() Response {
 // frame reports the painted frame. With Since it waits for a newer one, so a
 // watcher follows the program instead of polling it.
 func (s *Server) frame(req Request) Response {
-	deadline := time.After(30 * time.Second)
+	deadline := time.After(frameWait)
 	for {
 		f, err := s.current()
 		if err != nil {
@@ -295,7 +300,7 @@ func (s *Server) frame(req Request) Response {
 		select {
 		case <-ch:
 		case <-deadline:
-			return Response{Error: fmt.Sprintf("no frame newer than %d within 30s", req.Since)}
+			return Response{Error: fmt.Sprintf("no frame newer than %d within %s", req.Since, frameWait)}
 		}
 	}
 }

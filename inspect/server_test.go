@@ -31,8 +31,11 @@ type fake struct {
 func (f *fake) Frame() (Frame, bool) { return f.frame, f.ok }
 
 // readOnly hides the Controller half, which is how a program that only reports
-// is represented.
-type readOnly struct{ *fake }
+// its frames is represented. It wraps rather than embeds, so none of fake's
+// driving methods are promoted.
+type readOnly struct{ src Source }
+
+func (r readOnly) Frame() (Frame, bool) { return r.src.Frame() }
 
 func (f *fake) Key(key string) error {
 	f.keys = append(f.keys, key)
@@ -199,7 +202,7 @@ func TestDrivingOperationsReachTheProgram(t *testing.T) {
 
 // A read-only program says so rather than accepting input and dropping it.
 func TestAReadOnlyProgramRefusesTheDrivingOperations(t *testing.T) {
-	s := NewServer(readOnly{newFake()})
+	s := NewServer(readOnly{src: newFake()})
 
 	for _, req := range []Request{
 		{Op: "key", Key: "enter"},

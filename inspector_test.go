@@ -14,12 +14,15 @@ import (
 
 // inspectorView is a small real view: two ids, one inside the other, rendered
 // through the same path a program uses.
-const inspectorView = `<Root>
-	<Stack id="app" width="20">
-		<Text id="title">hello</Text>
-		<Text id="body">world</Text>
-	</Stack>
-</Root>`
+const inspectorView = `<?xml version="1.1" encoding="UTF-8"?>
+<Component xmlns="urn:tml:v1" name="Inspected">
+	<Template>
+		<Stack id="app" orientation="vertical" width="20">
+			<Text id="title">hello</Text>
+			<Text id="body">world</Text>
+		</Stack>
+	</Template>
+</Component>`
 
 func loadInspectorView(t *testing.T) *tml.View {
 	t.Helper()
