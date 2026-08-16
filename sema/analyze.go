@@ -89,18 +89,24 @@ type Options struct {
 // something in scope, and no component can instantiate itself. What remains for
 // expansion is only what genuinely depends on the caller's arguments.
 func Analyze(unit *syntax.Unit, opts Options) (*Program, error) {
-	if unit.Root == nil || unit.Root.Component == nil {
-		return nil, fmt.Errorf("the entry file defines no component")
+	if unit.Root == nil {
+		return nil, fmt.Errorf("nothing was loaded")
 	}
 
 	program := &Program{
 		unit:       unit,
-		root:       unit.Root.Component,
-		rootFile:   unit.Root.Path,
 		natives:    make(map[string]bool),
 		slots:      opts.Slots,
 		components: make(map[string]*compiled),
 		tokens:     make(map[string]*syntax.Token),
+	}
+	// A theme has no properties and nothing to instantiate, so it is checked for
+	// its own sake -- duplicate tokens, an unknown or cyclic style extends -- and
+	// never expanded. Program.Expand reports the clear refusal; nothing here
+	// needs a root component to exist.
+	if unit.Root.Component != nil {
+		program.root = unit.Root.Component
+		program.rootFile = unit.Root.Path
 	}
 	for _, name := range Builtins {
 		program.natives[name] = true
