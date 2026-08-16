@@ -50,6 +50,9 @@ type View struct {
 	engine  *layout.Engine
 	dark    bool
 	ui      *UI
+	// frames is the last painted frame, kept only while an inspector is
+	// attached. A view without one pays a single atomic load per render.
+	frames *frameRecord
 }
 
 // UI is the view's interaction state: which element has focus, which one the
@@ -116,5 +119,7 @@ func (v *View) Render(props Props, width, height int) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return render.Render(box), nil
+	out := render.Render(box)
+	v.record(box, out, width, height)
+	return out, nil
 }

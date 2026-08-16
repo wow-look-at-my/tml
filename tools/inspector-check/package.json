@@ -1,0 +1,12 @@
+{
+	"name": "tml-inspector-check",
+	"private": true,
+	"type": "module",
+	"description": "End-to-end check of the inspection layer against a running program",
+	"scripts": {
+		"check": "node check.mjs"
+	},
+	"dependencies": {
+		"playwright": "^1.62.1"
+	}
+}

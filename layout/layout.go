@@ -102,6 +102,10 @@ type Options struct {
 	// Measure is how wide a string is, in cells; nil means lipgloss.Width. See
 	// widget.Measurer.
 	Measure widget.Measurer
+	// Override supplies attributes that replace what the document wrote, for
+	// the element carrying the given id. It is what an inspector edits
+	// through, and a nil one means the document is the whole truth.
+	Override func(id string) map[string]string
 }
 
 // Engine lays out expanded trees against a stylesheet.
@@ -115,6 +119,10 @@ type Engine struct {
 func New(sheet *style.Sheet, opts Options) *Engine {
 	return &Engine{sheet: sheet, opts: opts}
 }
+
+// SetOverride installs the per-element attribute override. An inspector calls
+// it once when it attaches; passing nil restores the document.
+func (e *Engine) SetOverride(fn func(id string) map[string]string) { e.opts.Override = fn }
 
 // layoutAttrs are consumed by the engine; every other attribute is styling,
 // unless a widget claims it. Attached properties are recognised by their dot and
@@ -173,11 +181,22 @@ func (p *pass) build(node *sema.Node) (*Box, error) {
 	}
 
 	attrs := make(map[string]string, len(node.Attrs))
-	inline := map[string]string{}
 	for name, value := range node.Attrs {
 		attrs[name] = value.String()
+	}
+	// An override replaces what the document said, for one element, until the
+	// host drops it. It lands before anything reads an attribute, so a width,
+	// a margin and a colour all move the same way: the inspector edits the
+	// element rather than one special case per attribute.
+	if e.opts.Override != nil {
+		for name, value := range e.opts.Override(attrs["id"]) {
+			attrs[name] = value
+		}
+	}
+	inline := map[string]string{}
+	for name, value := range attrs {
 		if !isLayoutAttr(name) && !claimed.Contains(name) {
-			inline[name] = value.String()
+			inline[name] = value
 		}
 	}
 	resolved, err := e.sheet.Resolve(attrs["style"], inline)
@@ -194,10 +213,10 @@ func (p *pass) build(node *sema.Node) (*Box, error) {
 		ID:     attrs["id"],
 		Action: attrs["action"],
 	}
-	if box.width, err = lengthAttr(node, "width"); err != nil {
+	if box.width, err = lengthAttr(node, attrs, "width"); err != nil {
 		return nil, err
 	}
-	if box.height, err = lengthAttr(node, "height"); err != nil {
+	if box.height, err = lengthAttr(node, attrs, "height"); err != nil {
 		return nil, err
 	}
 
@@ -285,15 +304,22 @@ func textOf(node *sema.Node) string {
 	return b.String()
 }
 
-func lengthAttr(node *sema.Node, name string) (sema.Length, error) {
+// lengthAttr reads a size off the node, or off the merged attributes when an
+// override supplied one. The override wins, which is what makes a drag in the
+// inspector move a real box rather than a picture of one.
+func lengthAttr(node *sema.Node, attrs map[string]string, name string) (sema.Length, error) {
+	raw, overridden := attrs[name]
 	value, ok := node.Attr(name)
-	if !ok {
+	switch {
+	case !ok && !overridden:
 		return sema.Length{Kind: sema.LengthAuto}, nil
+	case ok && !overridden:
+		if value.Type().Kind == sema.KindLength {
+			return value.Length(), nil
+		}
+		raw = value.String()
 	}
-	if value.Type().Kind == sema.KindLength {
-		return value.Length(), nil
-	}
-	length, err := sema.ParseLength(value.String())
+	length, err := sema.ParseLength(raw)
 	if err != nil {
 		return sema.Length{}, &syntax.Error{Pos: node.Pos, Message: fmt.Sprintf("<%s> %s: %v", node.Name, name, err)}
 	}
