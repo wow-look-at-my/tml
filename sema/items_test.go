@@ -168,8 +168,8 @@ func TestAListOfStringsStillWorks(t *testing.T) {
 </Component>`,
 	}, map[string]Value{"lines": ListValue([]string{"one", "two"})})
 	require.NoError(t, err)
-	assert.Contains(t, got, `Text "one"`)
-	assert.Contains(t, got, `Text "two"`)
+	assert.Contains(t, got, "Text\n      \"one\"")
+	assert.Contains(t, got, "Text\n      \"two\"")
 }
 
 // TestATemplateThatAsksForItsPositionGetsIt, and one that does not is not
@@ -189,6 +189,6 @@ func TestATemplateThatAsksForItsPositionGetsIt(t *testing.T) {
 </Component>`,
 	}, map[string]Value{"lines": ListValue([]string{"one", "two"})})
 	require.NoError(t, err)
-	assert.Contains(t, got, `Text "0: one"`)
-	assert.Contains(t, got, `Text "1: two"`)
+	assert.Contains(t, got, "Text\n      \"0: one\"")
+	assert.Contains(t, got, "Text\n      \"1: two\"")
 }

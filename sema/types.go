@@ -100,6 +100,12 @@ func ParseType(src string) (Type, error) {
 		t.Kind = KindLength
 	case "thickness":
 		t.Kind = KindThickness
+	case "record":
+		// A record has no literal spelling: `default="..."` cannot write one, and
+		// an attribute cannot either. It is the type of a value the PROGRAM
+		// supplies, which is what `record[]` on a property means -- the items an
+		// items control repeats a template over.
+		t.Kind = KindRecord
 	default:
 		return Type{}, fmt.Errorf("unknown type %q", src)
 	}
