@@ -17,6 +17,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/wow-look-at-my/go-containers/set"
+
 	"github.com/wow-look-at-my/tml/sema"
 	"github.com/wow-look-at-my/tml/style"
 	"github.com/wow-look-at-my/tml/syntax"
@@ -117,15 +119,15 @@ func New(sheet *style.Sheet, opts Options) *Engine {
 // layoutAttrs are consumed by the engine; every other attribute is styling,
 // unless a widget claims it. Attached properties are recognised by their dot and
 // handled separately.
-var layoutAttrs = map[string]bool{
-	"width": true, "height": true, "orientation": true, "gap": true, "style": true,
-	"columns": true, "rows": true, "id": true, "action": true,
-	"offset": true, "offsetX": true, "scrollbar": true,
-	"title": true, "titleAlign": true,
-}
+var layoutAttrs = set.Of(
+	"width", "height", "orientation", "gap", "style",
+	"columns", "rows", "id", "action",
+	"offset", "offsetX", "scrollbar",
+	"title", "titleAlign",
+)
 
 func isLayoutAttr(name string) bool {
-	return layoutAttrs[name] || strings.Contains(name, ".")
+	return layoutAttrs.Contains(name) || strings.Contains(name, ".")
 }
 
 // Layout measures and arranges the tree inside a viewport.
@@ -165,18 +167,16 @@ func (p *pass) build(node *sema.Node) (*Box, error) {
 	// happens to be called.
 	factory, hasFactory := e.opts.Widgets.Factory(node.Name)
 	hasFactory = hasFactory && !node.Component
-	claimed := map[string]bool{}
+	claimed := set.New[string]()
 	if hasFactory {
-		for _, name := range factory.Attributes() {
-			claimed[name] = true
-		}
+		claimed.AddRange(factory.Attributes()...)
 	}
 
 	attrs := make(map[string]string, len(node.Attrs))
 	inline := map[string]string{}
 	for name, value := range node.Attrs {
 		attrs[name] = value.String()
-		if !isLayoutAttr(name) && !claimed[name] {
+		if !isLayoutAttr(name) && !claimed.Contains(name) {
 			inline[name] = value.String()
 		}
 	}

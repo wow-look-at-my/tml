@@ -16,7 +16,13 @@ jobs:
     runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v4
+      # Native per-platform binaries, not the default single fat APE. bubbletea
+      # and clipboard carry no GOOS=cosmo files, so the APE build cannot
+      # compile this tree.
       - uses: wow-look-at-my/go-toolchain@v1
+        with:
+          os: linux,darwin,windows
+          arch: amd64,arm64
 
       # The screenshots are taken from the binaries this job just built, in a
       # real terminal. see docs/screenshots.md

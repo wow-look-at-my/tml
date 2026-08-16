@@ -18,8 +18,10 @@ var root = &cobra.Command{
 	Use:   "tml",
 	Short: "Terminal Markup Language: declarative, reusable terminal components",
 	// A diagnostic is the product here, so cobra must not add usage noise
-	// underneath one.
-	SilenceUsage: true,
+	// underneath one. Execute prints the error itself, so letting cobra print
+	// it too says everything twice.
+	SilenceUsage:  true,
+	SilenceErrors: true,
 }
 
 // Execute runs the CLI, exiting non-zero on any diagnostic.
