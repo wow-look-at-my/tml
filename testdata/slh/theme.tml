@@ -1,0 +1,70 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<!--
+	The palette, and the only place it is written down. docs/spec/tui/theming.md
+	owns which names exist and what each one means; this owns their values.
+
+	A Token's light/dark pair is the truecolor tier. The 256- and 16-colour tiers
+	the spec tabulates are a downsample of these values, which the Charm stack
+	does at paint time against the terminal's reported profile, so degrading is
+	one implementation rather than four palettes.
+
+	role.assistant is deliberately absent: it is most of the text on screen, and
+	the spec resolves it to the terminal's default foreground at every tier.
+	Naming a colour for it is the mistake that makes a TUI look like a toy.
+-->
+<Theme xmlns="urn:tml:v1" name="slh">
+	<Token name="roleUser" light="#2a5db0" dark="#7aa2f7"/>
+	<Token name="roleTool" light="#0b6e8c" dark="#7dcfff"/>
+	<Token name="roleSubagent" light="#6c3fa8" dark="#bb9af7"/>
+	<Token name="roleSystem" light="#5c6378" dark="#8b93b0"/>
+
+	<Token name="stateOk" light="#2f7a2f" dark="#9ece6a"/>
+	<Token name="stateWarn" light="#8a5a00" dark="#e0af68"/>
+	<Token name="stateError" light="#b3243b" dark="#f7768e"/>
+	<Token name="statePending" light="#5c6378" dark="#8b93b0"/>
+
+	<Token name="diffAdd" light="#2f7a2f" dark="#9ece6a"/>
+	<Token name="diffDel" light="#b3243b" dark="#f7768e"/>
+	<Token name="diffCtx" light="#5c6378" dark="#8b93b0"/>
+
+	<Token name="uiDim" light="#5c6378" dark="#8b93b0"/>
+	<!-- Ghost and rail sit just over the 4.5:1 floor, and under uiDim's 5.6, so
+	     they stay the quietest things on screen without becoming unreadable.
+	     theming.md's tabulated #565f89 / #9aa0b4 measure 2.8 and 2.6, which the
+	     same document's contrast rule forbids; it calls its values starting
+	     points that will move, and this is them moving. -->
+	<Token name="uiGhost" light="#6d7280" dark="#7783bd"/>
+	<Token name="uiAccent" light="#2a5db0" dark="#7aa2f7"/>
+	<Token name="uiRail" light="#6d7280" dark="#7783bd"/>
+	<Token name="uiMatchBg" light="#ffd479" dark="#e0af68"/>
+	<Token name="uiMatchFg" light="#1a1b26" dark="#1a1b26"/>
+
+	<Token name="syntaxKw" light="#6c3fa8" dark="#bb9af7"/>
+	<Token name="syntaxStr" light="#2f7a2f" dark="#9ece6a"/>
+	<Token name="syntaxNum" light="#a04a00" dark="#ff9e64"/>
+	<Token name="syntaxComment" light="#5c6378" dark="#8b93b0"/>
+	<Token name="syntaxType" light="#0b6e8c" dark="#7dcfff"/>
+
+	<Style name="role.user" fg="{theme.roleUser}"/>
+	<Style name="role.assistant"/>
+	<Style name="role.tool" fg="{theme.roleTool}"/>
+	<Style name="role.subagent" fg="{theme.roleSubagent}"/>
+	<Style name="role.system" fg="{theme.roleSystem}"/>
+
+	<Style name="state.ok" fg="{theme.stateOk}"/>
+	<Style name="state.warn" fg="{theme.stateWarn}"/>
+	<Style name="state.error" fg="{theme.stateError}"/>
+	<Style name="state.pending" fg="{theme.statePending}"/>
+
+	<Style name="ui.dim" faint="true" fg="{theme.uiDim}"/>
+	<Style name="ui.ghost" faint="true" fg="{theme.uiGhost}"/>
+	<Style name="ui.accent" fg="{theme.uiAccent}"/>
+	<Style name="ui.rail" fg="{theme.uiRail}"/>
+
+	<!-- A selection is a range the user chose; a caret is a position the program
+	     is about to write to. Both reverse, and they are separate names because
+	     only one of the two survives losing focus. -->
+	<Style name="ui.selection" reverse="true"/>
+	<Style name="ui.caret" reverse="true"/>
+	<Style name="ui.match" bg="{theme.uiMatchBg}" fg="{theme.uiMatchFg}"/>
+</Theme>
