@@ -30,8 +30,8 @@ func TestSlhScreenRenders(t *testing.T) {
 			"rail": sema.StringValue("*"), "railStyle": sema.StringValue("role.assistant"),
 			"showHeader": sema.BoolValue(true), "identity": sema.StringValue("opus-4-6"),
 			"identityStyle": sema.StringValue("ui.dim"), "timestamp": sema.StringValue(""),
-			"body":  sema.ListValue([]string{"here is the answer", "on two lines"}),
-			"notes": sema.ListValue([]string{"! 1 escape sequences removed"}),
+			"body":      sema.ListValue([]string{"here is the answer", "on two lines"}),
+			"notes":     sema.ListValue([]string{"! 1 escape sequences removed"}),
 			"bodyStyle": sema.StringValue("role.assistant"), "showFooter": sema.BoolValue(true),
 			"footerLead": sema.StringValue("+"), "footer": sema.StringValue("18.4k in · 903 out · $0.0143"),
 			"footerWarn": sema.StringValue("! interrupted"),
@@ -59,7 +59,7 @@ func TestSlhScreenRenders(t *testing.T) {
 		"notice1": sema.StringValue(""), "notice1Style": sema.StringValue("role.system"),
 		"notice2": sema.StringValue(""), "notice2Style": sema.StringValue("role.system"),
 
-		"rule": sema.StringValue(""),
+		"rule":   sema.StringValue(""),
 		"bypass": sema.StringValue(""), "activity": sema.StringValue("thinking"),
 		"mode": sema.StringValue(""), "goal": sema.StringValue("goal: ship it"),
 		"goalStyle": sema.StringValue("ui.dim"), "context": sema.StringValue("38%"),
@@ -87,6 +87,6 @@ func TestSlhScreenRenders(t *testing.T) {
 
 	out, err := view.Render(props, 72, 20)
 	require.NoError(t, err)
-	t.Log("\n" + out)
+	require.NoError(t, os.WriteFile("/tmp/slh-screen.txt", []byte(out), 0o644))
 	require.NotEmpty(t, out)
 }
