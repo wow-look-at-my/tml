@@ -17,6 +17,10 @@ const (
 	KindLength
 	KindThickness
 	KindEnum
+	// KindRecord is a value with named fields. It is the only kind a host can
+	// build but a document cannot write as a literal: a record comes from the
+	// program, and the document reads its fields.
+	KindRecord
 )
 
 func (k Kind) String() string {
@@ -35,6 +39,8 @@ func (k Kind) String() string {
 		return "thickness"
 	case KindEnum:
 		return "enum"
+	case KindRecord:
+		return "record"
 	default:
 		return "invalid"
 	}

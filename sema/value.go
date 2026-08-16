@@ -16,6 +16,7 @@ type Value struct {
 	length Length
 	thick  Thickness
 	items  []Value
+	fields map[string]Value
 }
 
 // Type reports the value's type.

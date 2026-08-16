@@ -255,12 +255,26 @@ func (p *Program) expandNode(node *tnode, scope *evalScope, file string, slots *
 func (p *Program) expandNative(node *tnode, scope *evalScope, file string, slots *slotArgs, stack []string) ([]*Node, error) {
 	out := &Node{Kind: syntax.ElementNode, Name: node.name, Attrs: map[string]Value{}, Pos: node.pos}
 	for _, attr := range node.attrs {
+		// The items-control attributes are directives: they say what this
+		// element CONTAINS, and a widget that received them as properties would
+		// be handed a list it has no idea what to do with.
+		if attr.name == attrItemsSource || attr.name == attrItemTemplate {
+			continue
+		}
 		value, err := attr.expr.Eval(scope)
 		if err != nil {
 			return nil, &syntax.Error{Pos: attr.pos, Message: fmt.Sprintf("attribute %q: %v", attr.name, err)}
 		}
 		out.Attrs[attr.name] = value
 		out.Order = append(out.Order, attr.name)
+	}
+
+	if isItemsControl(node) {
+		items, err := p.expandItems(node, scope, file, stack)
+		if err != nil {
+			return nil, err
+		}
+		out.Children = append(out.Children, items...)
 	}
 	// A native element's slots stay slots: unlike a component, whose template
 	// decides where the content goes, a widget is the only thing that knows what

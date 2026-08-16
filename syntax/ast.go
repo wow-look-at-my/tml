@@ -16,7 +16,11 @@ type Component struct {
 	Properties []*Property
 	Template   *Node
 	Helpers    []*Component
-	Pos        Pos
+	// IsData marks a <DataTemplate>: a component instantiated once per item by
+	// an items control, with the item supplying its property values, rather than
+	// written as an element with attributes.
+	IsData bool
+	Pos    Pos
 }
 
 // Import brings the definition in another file into scope under its own name.
