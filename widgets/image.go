@@ -287,9 +287,6 @@ func sample(img image.Image, w, h int, back backdrop) [][]color.RGBA {
 	return grid
 }
 
-// backdrop is what a transparent pixel is blended onto.
-type backdrop struct{ r, g, b uint32 }
-
 // backdrop is the theme's own background. Nothing reports the terminal's real
 // one portably, so which half of the theme is in use is the closest thing to an
 // answer -- and it is the right answer whenever the terminal and the theme

@@ -194,6 +194,15 @@ func TestParseRejects(t *testing.T) {
 			wantErr: "more than one <Template>",
 		},
 		{
+			// One definition per file, per CLAUDE.md: a file's root is exactly one
+			// <Component> or <Theme>. XML forbids a second root element outright, so
+			// this is what actually enforces the rule -- this case pins it, rather
+			// than leaving it as an accident of the XML grammar nobody tests.
+			name:    "a second root component",
+			body:    `<Component xmlns="urn:tml:v1" name="A"><Template/></Component><Component xmlns="urn:tml:v1" name="B"><Template/></Component>`,
+			wantErr: "unexpected content after root element",
+		},
+		{
 			name:    "half an adaptive token",
 			body:    `<Theme xmlns="urn:tml:v1" name="t"><Token name="c" light="#fff"/></Theme>`,
 			wantErr: "only one of light and dark",
