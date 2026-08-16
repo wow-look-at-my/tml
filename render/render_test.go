@@ -64,6 +64,32 @@ func TestVerticalGapProducesBlankLines(t *testing.T) {
 	assert.Contains(t, lines[2], "two")
 }
 
+// Regression: a Stack that measures to zero on the stacking axis -- an empty
+// items control, or a component whose own body drew nothing -- must not push
+// its siblings down by a row. Layout gives it zero height; joining had still
+// spent one line on its empty string, so the sibling after it rendered one row
+// short of where the arranged geometry actually placed it.
+func TestAZeroHeightChildAddsNoRow(t *testing.T) {
+	empty := el("Stack", nil)
+	stack := el("Stack", nil, text("one"), empty, text("two"))
+	out := renderTree(t, stack, 10, 6)
+
+	lines := strings.Split(out, "\n")
+	require.GreaterOrEqual(t, len(lines), 2)
+	assert.Contains(t, lines[0], "one")
+	assert.Contains(t, lines[1], "two", "the empty child contributed no row between them")
+}
+
+// The horizontal counterpart: a zero-width child must not open a gap between
+// the columns on either side of it.
+func TestAZeroWidthChildAddsNoColumn(t *testing.T) {
+	empty := el("Stack", nil)
+	stack := el("Stack", map[string]string{"orientation": "horizontal"}, text("ab"), empty, text("cd"))
+	out := renderTree(t, stack, 20, 3)
+
+	assert.Contains(t, strings.Split(out, "\n")[0], "abcd", "the empty child contributed no column of its own")
+}
+
 func TestHorizontalGapProducesBlankColumns(t *testing.T) {
 	stack := el("Stack", map[string]string{"orientation": "horizontal", "gap": "3"}, text("ab"), text("cd"))
 	out := renderTree(t, stack, 20, 3)

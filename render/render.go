@@ -129,6 +129,26 @@ func joinStack(box *layout.Box, parts []string) string {
 	gap := box.Gap()
 	vertical := box.Vertical()
 
+	// A child measured to zero on the stacking axis (an items control with no
+	// items, or a component whose own body drew nothing) contributed no rows or
+	// columns during layout. Joining its rendered string unconditionally would
+	// still add one, because an empty string is one blank line to
+	// lipgloss.JoinVertical/JoinHorizontal: the row layout measured as absent
+	// reappears in the output, and everything after it renders one cell short
+	// of where the arranged geometry placed it.
+	kept := parts[:0:0]
+	for i, child := range box.Children {
+		size := child.Rect.W
+		if vertical {
+			size = child.Rect.H
+		}
+		if size == 0 {
+			continue
+		}
+		kept = append(kept, parts[i])
+	}
+	parts = kept
+
 	if gap > 0 {
 		spaced := make([]string, 0, len(parts)*2-1)
 		for i, part := range parts {
