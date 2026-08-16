@@ -28,6 +28,7 @@ type Inspector struct {
 	mu     sync.Mutex
 	onKey  func(string) error
 	onClk  func(x, y int) error
+	onPnt  func() error
 	styles map[string]map[string]string
 }
 
@@ -52,6 +53,48 @@ func (i *Inspector) OnClick(fn func(x, y int) error) {
 	i.mu.Lock()
 	i.onClk = fn
 	i.mu.Unlock()
+}
+
+// OnRepaint wires the way this host is asked to draw again.
+//
+// An override only reaches the screen on the next paint, and an idle program
+// does not paint. Without this the terminal keeps the old geometry until some
+// other event arrives, so a restyle looks like it did nothing. A host wires it
+// to whatever wakes its loop: for Bubble Tea that is Program.Send.
+func (i *Inspector) OnRepaint(fn func() error) {
+	i.mu.Lock()
+	i.onPnt = fn
+	i.mu.Unlock()
+}
+
+// repaint asks the host to draw again and waits for the frame that answers.
+//
+// It waits so a caller that restyles and then reads gets the new geometry
+// rather than the geometry it was trying to change. A host that wired no
+// repaint says so: a silent return would report a restyle that never reached
+// the terminal.
+func (i *Inspector) repaint() error {
+	i.mu.Lock()
+	fn := i.onPnt
+	i.mu.Unlock()
+	if fn == nil {
+		return fmt.Errorf("this program cannot be asked to redraw: its host wired no repaint handler")
+	}
+	before, _ := i.view.lastFrame()
+	if err := fn(); err != nil {
+		return err
+	}
+	deadline := time.After(2 * time.Second)
+	for {
+		if now, ok := i.view.lastFrame(); ok && now.Seq > before.Seq {
+			return nil
+		}
+		select {
+		case <-time.After(2 * time.Millisecond):
+		case <-deadline:
+			return fmt.Errorf("the program did not repaint within 2s of being asked")
+		}
+	}
 }
 
 // ListenSocket serves the line protocol at path.
@@ -88,8 +131,9 @@ func (i *Inspector) Click(x, y int) error {
 	return fn(x, y)
 }
 
-// Restyle implements inspect.Controller. The override lands on the next frame
-// the program paints, because the frame on screen is already painted.
+// Restyle implements inspect.Controller. It returns once the program has
+// painted with the override, so what the caller reads next is what the
+// terminal shows.
 func (i *Inspector) Restyle(id string, attrs map[string]string) error {
 	i.mu.Lock()
 	current := i.styles[id]
@@ -99,7 +143,7 @@ func (i *Inspector) Restyle(id string, attrs map[string]string) error {
 	}
 	maps.Copy(current, attrs)
 	i.mu.Unlock()
-	return nil
+	return i.repaint()
 }
 
 // Reset implements inspect.Controller.
@@ -107,7 +151,7 @@ func (i *Inspector) Reset() error {
 	i.mu.Lock()
 	i.styles = map[string]map[string]string{}
 	i.mu.Unlock()
-	return nil
+	return i.repaint()
 }
 
 // override is what the layout engine asks per element.

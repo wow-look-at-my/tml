@@ -381,6 +381,10 @@ func (m *model) render() string {
 	return out
 }
 
+// repaintMsg carries nothing. It exists so the inspector can wake the loop
+// without pretending to be an input the user made.
+type repaintMsg struct{}
+
 // keyMsg turns a key name from the inspector into the message the program
 // would have got from a terminal. Only the named keys a test drives are
 // spelled out; anything else is its first rune, which is right for every
@@ -480,6 +484,13 @@ func main() {
 		})
 		insp.OnClick(func(x, y int) error {
 			program.Send(tea.MouseClickMsg{X: x, Y: y, Button: tea.MouseLeft})
+			return nil
+		})
+		// Any message wakes the loop, and Bubble Tea draws after every update.
+		// This is what makes a restyle from the browser reach the terminal
+		// while the program sits idle.
+		insp.OnRepaint(func() error {
+			program.Send(repaintMsg{})
 			return nil
 		})
 		if err := insp.ListenSocket(*socket); err != nil {

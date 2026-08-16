@@ -39,6 +39,16 @@ jobs:
         env:
           SHOTS_BRANCH: ${{ github.ref_name }}
 
+      # The inspection layer is only worth having if it reports what a running
+      # program actually drew, so it is checked against one: the CLI over the
+      # socket, then the browser inspector driven with a pointer.
+      # see docs/inspector.md
+      - name: Install the inspector check
+        run: npm install --no-audit --no-fund
+        working-directory: tools/inspector-check
+      - name: Check the inspector against a running program
+        run: node tools/inspector-check/check.mjs
+
       - name: Publish the screenshots
         uses: wow-look-at-my/buildhost/.github/actions/buildhost-publish-site@master
         with:

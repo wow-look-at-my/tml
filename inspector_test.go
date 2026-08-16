@@ -58,11 +58,16 @@ func TestInspectorAnswersFromTheFrameTheViewPainted(t *testing.T) {
 }
 
 // A restyle is a real override: the next layout uses it, so the geometry the
-// inspector reports back is the geometry the terminal got.
+// inspector reports back is the geometry the terminal got. Restyle drives the
+// repaint itself, which is what makes an edit visible on an idle program.
 func TestRestyleChangesTheNextFramesLayout(t *testing.T) {
 	view := loadInspectorView(t)
 	insp := tml.NewInspector(view)
 	t.Cleanup(func() { require.NoError(t, insp.Close()) })
+	insp.OnRepaint(func() error {
+		_, err := view.Render(nil, 40, 10)
+		return err
+	})
 
 	_, err := view.Render(nil, 40, 10)
 	require.NoError(t, err)
@@ -71,21 +76,31 @@ func TestRestyleChangesTheNextFramesLayout(t *testing.T) {
 	assert.Equal(t, 20, inspect.Find(before.Box, "app").Screen.W)
 
 	require.NoError(t, insp.Restyle("app", map[string]string{"width": "8"}))
-	_, err = view.Render(nil, 40, 10)
-	require.NoError(t, err)
 
 	after, ok := insp.Frame()
 	require.True(t, ok)
 	assert.Equal(t, 8, inspect.Find(after.Box, "app").Screen.W,
 		"the override replaced the width the document wrote")
-	assert.Equal(t, uint64(2), after.Seq)
+	assert.Equal(t, uint64(2), after.Seq, "the restyle painted, rather than waiting for something else to")
 
 	require.NoError(t, insp.Reset())
-	_, err = view.Render(nil, 40, 10)
-	require.NoError(t, err)
 	restored, ok := insp.Frame()
 	require.True(t, ok)
 	assert.Equal(t, 20, inspect.Find(restored.Box, "app").Screen.W, "reset gives the document back")
+}
+
+// A host that never wired a repaint says so, rather than reporting an override
+// that stays off the screen.
+func TestRestyleWithNoRepaintWiringSaysSo(t *testing.T) {
+	view := loadInspectorView(t)
+	insp := tml.NewInspector(view)
+	t.Cleanup(func() { require.NoError(t, insp.Close()) })
+
+	_, err := view.Render(nil, 40, 10)
+	require.NoError(t, err)
+
+	assert.ErrorContains(t, insp.Restyle("app", map[string]string{"width": "8"}), "no repaint handler")
+	assert.ErrorContains(t, insp.Reset(), "no repaint handler")
 }
 
 // A host that wires no input says so, rather than accepting a keystroke and

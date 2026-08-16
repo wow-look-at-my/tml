@@ -119,17 +119,36 @@ header {
 	font-size: 12px;
 }
 
+/* The preview takes the wide column because a terminal is wider than it is
+   tall, and a clipped preview is the one thing this page cannot afford: the
+   element you are hunting is usually the one off the right edge. */
 main {
 	display: grid;
-	grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+	grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+	grid-template-areas:
+		"preview detail"
+		"tree    detail";
 	gap: 12px;
 	padding: 12px;
 	align-items: start;
 }
 
+#preview-pane {
+	grid-area: preview;
+}
+
+#tree-pane {
+	grid-area: tree;
+}
+
+#detail-pane {
+	grid-area: detail;
+}
+
 @media (max-width: 1100px) {
 	main {
 		grid-template-columns: minmax(0, 1fr);
+		grid-template-areas: "preview" "detail" "tree";
 	}
 }
 
@@ -216,6 +235,10 @@ pre {
 	margin: 1px 0;
 }
 
+#tree {
+	overflow-x: auto;
+}
+
 .node {
 	display: block;
 	width: 100%;
@@ -226,8 +249,6 @@ pre {
 	font-family: var(--mono);
 	font-size: 12px;
 	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
 }
 
 .node:hover {
