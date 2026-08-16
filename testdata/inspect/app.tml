@@ -1,0 +1,28 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<!-- Three stacked regions, each carrying an id: the shape a terminal
+     application tends to have, and what `tml inspect` is asked about. -->
+<Component xmlns="urn:tml:v1" name="Inspectable">
+	<Property name="title" type="string" default="header"/>
+	<Property name="rows" type="string[]" default=""/>
+	<Property name="offset" type="int" default="0"/>
+	<Property name="draft" type="string" default=""/>
+
+	<Template>
+		<Stack orientation="vertical" height="*">
+			<Text id="header">{title}</Text>
+
+			<Scrollbox id="body" offset="{offset}" height="*">
+				<Stack orientation="vertical">
+					<For each="{rows}" as="row">
+						<Text>{row}</Text>
+					</For>
+				</Stack>
+			</Scrollbox>
+
+			<Stack id="footer" orientation="horizontal" gap="1">
+				<Text>&gt;</Text>
+				<Text id="draft" width="*">{draft}</Text>
+			</Stack>
+		</Stack>
+	</Template>
+</Component>

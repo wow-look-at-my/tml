@@ -83,10 +83,16 @@ Edits show up without a restart. A reload that fails hands you the error instead
 ## CLI
 
 ```bash
-tml check  app.tml                       # parse and check, no rendering
-tml tree   app.tml                       # the expanded element tree
-tml render app.tml --width 80 --height 24
+tml check   app.tml                      # parse and check, no rendering
+tml tree    app.tml                      # the expanded element tree
+tml render  app.tml --width 80 --height 24
+tml inspect app.tml --width 80 --height 24 --id composer
 ```
+
+`inspect` is the testable half of `render`. It lays the view out and prints JSON for the elements that carry an `id`:
+the rect each one occupies, the content size it was given, its clip, its scroll position, and the lines it drew. With
+`--id` it reports one element, and fails naming the ids that do exist when nothing carries the one asked for. A test
+can then assert that a region is where it should be and says what it should say, without pinning the whole frame.
 
 ## What it does
 
