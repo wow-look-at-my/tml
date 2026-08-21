@@ -26,3 +26,12 @@ func Inspect() *Inspector {
 	defer inspection.mu.Unlock()
 	return inspection.insp
 }
+
+// ResetDrivable forgets what the drivable guard has seen. Test-only, and it is
+// how a test drives the guard's own clock rather than waiting on it.
+func ResetDrivable() { drives.reset() }
+
+// CheckDrivable is the guard's failure, reached directly. Test-only: it is what
+// lets a test see the panic and its wording without building a program and
+// waiting out the grace window.
+func CheckDrivable() { drives.check() }

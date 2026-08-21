@@ -129,12 +129,18 @@ lives under `cmd/`.
 ## Inspection
 
 Answers questions about the frame `Render` painted, one element at a time: rectangle, content size, clip, scroll, focus,
-and drawn text by id. **There is nothing to wire.** Every `Load` adopts its view into the process's one inspector and
-opens `TML_INSPECT_SOCKET` if it is set; `tml.NewProgram` builds the Bubble Tea program so the protocol can drive as well as
-read. `tea.NewProgram` still works and produces a read-only program that says so. A model that caches its frame must
-invalidate on `tml.RepaintMsg` — the one line a host writes, and a restyle fails by name when it is missing. `tml-test`
-asks over the socket; `tml-test serve` opens a browser inspector on the same protocol, where a click selects and a drag
-rewrites the element's attributes as a real layout override. See docs/inspector.md.
+and drawn text by id. **There is nothing to wire and nothing to turn on.** Every `Load` adopts its view into the
+process's one inspector and opens a socket — `$XDG_RUNTIME_DIR/tml/<pid>.sock`, in a 0700 directory, with no variable
+set and no flag passed. `TML_INSPECT_SOCKET` overrides the path and `TML_INSPECT_DIR` the directory; neither is a
+switch, and a view that cannot be served fails `Load` rather than running unreachable. `tml-test` finds the program by
+dialling what is in that directory (`tml-test list` names them all).
+
+`tml.NewProgram` is the one thing a host does: driving needs a running `*tea.Program`, which cannot exist before the host
+builds it. A program built with `tea.NewProgram` is readable and not drivable, and `drivable.go` takes it down after
+`DriveGrace` rather than leave the debugger half working — `testdata/undrivable` is the program that proves the guard
+still fires. A model that caches its frame must invalidate on `tml.RepaintMsg` — the one line a host writes, and a
+restyle fails by name when it is missing. `tml-test serve` opens a browser inspector on the same protocol, where a click
+selects and a drag rewrites the element's attributes as a real layout override. See docs/inspector.md.
 
 ## Hot reload
 

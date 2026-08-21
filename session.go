@@ -2,19 +2,10 @@ package tml
 
 import (
 	"fmt"
-	"os"
 	"sync"
 
 	tea "charm.land/bubbletea/v2"
 )
-
-// SocketEnv names the unix socket a program serves the inspection protocol on.
-//
-// It is read by Load rather than by a host, because a host that has to
-// remember to serve is a host that forgets: every program built on this
-// library would be inspectable in principle and not in fact, which is how a
-// test suite ends up reading pane captures instead.
-const SocketEnv = "TML_INSPECT_SOCKET"
 
 // inspection is the process's one inspector.
 //
@@ -28,16 +19,34 @@ type session struct {
 	mu      sync.Mutex
 	insp    *Inspector
 	serving bool
+	driven  bool
 	err     error
+}
+
+// isDriven reports whether something handed this process's program over.
+func (s *session) isDriven() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.driven
 }
 
 // adopt takes over a freshly loaded View, and opens the socket the first time
 // there is a frame to answer about.
 //
+// The socket is not conditional on anything. A program that loads a document
+// is a program the inspector can reach, from that moment until it exits, with
+// nothing set and nothing passed -- because a switch is a switch whichever way
+// it points, and a library whose inspector has to be asked for is a library
+// whose programs are inspectable in principle and not in fact.
+//
 // A host that loads again -- a theme flip, a width method the terminal
 // answered late -- gets a new View and this follows it. Nothing about that is
 // the host's to arrange.
-func (s *session) adopt(v *View) {
+// It returns what went wrong THIS time. The session also keeps the failure, so
+// a host holding only a program can still read it, but Load must not fail on a
+// failure some earlier Load already reported: one unservable path would then be
+// the last word for the life of the process.
+func (s *session) adopt(v *View) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.insp == nil {
@@ -46,26 +55,26 @@ func (s *session) adopt(v *View) {
 		s.insp.Attach(v)
 	}
 	if s.serving {
-		return
-	}
-	socket := os.Getenv(SocketEnv)
-	if socket == "" {
-		return
+		return nil
 	}
 	s.serving = true
-	if err := s.insp.ListenSocket(socket); err != nil {
-		// Recorded rather than returned: Load's error is about the document,
-		// and a caller cannot tell one from the other by reading a string.
-		// Run reports this, and a program that never calls Run has one waiting
-		// in InspectError.
-		s.err = fmt.Errorf("tml: serve the inspection protocol on %s (%s): %w", socket, SocketEnv, err)
+	socket := SocketPath()
+	err := prepareSocketDir(socket)
+	if err == nil {
+		err = s.insp.ListenSocket(socket)
 	}
+	if err == nil {
+		return nil
+	}
+	s.err = fmt.Errorf("tml: serve the inspection protocol on %s: %w", socket, err)
+	return s.err
 }
 
 // drive gives the protocol the three capabilities that need a running program.
 func (s *session) drive(p *tea.Program) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.driven = true
 	if s.insp == nil {
 		return
 	}

@@ -308,7 +308,7 @@ func main() {
 		fmt.Println(m.frameOf())
 		return
 	}
-	if _, err := tea.NewProgram(m).Run(); err != nil {
+	if _, err := tml.Run(m); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
 	}
