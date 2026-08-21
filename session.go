@@ -92,21 +92,6 @@ func (s *session) close() {
 	s.serving = false
 }
 
-// Inspect is the process's inspector: the one every Load adopts its View into.
-//
-// It is a reader and a driver, not a thing to construct. A host that could
-// build its own would be a host that can build a second, and two inspectors on
-// one View overwrite each other's engine override and frame hook -- so the
-// answer to "which one is serving" would depend on construction order.
-//
-// It is nil until something has been loaded, because until then there is no
-// frame to be asked about.
-func Inspect() *Inspector {
-	inspection.mu.Lock()
-	defer inspection.mu.Unlock()
-	return inspection.insp
-}
-
 // InspectError reports why the inspection socket is not being served, or nil.
 //
 // A program that asked for a socket by setting the environment variable and
@@ -132,10 +117,13 @@ type RepaintMsg struct{}
 
 // Run runs a Bubble Tea program with the inspection protocol wired.
 //
-// It exists so that wiring is not a thing to remember. tea.NewProgram builds a
-// program this library cannot reach, so a program started that way answers
-// every op=key with "its host wired no key handler" -- true, unhelpful, and
-// entirely avoidable by there being one way to start.
+// It exists so that wiring is not a thing to remember, and it is the ONE thing
+// a host does that this library cannot do for it. Reading is automatic: Load
+// adopts the View and opens the socket. Driving needs the *tea.Program, which
+// does not exist when this package initialises, and Go offers no way to
+// intercept another package's constructor -- so the handle has to come from
+// whoever builds it. tea.NewProgram still works and produces a program this
+// library cannot reach: it answers every drive op by naming this function.
 func NewProgram(m tea.Model, opts ...tea.ProgramOption) (*tea.Program, error) {
 	p := tea.NewProgram(m, opts...)
 	inspection.drive(p)

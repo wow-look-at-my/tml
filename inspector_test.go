@@ -103,8 +103,8 @@ func TestRestyleWithNoRepaintWiringSaysSo(t *testing.T) {
 	_, err := view.Render(nil, 40, 10)
 	require.NoError(t, err)
 
-	assert.ErrorContains(t, insp.Restyle("app", map[string]string{"width": "8"}), "no repaint handler")
-	assert.ErrorContains(t, insp.Reset(), "no repaint handler")
+	assert.ErrorContains(t, insp.Restyle("app", map[string]string{"width": "8"}), "tml.NewProgram")
+	assert.ErrorContains(t, insp.Reset(), "tml.NewProgram")
 }
 
 // A host that wires no input says so, rather than accepting a keystroke and
@@ -114,8 +114,8 @@ func TestAnInspectorWithNoInputWiringRefusesToDrive(t *testing.T) {
 	loadInspectorView(t)
 	insp := tml.Inspect()
 
-	assert.ErrorContains(t, insp.Key("enter"), "no key handler")
-	assert.ErrorContains(t, insp.Click(1, 1), "no click handler")
+	assert.ErrorContains(t, insp.Key("enter"), "tml.NewProgram")
+	assert.ErrorContains(t, insp.Click(1, 1), "tml.NewProgram")
 
 	var got string
 	insp.OnKey(func(key string) error { got = key; return nil })

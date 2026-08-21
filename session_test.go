@@ -38,9 +38,9 @@ func TestNewProgramIsWhatMakesAProgramDrivable(t *testing.T) {
 	loadInspectorView(t)
 	insp := tml.Inspect()
 
-	require.ErrorContains(t, insp.Key("a"), "no key handler",
+	require.ErrorContains(t, insp.Key("a"), "tml.NewProgram",
 		"a program this library did not build refuses input rather than dropping it")
-	require.ErrorContains(t, insp.Click(1, 1), "no click handler")
+	require.ErrorContains(t, insp.Click(1, 1), "tml.NewProgram")
 
 	m := driveModel{got: make(chan tea.Msg, 16)}
 	p, err := tml.NewProgram(m, tea.WithInput(strings.NewReader("")), tea.WithOutput(io.Discard))

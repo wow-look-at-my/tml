@@ -119,7 +119,7 @@ func (i *Inspector) repaint() error {
 	fn := i.onPnt
 	i.mu.Unlock()
 	if fn == nil {
-		return fmt.Errorf("this program cannot be asked to redraw: its host wired no repaint handler")
+		return fmt.Errorf("this program cannot be asked to redraw: build it with tml.NewProgram or tml.Run rather than tea.NewProgram")
 	}
 	before, _ := i.currentView().lastFrame()
 	if err := fn(); err != nil {
@@ -156,7 +156,7 @@ func (i *Inspector) Key(key string) error {
 	fn := i.onKey
 	i.mu.Unlock()
 	if fn == nil {
-		return fmt.Errorf("this program accepts no input: its host wired no key handler")
+		return fmt.Errorf("this program can be read and not driven: build it with tml.NewProgram or tml.Run rather than tea.NewProgram")
 	}
 	return fn(key)
 }
@@ -167,7 +167,7 @@ func (i *Inspector) Click(x, y int) error {
 	fn := i.onClk
 	i.mu.Unlock()
 	if fn == nil {
-		return fmt.Errorf("this program accepts no pointer input: its host wired no click handler")
+		return fmt.Errorf("this program can be read and not driven: build it with tml.NewProgram or tml.Run rather than tea.NewProgram")
 	}
 	return fn(x, y)
 }
