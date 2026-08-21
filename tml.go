@@ -94,6 +94,10 @@ func Load(fsys fs.FS, entry string, opts Options) (*View, error) {
 		Interaction: view.ui,
 		Measure:     opts.Measure,
 	})
+	// Every view this library builds is inspectable, with nothing asked of the
+	// caller. Making it a step a host takes is what leaves a program that could
+	// answer questions about its own frames answering none.
+	inspection.adopt(view)
 	return view, nil
 }
 

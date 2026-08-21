@@ -32,8 +32,10 @@ type Inspector struct {
 	styles map[string]map[string]string
 }
 
-// NewInspector returns an inspector reading v's frames.
-func NewInspector(v *View) *Inspector {
+// newInspector returns an inspector reading v's frames. The process has one,
+// built by the first Load; a second would fight it for the engine override and
+// the frame hook, which is why nothing outside this package can make one.
+func newInspector(v *View) *Inspector {
 	i := &Inspector{styles: map[string]map[string]string{}}
 	i.srv = inspect.NewServer(i)
 	i.Attach(v)
