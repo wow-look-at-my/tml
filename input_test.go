@@ -15,9 +15,10 @@ func TestKeyMsgSpellsTheProtocolsVocabulary(t *testing.T) {
 		"enter":        {Code: tea.KeyEnter},
 		"esc":          {Code: tea.KeyEscape},
 		"escape":       {Code: tea.KeyEscape},
-		"space":        {Code: tea.KeySpace},
+		"space":        {Code: tea.KeySpace, Text: " "},
 		"ctrl+c":       {Code: 'c', Mod: tea.ModCtrl},
 		"ctrl+enter":   {Code: tea.KeyEnter, Mod: tea.ModCtrl},
+		"ctrl+space":   {Code: tea.KeySpace, Mod: tea.ModCtrl},
 		"alt+left":     {Code: tea.KeyLeft, Mod: tea.ModAlt},
 		"ctrl+shift+a": {Code: 'a', Mod: tea.ModCtrl | tea.ModShift},
 	}

@@ -26,7 +26,16 @@ func KeyMsg(key string) tea.KeyPressMsg {
 		name = rest.name
 	}
 	if code, ok := namedKeys[name]; ok {
-		return tea.KeyPressMsg{Code: code, Mod: mod}
+		msg := tea.KeyPressMsg{Code: code, Mod: mod}
+		// Space is a named key that still produces text, and a terminal sends
+		// it as one: {Code: KeySpace, Text: " "}. A host inserting from Text --
+		// which every composer does -- gets nothing without this, so `key
+		// space` moved the cursor and typed no space, and a driver spelling a
+		// sentence got everywordruntogether.
+		if code == tea.KeySpace && mod == 0 {
+			msg.Text = " "
+		}
+		return msg
 	}
 	if name == "" {
 		return tea.KeyPressMsg{Mod: mod}
