@@ -40,6 +40,18 @@ restyles and then reads gets the geometry it asked for.
 
 `examples/agent/main.go` wires all four behind its `-inspect` flag.
 
+## A host that reloads
+
+`Load` bakes in which half of every theme token resolves and how a width is
+measured, so a host that learns either late — a terminal answering OSC 11, or
+mode 2027 — loads again and renders through a new `View`. `insp.Attach(view)`
+follows it: the new view starts recording, the old one stops, the overrides
+carry over, and frame numbers continue upward so a caller waiting for a newer
+frame is not answered by the new view's first paint.
+
+Without it the inspector keeps answering about a view nothing paints any more,
+which reads as a program that froze rather than one that changed theme.
+
 ## One protocol, two transports
 
 `inspect.Server.Handle(Request) Response` is the whole protocol. A unix socket

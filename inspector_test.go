@@ -152,3 +152,58 @@ func TestSocketServesARealViewsFrame(t *testing.T) {
 	require.NotNil(t, res.Element)
 	assert.Equal(t, "hello", res.Element.Text)
 }
+
+// A host that recompiles its document renders through a new View. The
+// inspector follows it, and keeps numbering frames upward so a caller waiting
+// for a newer one is not answered by the new View's first paint.
+func TestAttachFollowsTheHostToANewView(t *testing.T) {
+	first := loadInspectorView(t)
+	insp := tml.NewInspector(first)
+	t.Cleanup(func() { require.NoError(t, insp.Close()) })
+
+	_, err := first.Render(nil, 40, 10)
+	require.NoError(t, err)
+	before, ok := insp.Frame()
+	require.True(t, ok)
+
+	second := loadInspectorView(t)
+	insp.Attach(second)
+
+	_, err = second.Render(nil, 60, 12)
+	require.NoError(t, err)
+
+	after, ok := insp.Frame()
+	require.True(t, ok, "the inspector answers from the view the host now paints")
+	assert.Equal(t, 60, after.Width, "the frame is the new view's, not the old one's")
+	assert.Greater(t, after.Seq, before.Seq, "frame numbers continue across the swap")
+
+	// The old view stops recording, so a stray paint on it cannot come back as
+	// the current frame.
+	_, err = first.Render(nil, 11, 11)
+	require.NoError(t, err)
+	still, ok := insp.Frame()
+	require.True(t, ok)
+	assert.Equal(t, 60, still.Width, "the detached view no longer feeds the inspector")
+}
+
+// Overrides are the inspector's, not the view's, so they survive the swap and
+// the new view lays them out.
+func TestOverridesSurviveAttach(t *testing.T) {
+	first := loadInspectorView(t)
+	insp := tml.NewInspector(first)
+	t.Cleanup(func() { require.NoError(t, insp.Close()) })
+
+	second := loadInspectorView(t)
+	insp.OnRepaint(func() error {
+		_, err := second.Render(nil, 40, 10)
+		return err
+	})
+	insp.Attach(second)
+
+	require.NoError(t, insp.Restyle("title", map[string]string{"width": "7"}))
+
+	frame, ok := insp.Frame()
+	require.True(t, ok)
+	assert.Equal(t, 7, inspect.Find(frame.Box, "title").Screen.W,
+		"the new view lays out the override the old one was given")
+}

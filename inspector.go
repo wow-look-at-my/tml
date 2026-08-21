@@ -34,11 +34,50 @@ type Inspector struct {
 
 // NewInspector returns an inspector reading v's frames.
 func NewInspector(v *View) *Inspector {
-	i := &Inspector{view: v, styles: map[string]map[string]string{}}
-	v.recordFrames(true)
-	v.engine.SetOverride(i.override)
+	i := &Inspector{styles: map[string]map[string]string{}}
 	i.srv = inspect.NewServer(i)
+	i.Attach(v)
 	return i
+}
+
+// Attach points the inspector at another View, and is how a host survives
+// recompiling its own document.
+//
+// Load bakes in which half of every theme token resolves and how a width is
+// measured, so a host that learns either late -- a terminal answering OSC 11,
+// or mode 2027 -- loads again and renders through a NEW View. The old one stops
+// painting. An inspector still reading it answers about a frame nothing is
+// drawing, which reads as a program that froze rather than one that changed
+// theme.
+//
+// The new View continues the old one's frame numbers. A caller waiting for a
+// frame newer than the one it read must not be answered by a fresh View's
+// first frame, which would otherwise number 1.
+func (i *Inspector) Attach(v *View) {
+	i.mu.Lock()
+	old := i.view
+	i.view = v
+	i.mu.Unlock()
+	if old == v {
+		return
+	}
+
+	v.recordFrames(true)
+	if old != nil && old.frames != nil {
+		v.frames.seq.Store(old.frames.seq.Load())
+		old.frames.on.Store(false)
+	}
+	v.engine.SetOverride(i.override)
+	v.OnFrame(i.Publish)
+	i.srv.Publish()
+}
+
+// currentView reads the attached View. Every path that touches it goes through
+// here, because Attach can replace it while a request is being answered.
+func (i *Inspector) currentView() *View {
+	i.mu.Lock()
+	defer i.mu.Unlock()
+	return i.view
 }
 
 // OnKey and OnClick wire the driving half. A host calls them once, before
@@ -80,13 +119,13 @@ func (i *Inspector) repaint() error {
 	if fn == nil {
 		return fmt.Errorf("this program cannot be asked to redraw: its host wired no repaint handler")
 	}
-	before, _ := i.view.lastFrame()
+	before, _ := i.currentView().lastFrame()
 	if err := fn(); err != nil {
 		return err
 	}
 	deadline := time.After(2 * time.Second)
 	for {
-		if now, ok := i.view.lastFrame(); ok && now.Seq > before.Seq {
+		if now, ok := i.currentView().lastFrame(); ok && now.Seq > before.Seq {
 			return nil
 		}
 		select {
@@ -107,7 +146,7 @@ func (i *Inspector) ListenHTTP(addr string) (string, error) { return i.srv.Liste
 func (i *Inspector) Close() error { return i.srv.Close() }
 
 // Frame implements inspect.Source.
-func (i *Inspector) Frame() (inspect.Frame, bool) { return i.view.lastFrame() }
+func (i *Inspector) Frame() (inspect.Frame, bool) { return i.currentView().lastFrame() }
 
 // Key implements inspect.Controller.
 func (i *Inspector) Key(key string) error {
