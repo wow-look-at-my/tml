@@ -27,7 +27,7 @@ func dial(path string) (*client, error) {
 	}
 	conn, err := net.DialTimeout("unix", path, 5*time.Second)
 	if err != nil {
-		return nil, fmt.Errorf("cannot reach a program at %s: %w\nIs it running, and did it call Inspector.ListenSocket?", path, err)
+		return nil, fmt.Errorf("cannot reach a program at %s: %w\nIs it running, and was it started with TML_INSPECT_SOCKET set to this path?", path, err)
 	}
 	reader := bufio.NewReaderSize(conn, 64*1024)
 	return &client{conn: conn, dec: json.NewDecoder(reader), enc: json.NewEncoder(conn)}, nil

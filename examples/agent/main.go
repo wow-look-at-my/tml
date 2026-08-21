@@ -15,7 +15,6 @@ import (
 	"io/fs"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 	"unicode"
 
@@ -381,35 +380,6 @@ func (m *model) render() string {
 	return out
 }
 
-// repaintMsg carries nothing. It exists so the inspector can wake the loop
-// without pretending to be an input the user made.
-type repaintMsg struct{}
-
-// keyMsg turns a key name from the inspector into the message the program
-// would have got from a terminal. Only the named keys a test drives are
-// spelled out; anything else is its first rune, which is right for every
-// printable key.
-func keyMsg(key string) tea.KeyPressMsg {
-	var mod tea.KeyMod
-	name := key
-	if rest, ok := strings.CutPrefix(key, "ctrl+"); ok {
-		mod, name = tea.ModCtrl, rest
-	}
-	named := map[string]rune{
-		"enter": tea.KeyEnter, "tab": tea.KeyTab, "esc": tea.KeyEscape,
-		"escape": tea.KeyEscape, "space": tea.KeySpace, "backspace": tea.KeyBackspace,
-		"up": tea.KeyUp, "down": tea.KeyDown, "left": tea.KeyLeft, "right": tea.KeyRight,
-	}
-	if code, ok := named[name]; ok {
-		return tea.KeyPressMsg{Code: code, Mod: mod}
-	}
-	if name == "" {
-		return tea.KeyPressMsg{Mod: mod}
-	}
-	code := []rune(name)[0]
-	return tea.KeyPressMsg{Code: code, Text: string(code), Mod: mod}
-}
-
 // cost is the going rate for a model that does not exist, so the meter has
 // something to show.
 func cost(tokens int) string {
@@ -430,7 +400,6 @@ func main() {
 	steps := flag.Int("steps", 0, "run this many script beats before starting")
 	focus := flag.String("focus", "", "id of the control to put the keyboard on")
 	answer := flag.String("answer", "", "allow or deny the permission the script stopped on")
-	socket := flag.String("inspect", "", "serve the TML inspection protocol on this unix socket")
 	flag.Parse()
 
 	m, err := newModel()
@@ -471,36 +440,10 @@ func main() {
 		fmt.Println(m.render())
 		return
 	}
-	program := tea.NewProgram(m)
-
-	// An inspector is attached only when one is asked for, so an ordinary run
-	// opens no socket and costs nothing. tml-test talks to this.
-	if *socket != "" {
-		insp := tml.NewInspector(m.view)
-		m.view.OnFrame(insp.Publish)
-		insp.OnKey(func(key string) error {
-			program.Send(keyMsg(key))
-			return nil
-		})
-		insp.OnClick(func(x, y int) error {
-			program.Send(tea.MouseClickMsg{X: x, Y: y, Button: tea.MouseLeft})
-			return nil
-		})
-		// Any message wakes the loop, and Bubble Tea draws after every update.
-		// This is what makes a restyle from the browser reach the terminal
-		// while the program sits idle.
-		insp.OnRepaint(func() error {
-			program.Send(repaintMsg{})
-			return nil
-		})
-		if err := insp.ListenSocket(*socket); err != nil {
-			fmt.Fprintln(os.Stderr, "error:", err)
-			os.Exit(1)
-		}
-		defer insp.Close()
-	}
-
-	if _, err := program.Run(); err != nil {
+	// Nothing here wires an inspector. Load adopted the view and opened the
+	// socket, and Run gave the protocol a program to type into. The only
+	// thing this program does about being inspectable is start the one way.
+	if _, err := tml.Run(m); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
 	}

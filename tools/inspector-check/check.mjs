@@ -67,8 +67,11 @@ async function settled(read) {
 // A pty is not optional: bubbletea opens /dev/tty and the layout is sized from
 // the window, so without one there is no frame to inspect.
 function startAgent() {
-	const p = spawn('script', ['-q', '-c', `stty rows 30 cols 100; exec ${agent} -inspect ${sock}`,
-		join(work, 'typescript')], { stdio: 'ignore', detached: true });
+	// No -inspect flag: the socket is TML_INSPECT_SOCKET, which Load reads. The
+	// agent says nothing about being inspectable, which is the point.
+	const p = spawn('script', ['-q', '-c', `stty rows 30 cols 100; exec ${agent}`,
+		join(work, 'typescript')],
+	{ stdio: 'ignore', detached: true, env: { ...process.env, TML_INSPECT_SOCKET: sock } });
 	// A program that dies at startup must say so now. Waiting for it to paint
 	// would spend the whole timeout and then report the wrong thing.
 	p.on('exit', (code) => { p.died = `the program exited with ${code} before it painted`; });
