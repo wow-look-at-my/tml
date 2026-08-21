@@ -142,6 +142,10 @@ still fires. A model that caches its frame must invalidate on `tml.RepaintMsg` â
 restyle fails by name when it is missing. `tml-test serve` opens a browser inspector on the same protocol, where a click
 selects and a drag rewrites the element's attributes as a real layout override. See docs/inspector.md.
 
+A test waits on the screen rather than sleeping: `query --await REGEX` and `--await-gone` block until the field matches,
+failing with what the element last drew, and `frame --since` blocks until the next paint. `frame --max-width` measures
+the widest line in display cells, which is the number that catches a region painting past its own edge.
+
 ## Hot reload
 
 `tml.Watch(ctx, dir, entry, opts, onChange)` reloads on change, by polling modification times rather than subscribing to

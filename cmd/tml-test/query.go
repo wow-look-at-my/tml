@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
+	"charm.land/lipgloss/v2"
 	"github.com/spf13/cobra"
 
 	"github.com/wow-look-at-my/tml/inspect"
@@ -18,9 +20,12 @@ func init() {
 // newQueryCmd reports one element by id.
 func newQueryCmd() *cobra.Command {
 	var (
-		id       string
-		keepANSI bool
-		field    string
+		id        string
+		keepANSI  bool
+		field     string
+		await     string
+		awaitGone string
+		timeout   time.Duration
 	)
 	cmd := &cobra.Command{
 		Use:   "query",
@@ -30,13 +35,32 @@ func newQueryCmd() *cobra.Command {
 			"lines it drew.\n" +
 			"\n" +
 			"--field prints one value on its own, which is what a shell assertion\n" +
-			"wants: text, lines, x, y, w, h, focus, action, element.",
+			"wants: text, lines, x, y, w, h, focus, action, element.\n" +
+			"\n" +
+			"--await blocks until that value matches a regular expression, and\n" +
+			"--await-gone until it stops matching. A screen a test asserts about is\n" +
+			"still changing, so the question is always \"has it happened yet\", and a\n" +
+			"sleep answers it by guessing at how fast the machine is. A timeout\n" +
+			"exits non-zero naming what the element last drew.",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if id == "" {
 				return fmt.Errorf("--id is required; run `tml-test ids` to see what the frame declares")
 			}
-			res, err := ask(inspect.Request{Op: "query", ID: id, ANSI: keepANSI})
+			if await != "" && awaitGone != "" {
+				return fmt.Errorf("give --await or --await-gone, not both")
+			}
+			var res inspect.Response
+			var err error
+			if await != "" || awaitGone != "" {
+				pattern, gone := await, false
+				if awaitGone != "" {
+					pattern, gone = awaitGone, true
+				}
+				res.Element, err = awaitField(id, keepANSI, field, pattern, gone, timeout)
+			} else {
+				res, err = ask(inspect.Request{Op: "query", ID: id, ANSI: keepANSI})
+			}
 			if err != nil {
 				return err
 			}
@@ -49,48 +73,10 @@ func newQueryCmd() *cobra.Command {
 	cmd.Flags().StringVar(&id, "id", "", "id of the element to report")
 	cmd.Flags().BoolVar(&keepANSI, "ansi", false, "include the styled text as well as the plain text")
 	cmd.Flags().StringVar(&field, "field", "", "print one field instead of the whole element")
+	cmd.Flags().StringVar(&await, "await", "", "block until --field matches this regular expression")
+	cmd.Flags().StringVar(&awaitGone, "await-gone", "", "block until --field stops matching this regular expression")
+	cmd.Flags().DurationVar(&timeout, "timeout", 20*time.Second, "how long an await waits before failing")
 	return cmd
-}
-
-// printField writes one value bare, so a test can compare it without a JSON
-// parser in the way.
-func printField(w io.Writer, el inspect.Element, field string) error {
-	switch field {
-	case "text":
-		_, err := fmt.Fprintln(w, el.Text)
-		return err
-	case "lines":
-		for _, line := range el.Lines {
-			if _, err := fmt.Fprintln(w, line); err != nil {
-				return err
-			}
-		}
-		return nil
-	case "x":
-		return printInt(w, el.Rect.X)
-	case "y":
-		return printInt(w, el.Rect.Y)
-	case "w":
-		return printInt(w, el.Rect.W)
-	case "h":
-		return printInt(w, el.Rect.H)
-	case "focus":
-		_, err := fmt.Fprintln(w, el.Focus)
-		return err
-	case "action":
-		_, err := fmt.Fprintln(w, el.Action)
-		return err
-	case "element":
-		_, err := fmt.Fprintln(w, el.Element)
-		return err
-	default:
-		return fmt.Errorf("unknown field %q; want one of text, lines, x, y, w, h, focus, action, element", field)
-	}
-}
-
-func printInt(w io.Writer, n int) error {
-	_, err := fmt.Fprintln(w, n)
-	return err
 }
 
 func newElementsCmd() *cobra.Command {
@@ -156,16 +142,26 @@ func newFrameCmd() *cobra.Command {
 	var (
 		keepANSI bool
 		since    uint64
+		maxWidth bool
 	)
 	cmd := &cobra.Command{
 		Use:   "frame",
 		Short: "Report the frame the program has on screen",
 		Long: "With --since it waits for a frame newer than that sequence number, so a\n" +
-			"test can say \"after the next paint\" instead of sleeping.",
+			"test can say \"after the next paint\" instead of sleeping.\n" +
+			"\n" +
+			"--max-width prints the widest line of the frame in DISPLAY CELLS, which\n" +
+			"is what catches a region that fits its rectangle and paints past its own\n" +
+			"edge. Counting bytes or runes is a different number: a box-drawing rule\n" +
+			"is three bytes a cell, and a wide glyph is one rune in two cells.",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			res, err := ask(inspect.Request{Op: "frame", ANSI: keepANSI, Since: since})
 			if err != nil {
+				return err
+			}
+			if maxWidth {
+				_, err := fmt.Fprintln(cmd.OutOrStdout(), widestLine(res.Frame.Text))
 				return err
 			}
 			return encode(cmd.OutOrStdout(), res.Frame)
@@ -173,7 +169,20 @@ func newFrameCmd() *cobra.Command {
 	}
 	cmd.Flags().BoolVar(&keepANSI, "ansi", false, "include the styled text as well as the plain text")
 	cmd.Flags().Uint64Var(&since, "since", 0, "wait for a frame newer than this sequence number")
+	cmd.Flags().BoolVar(&maxWidth, "max-width", false, "print the widest line of the frame, in display cells")
 	return cmd
+}
+
+// widestLine measures in the cells a terminal draws, through the same function
+// the engine lays out with.
+func widestLine(text string) int {
+	widest := 0
+	for _, line := range strings.Split(text, "\n") {
+		if w := lipgloss.Width(line); w > widest {
+			widest = w
+		}
+	}
+	return widest
 }
 
 func newKeyCmd() *cobra.Command {
