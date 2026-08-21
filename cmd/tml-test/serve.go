@@ -69,11 +69,15 @@ func newServeCmd() *cobra.Command {
 			"real, so what the browser shows is what the terminal shows.",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			p := &proxy{path: socket}
+			path, err := resolveSocket()
+			if err != nil {
+				return err
+			}
+			p := &proxy{path: path}
 			// Fail here rather than after printing a URL that answers nothing:
 			// a page that loads and then says "connection lost" is a worse
 			// error message than the dial's own.
-			probe, err := dial(socket)
+			probe, err := dial(path)
 			if err != nil {
 				return err
 			}
@@ -84,7 +88,7 @@ func newServeCmd() *cobra.Command {
 				return fmt.Errorf("cannot listen on %s: %w", addr, err)
 			}
 			url := "http://" + ln.Addr().String()
-			fmt.Fprintf(cmd.OutOrStdout(), "inspector on %s (program: %s)\n", url, socket)
+			fmt.Fprintf(cmd.OutOrStdout(), "inspector on %s (program: %s)\n", url, path)
 			if open {
 				fmt.Fprintln(cmd.OutOrStdout(), "open that URL in a browser")
 			}

@@ -1,0 +1,66 @@
+// Command undrivable is the program the drivable guard exists to stop.
+//
+// It loads a document and then builds its Bubble Tea program with
+// tea.NewProgram, which returns a program tml never sees. The inspector can
+// read every frame it paints and drive none of them. Running it is the
+// negative control for drivable.go: a guard that has never been watched fire
+// is a guard nobody knows still works.
+//
+// It lives in testdata so it is not part of the module's own build and cannot
+// be published by mistake. drivable_e2e_test.go builds and runs it.
+//
+// Input is disabled and output discarded so it runs with no terminal, which is
+// what CI has. Neither choice touches the thing under test: what matters is
+// which constructor built the program.
+package main
+
+import (
+	"fmt"
+	"io"
+	"os"
+	"testing/fstest"
+	"time"
+
+	tea "charm.land/bubbletea/v2"
+	"github.com/wow-look-at-my/tml"
+)
+
+const doc = `<?xml version="1.1" encoding="UTF-8"?>
+<Component xmlns="urn:tml:v1" name="App">
+	<Template><Stack id="app" width="20"><Text id="hello">hello</Text></Stack></Template>
+</Component>`
+
+type tickMsg struct{}
+
+// tick paints often enough that the guard sees a program rather than a render.
+func tick() tea.Cmd {
+	return tea.Tick(100*time.Millisecond, func(time.Time) tea.Msg { return tickMsg{} })
+}
+
+type model struct{ view *tml.View }
+
+func (m model) Init() tea.Cmd                      { return tick() }
+func (m model) Update(tea.Msg) (tea.Model, tea.Cmd) { return m, tick() }
+
+func (m model) View() tea.View {
+	out, err := m.view.Render(nil, 40, 10)
+	if err != nil {
+		panic(err)
+	}
+	return tea.NewView(out)
+}
+
+func main() {
+	view, err := tml.Load(fstest.MapFS{"app.tml": &fstest.MapFile{Data: []byte(doc)}},
+		"app.tml", tml.Options{})
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "load:", err)
+		os.Exit(1)
+	}
+	// The whole point of this program: tea.NewProgram, not tml.NewProgram.
+	if _, err := tea.NewProgram(model{view: view},
+		tea.WithInput(nil), tea.WithOutput(io.Discard)).Run(); err != nil {
+		fmt.Fprintln(os.Stderr, "run:", err)
+		os.Exit(1)
+	}
+}

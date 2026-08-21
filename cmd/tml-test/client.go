@@ -23,7 +23,7 @@ type client struct {
 // different problems with different fixes.
 func dial(path string) (*client, error) {
 	if path == "" {
-		return nil, errors.New("no socket given: pass --socket or set TML_INSPECT_SOCKET")
+		return nil, errors.New("no socket resolved")
 	}
 	conn, err := net.DialTimeout("unix", path, 5*time.Second)
 	if err != nil {
@@ -54,7 +54,11 @@ func (c *client) do(req inspect.Request) (inspect.Response, error) {
 // ask opens a connection, asks one question and closes it. Every one-shot
 // subcommand is this plus a printer.
 func ask(req inspect.Request) (inspect.Response, error) {
-	c, err := dial(socket)
+	path, err := resolveSocket()
+	if err != nil {
+		return inspect.Response{}, err
+	}
+	c, err := dial(path)
 	if err != nil {
 		return inspect.Response{}, err
 	}

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 	"testing/fstest"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -236,9 +237,13 @@ func TestLoadServesTheSocketWithNoHostWiring(t *testing.T) {
 	assert.Equal(t, "hello", res.Element.Text)
 }
 
-// A socket that was asked for and could not be opened is reported. Silence
-// would leave every question against it timing out with nothing to read.
-func TestAnUnservableSocketIsReported(t *testing.T) {
+// A view that cannot be served is not returned at all.
+//
+// Reporting it and handing back a working View would leave a program running
+// that nothing can reach -- which is the state this whole mechanism exists to
+// make unreachable. Load is where it has to fail, because Load is the last
+// point at which the host has not started drawing.
+func TestAViewThatCannotBeServedIsNotReturned(t *testing.T) {
 	tml.ResetInspection()
 	// A regular file where the socket's directory has to be. ListenSocket
 	// creates a missing directory on purpose, so an absent path is servable
@@ -247,6 +252,38 @@ func TestAnUnservableSocketIsReported(t *testing.T) {
 	require.NoError(t, os.WriteFile(blocker, []byte("x"), 0o600))
 	t.Setenv(tml.SocketEnv, filepath.Join(blocker, "x.sock"))
 
+	loaded, err := tml.Load(fstest.MapFS{"app.tml": &fstest.MapFile{Data: []byte(inspectorView)}},
+		"app.tml", tml.Options{})
+	require.Error(t, err)
+	assert.Nil(t, loaded)
+	assert.ErrorContains(t, err, "serve the inspection protocol")
+	assert.ErrorContains(t, tml.InspectError(), "serve the inspection protocol")
+}
+
+// The socket is not conditional on the environment: a program that sets nothing
+// at all still serves, and the path it serves on is the one tml-test looks in.
+func TestAProgramServesWithNothingSet(t *testing.T) {
+	tml.ResetInspection()
+	t.Setenv(tml.SocketEnv, "")
+
 	loadInspectorView(t)
-	require.ErrorContains(t, tml.InspectError(), tml.SocketEnv)
+	require.NoError(t, tml.InspectError())
+
+	path := tml.SocketPath()
+	assert.Equal(t, tml.SocketDir(), filepath.Dir(path))
+	conn, err := net.DialTimeout("unix", path, 2*time.Second)
+	require.NoError(t, err, "nothing is listening on the path a program serves on by default")
+	require.NoError(t, conn.Close())
+}
+
+// The directory carries the right to drive every program in it, so it is this
+// user's and nobody else's.
+func TestTheSocketDirectoryIsPrivateToThisUser(t *testing.T) {
+	tml.ResetInspection()
+	t.Setenv(tml.SocketEnv, "")
+
+	loadInspectorView(t)
+	info, err := os.Stat(tml.SocketDir())
+	require.NoError(t, err)
+	assert.Equal(t, os.FileMode(0o700), info.Mode().Perm())
 }

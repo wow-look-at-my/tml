@@ -95,9 +95,13 @@ func Load(fsys fs.FS, entry string, opts Options) (*View, error) {
 		Measure:     opts.Measure,
 	})
 	// Every view this library builds is inspectable, with nothing asked of the
-	// caller. Making it a step a host takes is what leaves a program that could
-	// answer questions about its own frames answering none.
-	inspection.adopt(view)
+	// caller, and a view that cannot be is not returned. Making it a step a
+	// host takes is what leaves a program that could answer questions about its
+	// own frames answering none; letting the socket fail quietly is the same
+	// program with an excuse.
+	if err := inspection.adopt(view); err != nil {
+		return nil, err
+	}
 	return view, nil
 }
 
@@ -125,5 +129,9 @@ func (v *View) Render(props Props, width, height int) (string, error) {
 	}
 	out := render.Render(box)
 	v.record(box, out, width, height)
+	// Readable is half. A view still painting after the grace window with
+	// nothing able to drive it is a program the debugger only half works
+	// against, and this is where that gets noticed.
+	drives.painted(inspection.isDriven())
 	return out, nil
 }

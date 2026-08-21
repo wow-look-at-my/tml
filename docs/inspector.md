@@ -10,29 +10,55 @@ prompt` reports that element's rectangle, its content size, its clip, its
 scroll offsets, whether it holds focus, and the text it drew. A whole-screen
 dump would say none of that.
 
-## There is nothing to attach
+## There is nothing to attach, and nothing to turn on
 
 Every `View` that `Load` builds is adopted by the process's one inspector, and
-the socket named by `TML_INSPECT_SOCKET` is opened the first time there is a
-frame to answer about. A host writes no line of code for either.
+the socket is opened the first time there is a frame to answer about. Not if a
+variable is set, not if a flag is passed: a program that loads a document is a
+program the inspector can reach.
 
 ```sh
-TML_INSPECT_SOCKET=/tmp/app.sock ./myprogram &
-tml-test --socket /tmp/app.sock query --id prompt
+./myprogram &
+tml-test query --id prompt
 ```
+
+Neither command names a socket. The program serves on
+`$XDG_RUNTIME_DIR/tml/<pid>.sock`, and `tml-test` looks there, dials what it
+finds and uses the one that answers. `tml-test list` is every program running
+now. Two or more, and it says so and asks for `--socket`.
+
+- `TML_INSPECT_SOCKET` overrides the path. It is an override, not a switch:
+  with it unset the program still serves.
+- `TML_INSPECT_DIR` overrides the directory the default path is built in,
+  which is what a test sets to keep its programs out of the user's listing.
+- The directory is 0700. The socket carries the right to drive the program, so
+  its boundary is the same one the user's own shell already has.
+- A view that cannot be served is not returned: `Load` fails, naming the path.
+  Handing back a working View and a program nothing can reach is the state this
+  exists to remove.
 
 That is deliberate, and it is the whole design. Wiring an inspector used to be
 six calls a host made in the right order, and a host that made five of them got
 a program that was inspectable in principle and useless in fact — so its tests
 went back to reading pane captures, which cannot tell a status line that moved
-from one that did not. A capability every program has is worth more than a
-capability every program could have.
+from one that did not. An environment variable is the same failure with fewer
+steps: a capability every program has is worth more than one every program
+could have.
 
-`tml.NewProgram` is the other half: it builds the Bubble Tea program, so the
-protocol has something to type into and the program can be driven as well as
-read. It returns the program, because a host that kills it from a worker or
-sends to it needs the handle. `tml.Run` is the same plus running it, for a host
-with nothing to say in between.
+`tml.NewProgram` is the other half, and the one thing a host does. It builds the
+Bubble Tea program, so the protocol has something to type into and the program
+can be driven as well as read. It returns the program, because a host that kills
+it from a worker or sends to it needs the handle. `tml.Run` is the same plus
+running it, for a host with nothing to say in between.
+
+It cannot be automatic. The inspector delivers a keystroke by sending a message
+to a running `*tea.Program`, which does not exist when this package
+initialises, and Go offers no way to intercept another package's constructor.
+So it is enforced instead: a view still painting `DriveGrace` after its first
+frame with nothing able to drive it takes the program down, naming this
+function. A program the debugger only half works against is not one this
+library keeps running — see `drivable.go`, and `testdata/undrivable` for the
+program that proves the guard still fires.
 
 ```go
 program, err := tml.NewProgram(model, tea.WithContext(ctx))
