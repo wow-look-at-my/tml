@@ -28,11 +28,15 @@ went back to reading pane captures, which cannot tell a status line that moved
 from one that did not. A capability every program has is worth more than a
 capability every program could have.
 
-`tml.Run` is the other half: it builds the Bubble Tea program, so the protocol
-has something to type into and the program can be driven as well as read.
+`tml.NewProgram` is the other half: it builds the Bubble Tea program, so the
+protocol has something to type into and the program can be driven as well as
+read. It returns the program, because a host that kills it from a worker or
+sends to it needs the handle. `tml.Run` is the same plus running it, for a host
+with nothing to say in between.
 
 ```go
-if _, err := tml.Run(m); err != nil { ... }
+program, err := tml.NewProgram(model, tea.WithContext(ctx))
+if err != nil { ... }
 ```
 
 `tea.NewProgram` builds a program this library cannot reach. One started that
@@ -58,7 +62,7 @@ drive the repaint themselves and wait for a frame that is genuinely new, and
 fail by name when none arrives.
 
 `tml.InspectError` reports a socket that was asked for and could not be opened.
-`tml.Run` returns it; a host that runs its own program checks it. A session
+`tml.NewProgram` returns it, and so does `tml.Run`. A session
 that silently is not listening is one every question times out against with
 nothing to read.
 

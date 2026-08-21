@@ -136,12 +136,20 @@ type RepaintMsg struct{}
 // program this library cannot reach, so a program started that way answers
 // every op=key with "its host wired no key handler" -- true, unhelpful, and
 // entirely avoidable by there being one way to start.
-func Run(m tea.Model, opts ...tea.ProgramOption) (tea.Model, error) {
+func NewProgram(m tea.Model, opts ...tea.ProgramOption) (*tea.Program, error) {
 	p := tea.NewProgram(m, opts...)
 	inspection.drive(p)
-	defer inspection.close()
-	if err := InspectError(); err != nil {
+	return p, InspectError()
+}
+
+// Run is NewProgram plus running it, for a host with nothing to say to the
+// program in between. A host that needs the handle -- to kill the program from
+// a worker, or to send to it -- calls NewProgram and runs it itself.
+func Run(m tea.Model, opts ...tea.ProgramOption) (tea.Model, error) {
+	p, err := NewProgram(m, opts...)
+	if err != nil {
 		return nil, err
 	}
+	defer inspection.close()
 	return p.Run()
 }

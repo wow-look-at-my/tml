@@ -130,7 +130,7 @@ lives under `cmd/`.
 
 Answers questions about the frame `Render` painted, one element at a time: rectangle, content size, clip, scroll, focus,
 and drawn text by id. **There is nothing to wire.** Every `Load` adopts its view into the process's one inspector and
-opens `TML_INSPECT_SOCKET` if it is set; `tml.Run` builds the Bubble Tea program so the protocol can drive as well as
+opens `TML_INSPECT_SOCKET` if it is set; `tml.NewProgram` builds the Bubble Tea program so the protocol can drive as well as
 read. `tea.NewProgram` still works and produces a read-only program that says so. A model that caches its frame must
 invalidate on `tml.RepaintMsg` — the one line a host writes, and a restyle fails by name when it is missing. `tml-test`
 asks over the socket; `tml-test serve` opens a browser inspector on the same protocol, where a click selects and a drag
