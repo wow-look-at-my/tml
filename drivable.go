@@ -33,54 +33,61 @@ const DriveGrace = 5 * time.Second
 // exit any other fatal misconfiguration gets.
 type drivable struct {
 	mu    sync.Mutex
-	first time.Time
-	seen  int
+	timer *time.Timer
 }
 
 var drives drivable
 
 // painted is called once per frame, by the View that painted it.
+//
+// The check runs on a TIMER armed here, never on a later frame. An idle
+// terminal program paints once and then waits for a keystroke that is not
+// coming, because the thing that would send one is the inspector it never
+// handed its program to. Waiting for a second frame to notice would mean never
+// noticing -- and that program, sitting there unreachable, is the one this
+// exists for.
 func (d *drivable) painted(driven bool) {
 	if driven || underTest() {
 		return
 	}
-	d.check()
-}
-
-// check is painted without its two exemptions, so a test can reach the failure
-// without building a program and waiting out the window.
-func (d *drivable) check() {
 	d.mu.Lock()
-	if d.first.IsZero() {
-		d.first = time.Now()
-	}
-	d.seen++
-	seen, since := d.seen, time.Since(d.first)
-	d.mu.Unlock()
-
-	// One frame is a one-shot render -- `tml render`, a golden, a screenshot --
-	// and it is over before anything could have driven it. What this catches is
-	// the other shape: a view still painting minutes later with no way in.
-	if seen < 2 || since < DriveGrace {
+	defer d.mu.Unlock()
+	if d.timer != nil {
 		return
 	}
+	// A one-shot render -- `tml render`, a golden, a screenshot -- has exited
+	// long before this fires, which is what keeps the guard away from
+	// everything that is not a running program.
+	d.timer = time.AfterFunc(DriveGrace, func() {
+		if inspection.isDriven() {
+			return
+		}
+		d.check()
+	})
+}
+
+// check is the failure itself, with no timer and no exemptions, so a test can
+// reach it without building a program and waiting out the window.
+func (d *drivable) check() {
 	fmt.Fprintf(os.Stderr, "\ntml: this program has been drawing for %s and the inspector cannot drive it.\n"+
 		"Build it with tml.NewProgram (or tml.Run) instead of tea.NewProgram:\n"+
 		"\n    program, err := tml.NewProgram(model)\n\n"+
 		"tea.NewProgram returns a program this library never sees, so op=key, op=click\n"+
 		"and op=restyle have nothing to send to. Reading works either way; driving does\n"+
 		"not, and a program the debugger only half works against is not one this library\n"+
-		"will keep running.\n", since.Truncate(time.Second))
+		"will keep running.\n", DriveGrace)
 	panic("tml: no way to drive this program; build it with tml.NewProgram")
 }
 
-// reset forgets what has been painted. Test-only, and it exists because the
-// guard is process-wide for the same reason the inspector is.
+// reset disarms the guard. Test-only, and it exists because the guard is
+// process-wide for the same reason the inspector is.
 func (d *drivable) reset() {
 	d.mu.Lock()
 	defer d.mu.Unlock()
-	d.first = time.Time{}
-	d.seen = 0
+	if d.timer != nil {
+		d.timer.Stop()
+		d.timer = nil
+	}
 }
 
 // underTest reports whether this binary was built by `go test`.

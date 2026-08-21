@@ -1,7 +1,5 @@
 package tml
 
-import "time"
-
 // ResetInspection drops the process's inspector and stops serving.
 //
 // Test-only, and it exists because the inspector is deliberately process-wide:
@@ -33,14 +31,7 @@ func Inspect() *Inspector {
 // how a test drives the guard's own clock rather than waiting on it.
 func ResetDrivable() { drives.reset() }
 
-// PaintedUndrivable runs the guard's check as a program with no driver would,
-// on a session that first painted at first and is now painting its seen'th
-// frame. Test-only: it is what lets a test reach the panic without painting for
-// five seconds first.
-func PaintedUndrivable(first time.Time, seen int) {
-	drives.mu.Lock()
-	drives.first = first
-	drives.seen = seen - 1 // check counts the frame it is called for
-	drives.mu.Unlock()
-	drives.check()
-}
+// CheckDrivable is the guard's failure, reached directly. Test-only: it is what
+// lets a test see the panic and its wording without building a program and
+// waiting out the grace window.
+func CheckDrivable() { drives.check() }

@@ -4,7 +4,6 @@ import (
 	"io"
 	"strings"
 	"testing"
-	"time"
 
 	tea "charm.land/bubbletea/v2"
 
@@ -14,33 +13,13 @@ import (
 	"github.com/wow-look-at-my/tml"
 )
 
-// A one-shot render is not a program. `tml render`, a golden and a screenshot
-// all paint once and exit, and none of them was ever going to be driven.
-func TestOneFrameIsNotAnUndrivableProgram(t *testing.T) {
-	tml.ResetDrivable()
-	assert.NotPanics(t, func() {
-		tml.PaintedUndrivable(time.Now().Add(-time.Hour), 1)
-	}, "one frame is a render, not a running program")
-}
-
-// Inside the grace window nothing is said: a host builds its program after it
-// loads its document, and this is the gap between the two.
-func TestAProgramThatHasJustStartedIsLeftAlone(t *testing.T) {
-	tml.ResetDrivable()
-	assert.NotPanics(t, func() {
-		tml.PaintedUndrivable(time.Now(), 40)
-	})
-}
-
-// The hole this closes: a host that built its program with tea.NewProgram keeps
-// painting, and the inspector can read every frame and drive none of them. The
-// program goes down rather than staying up in that state, and the message names
-// the identifier that fixes it.
-func TestAProgramNothingCanDriveDoesNotKeepRunning(t *testing.T) {
+// The failure names the fix. A guard that takes a program down and leaves the
+// reader to guess why has traded one broken state for a worse one.
+func TestTheRefusalNamesTheFix(t *testing.T) {
 	tml.ResetDrivable()
 	assert.PanicsWithValue(t,
 		"tml: no way to drive this program; build it with tml.NewProgram",
-		func() { tml.PaintedUndrivable(time.Now().Add(-tml.DriveGrace-time.Second), 2) })
+		func() { tml.CheckDrivable() })
 }
 
 // A program tml built is driven from the frame it starts on, so the guard has

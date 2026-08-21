@@ -30,17 +30,17 @@ const doc = `<?xml version="1.1" encoding="UTF-8"?>
 	<Template><Stack id="app" width="20"><Text id="hello">hello</Text></Stack></Template>
 </Component>`
 
-type tickMsg struct{}
-
-// tick paints often enough that the guard sees a program rather than a render.
-func tick() tea.Cmd {
-	return tea.Tick(100*time.Millisecond, func(time.Time) tea.Msg { return tickMsg{} })
-}
-
 type model struct{ view *tml.View }
 
-func (m model) Init() tea.Cmd                      { return tick() }
-func (m model) Update(tea.Msg) (tea.Model, tea.Cmd) { return m, tick() }
+// It paints once and then waits, which is what a terminal program does between
+// keystrokes and the harder case for the guard: there is no second frame to
+// notice anything on. It also refuses to end on its own, so if it exits, the
+// guard is why.
+func (m model) Init() tea.Cmd {
+	return tea.Tick(time.Hour, func(time.Time) tea.Msg { return struct{}{} })
+}
+
+func (m model) Update(tea.Msg) (tea.Model, tea.Cmd) { return m, nil }
 
 func (m model) View() tea.View {
 	out, err := m.view.Render(nil, 40, 10)
