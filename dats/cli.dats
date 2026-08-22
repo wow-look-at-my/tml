@@ -46,12 +46,18 @@ tests:
 
 	- desc: check accepts a file
 	  cmd: '"$GO_TOOLCHAIN_DATS_BUILD_DIR/tml" check testdata/inspect/app.tml'
+	  inputs:
+		env:
+			TML_INSPECT_DIR: "{outputs.sockets}"
 	  outputs:
 		stdout:
 			- "ok: testdata/inspect/app.tml"
 
 	- desc: tree with a file prints the expanded document
 	  cmd: '"$GO_TOOLCHAIN_DATS_BUILD_DIR/tml" tree testdata/inspect/app.tml --prop title=STATUS'
+	  inputs:
+		env:
+			TML_INSPECT_DIR: "{outputs.sockets}"
 	  outputs:
 		stdout:
 			- header
@@ -59,12 +65,18 @@ tests:
 
 	- desc: render prints a frame
 	  cmd: '"$GO_TOOLCHAIN_DATS_BUILD_DIR/tml" render testdata/inspect/app.tml --width 40 --height 8 --prop title=STATUS --prop rows=one'
+	  inputs:
+		env:
+			TML_INSPECT_DIR: "{outputs.sockets}"
 	  outputs:
 		stdout:
 			- STATUS
 
 	- desc: inspect --id header is JSON for that element
 	  cmd: '"$GO_TOOLCHAIN_DATS_BUILD_DIR/tml" inspect testdata/inspect/app.tml --width 40 --height 8 --prop title=STATUS --prop rows=one,two,three --id header'
+	  inputs:
+		env:
+			TML_INSPECT_DIR: "{outputs.sockets}"
 	  outputs:
 		stdout:
 			- '"id": "header"'
