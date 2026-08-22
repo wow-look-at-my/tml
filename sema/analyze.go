@@ -140,8 +140,8 @@ func (p *Program) compileTree(path string, def *syntax.Component) error {
 	if err := p.compileOne(path, def); err != nil {
 		return err
 	}
-	for _, helper := range def.Helpers {
-		if err := p.compileTree(path, helper); err != nil {
+	for _, data := range def.DataTemplates {
+		if err := p.compileTree(path, data); err != nil {
 			return err
 		}
 	}

@@ -13,11 +13,10 @@ import (
 	"github.com/wow-look-at-my/tml/inspect"
 )
 
-func TestDialNamesTheMissingSocket(t *testing.T) {
+func TestDialNamesTheUnresolvedSocket(t *testing.T) {
 	_, err := dial("")
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "--socket")
-	assert.Contains(t, err.Error(), "TML_INSPECT_SOCKET")
+	assert.Contains(t, err.Error(), "no socket resolved")
 }
 
 func TestAskReadsOneJSONResponse(t *testing.T) {

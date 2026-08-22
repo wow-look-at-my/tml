@@ -88,7 +88,8 @@ tml tree    app.tml                      # the expanded element tree
 tml render  app.tml --width 80 --height 24
 tml inspect app.tml --width 80 --height 24 --id composer
 
-# a running program, on $TML_INSPECT_SOCKET or --socket
+# a running program (discovers the socket; --socket or $TML_INSPECT_SOCKET overrides)
+tml list
 tml ids
 tml query --id composer
 tml tree                                 # the live frame, including boxes with no id
@@ -100,9 +101,10 @@ the rect each one occupies, the content size it was given, its clip, its scroll 
 `--id` it reports one element, and fails naming the ids that do exist when nothing carries the one asked for. A test
 can then assert that a region is where it should be and says what it should say, without pinning the whole frame.
 
-The live commands talk to a program that called `tml.NewInspector`: `query`, `elements`, `ids`, `at`, `frame`,
-`input`, `restyle`, and `serve`. `tree` with a file is the expanded document; `tree` with no file is the frame on
-screen. See `docs/inspector.md`.
+The live commands talk to any program that called `tml.Load`: `query`, `elements`, `ids`, `list`, `at`, `frame`,
+`input`, `restyle`, and `serve`. A program serves on `$XDG_RUNTIME_DIR/tml/<pid>.sock` with nothing set; `tml list`
+names them. `tree` with a file is the expanded document; `tree` with no file is the frame on screen. See
+`docs/inspector.md`.
 
 ## What it does
 

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"os"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -22,18 +21,11 @@ type client struct {
 }
 
 // socketFlag adds --socket to a live-program command. The flag is empty by
-// default so TML_INSPECT_SOCKET is read at call time rather than when the
-// command is constructed.
+// default so discovery (and TML_INSPECT_SOCKET) run at call time rather than
+// when the command is constructed.
 func socketFlag(cmd *cobra.Command, dest *string) {
 	cmd.Flags().StringVar(dest, "socket", "",
-		"path of the program's inspection socket (default $TML_INSPECT_SOCKET)")
-}
-
-func socketPath(flag string) string {
-	if flag != "" {
-		return flag
-	}
-	return os.Getenv("TML_INSPECT_SOCKET")
+		"path of the program's inspection socket (default: discover, or $TML_INSPECT_SOCKET)")
 }
 
 // dial connects, or says why it could not in terms of what the caller can do
@@ -41,11 +33,11 @@ func socketPath(flag string) string {
 // different problems with different fixes.
 func dial(path string) (*client, error) {
 	if path == "" {
-		return nil, errors.New("no socket given: pass --socket or set TML_INSPECT_SOCKET")
+		return nil, errors.New("no socket resolved")
 	}
 	conn, err := net.DialTimeout("unix", path, 5*time.Second)
 	if err != nil {
-		return nil, fmt.Errorf("cannot reach a program at %s: %w\nIs it running, and did it call Inspector.ListenSocket?", path, err)
+		return nil, fmt.Errorf("cannot reach a program at %s: %w\nIs it running, and was it started with TML_INSPECT_SOCKET set to this path?", path, err)
 	}
 	reader := bufio.NewReaderSize(conn, 64*1024)
 	return &client{conn: conn, dec: json.NewDecoder(reader), enc: json.NewEncoder(conn)}, nil
@@ -70,8 +62,14 @@ func (c *client) do(req inspect.Request) (inspect.Response, error) {
 }
 
 // ask opens a connection, asks one question and closes it. Every one-shot
-// subcommand is this plus a printer.
-func ask(path string, req inspect.Request) (inspect.Response, error) {
+// subcommand is this plus a printer. flag is the command's --socket value;
+// resolveSocket turns it into a path, discovering the live program when it is
+// empty.
+func ask(flag string, req inspect.Request) (inspect.Response, error) {
+	path, err := resolveSocket(flag)
+	if err != nil {
+		return inspect.Response{}, err
+	}
 	c, err := dial(path)
 	if err != nil {
 		return inspect.Response{}, err

@@ -1,6 +1,7 @@
 package syntax
 
 import (
+	"os"
 	"testing"
 	"testing/fstest"
 
@@ -37,7 +38,7 @@ func TestLoadResolvesImportsRelativeToTheImporter(t *testing.T) {
 func TestLoadPutsHelpersAndSelfInScope(t *testing.T) {
 	fsys := fstest.MapFS{
 		"app.tml": {Data: []byte(header + `<Component xmlns="urn:tml:v1" name="App">
-	<Component name="Row"><Template/></Component>
+	<DataTemplate name="Row"><Template/></DataTemplate>
 	<Template/>
 </Component>`)},
 	}
@@ -46,7 +47,24 @@ func TestLoadPutsHelpersAndSelfInScope(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, []string{"App", "Row"}, unit.InScope("app.tml"),
-		"a component sees itself and its file-private helpers")
+		"a component sees itself and its data templates")
+}
+
+// A file defines exactly one component. A component nested under the root is
+// a second definition, and it is refused by name through the real load path.
+func TestLoadRefusesTwoComponentsInOneFile(t *testing.T) {
+	src, err := os.ReadFile("testdata/two-components.tml")
+	require.NoError(t, err)
+	fsys := fstest.MapFS{
+		"app.tml": {Data: src},
+	}
+
+	_, err = Load(fsys, "app.tml")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "app.tml")
+	assert.Contains(t, err.Error(), `"App"`)
+	assert.Contains(t, err.Error(), `"Row"`)
+	assert.Contains(t, err.Error(), "one component per file")
 }
 
 // An import cycle only makes names mutually visible, so loading must terminate
@@ -102,14 +120,14 @@ func TestLoadRejects(t *testing.T) {
 		assert.Contains(t, err.Error(), "cannot escape")
 	})
 
-	t.Run("two components cannot share a name in one scope", func(t *testing.T) {
+	t.Run("two imported components cannot share a name in one scope", func(t *testing.T) {
+		// The old shape for this clash was a nested definition, which the
+		// one-component rule now refuses earlier. Duplicate names still clash
+		// when two separate imports both declare the same component.
 		fsys := fstest.MapFS{
-			"app.tml": {Data: []byte(header + `<Component xmlns="urn:tml:v1" name="App">
-	<Import src="./card.tml"/>
-	<Component name="Card"><Template/></Component>
-	<Template/>
-</Component>`)},
-			"card.tml": {Data: []byte(component("Card", ``))},
+			"app.tml":        {Data: []byte(component("App", `<Import src="./card.tml"/><Import src="./other/card.tml"/>`))},
+			"card.tml":       {Data: []byte(component("Card", ``))},
+			"other/card.tml": {Data: []byte(component("Card", ``))},
 		}
 		_, err := Load(fsys, "app.tml")
 		require.Error(t, err)

@@ -37,7 +37,7 @@ func newQueryCmd() *cobra.Command {
 			if id == "" {
 				return fmt.Errorf("--id is required; run `tml ids` to see what the frame declares")
 			}
-			res, err := ask(socketPath(sock), inspect.Request{Op: "query", ID: id, ANSI: keepANSI})
+			res, err := ask(sock, inspect.Request{Op: "query", ID: id, ANSI: keepANSI})
 			if err != nil {
 				return err
 			}
@@ -105,7 +105,7 @@ func newElementsCmd() *cobra.Command {
 		Short: "Report every id-bearing element of a running program, in document order",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			res, err := ask(socketPath(sock), inspect.Request{Op: "elements", ANSI: keepANSI})
+			res, err := ask(sock, inspect.Request{Op: "elements", ANSI: keepANSI})
 			if err != nil {
 				return err
 			}
@@ -124,7 +124,7 @@ func newIDsCmd() *cobra.Command {
 		Short: "List the ids the current frame of a running program declares",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			res, err := ask(socketPath(sock), inspect.Request{Op: "ids"})
+			res, err := ask(sock, inspect.Request{Op: "ids"})
 			if err != nil {
 				return err
 			}
@@ -146,7 +146,7 @@ func newAtCmd() *cobra.Command {
 			"when nothing does. It is the pointer's own question, asked from a shell.",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			res, err := ask(socketPath(sock), inspect.Request{Op: "at", X: x, Y: y})
+			res, err := ask(sock, inspect.Request{Op: "at", X: x, Y: y})
 			if err != nil {
 				return err
 			}
@@ -176,7 +176,7 @@ func newFrameCmd() *cobra.Command {
 			"test can say \"after the next paint\" instead of sleeping.",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			res, err := ask(socketPath(sock), inspect.Request{Op: "frame", ANSI: keepANSI, Since: since})
+			res, err := ask(sock, inspect.Request{Op: "frame", ANSI: keepANSI, Since: since})
 			if err != nil {
 				return err
 			}
@@ -207,7 +207,7 @@ func newKeyCmd() *cobra.Command {
 			} else if key == "" {
 				return fmt.Errorf("give --key, or --click with --x and --y")
 			}
-			if _, err := ask(socketPath(sock), req); err != nil {
+			if _, err := ask(sock, req); err != nil {
 				return err
 			}
 			_, err := fmt.Fprintln(cmd.OutOrStdout(), "ok")
@@ -237,9 +237,8 @@ func newRestyleCmd() *cobra.Command {
 			"margin-left, background, foreground.",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			path := socketPath(sock)
 			if clear {
-				if _, err := ask(path, inspect.Request{Op: "reset"}); err != nil {
+				if _, err := ask(sock, inspect.Request{Op: "reset"}); err != nil {
 					return err
 				}
 				_, err := fmt.Fprintln(cmd.OutOrStdout(), "overrides dropped")
@@ -256,7 +255,7 @@ func newRestyleCmd() *cobra.Command {
 				}
 				attrs[name] = value
 			}
-			if _, err := ask(path, inspect.Request{Op: "restyle", ID: id, Attrs: attrs}); err != nil {
+			if _, err := ask(sock, inspect.Request{Op: "restyle", ID: id, Attrs: attrs}); err != nil {
 				return err
 			}
 			_, err := fmt.Fprintln(cmd.OutOrStdout(), "ok")

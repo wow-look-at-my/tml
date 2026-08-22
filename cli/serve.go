@@ -70,7 +70,10 @@ func newServeCmd() *cobra.Command {
 			"real, so what the browser shows is what the terminal shows.",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			path := socketPath(sock)
+			path, err := resolveSocket(sock)
+			if err != nil {
+				return err
+			}
 			p := &proxy{path: path}
 			// Fail here rather than after printing a URL that answers nothing:
 			// a page that loads and then says "connection lost" is a worse

@@ -10,35 +10,87 @@ prompt` reports that element's rectangle, its content size, its clip, its
 scroll offsets, whether it holds focus, and the text it drew. A whole-screen
 dump would say none of that.
 
-## Attaching it
+## There is nothing to attach, and nothing to turn on
 
-A host makes one, wires input, and serves:
+Every `View` that `Load` builds is adopted by the process's one inspector, and
+the socket is opened the first time there is a frame to answer about. Not if a
+variable is set, not if a flag is passed: a program that loads a document is a
+program the inspector can reach.
 
-```go
-insp := tml.NewInspector(m.view)
-m.view.OnFrame(insp.Publish)
-insp.OnKey(func(key string) error { program.Send(keyMsg(key)); return nil })
-insp.OnClick(func(x, y int) error {
-	program.Send(tea.MouseClickMsg{X: x, Y: y, Button: tea.MouseLeft})
-	return nil
-})
-insp.OnRepaint(func() error { program.Send(repaintMsg{}); return nil })
-if err := insp.ListenSocket(os.Getenv("TML_INSPECT_SOCKET")); err != nil {
-	return err
-}
+```sh
+./myprogram &
+tml query --id prompt
 ```
 
-Each hook is optional and each one is a capability. A host that wires no key
-handler is read-only, and the protocol answers `op=key` with that reason rather
-than accepting the keystroke and dropping it.
+Neither command names a socket. The program serves on
+`$XDG_RUNTIME_DIR/tml/<pid>.sock`, and `tml` looks there, dials what it
+finds and uses the one that answers. `tml list` is every program running
+now. Two or more, and it says so and asks for `--socket`.
 
-`OnRepaint` is the one that is easy to skip and painful to skip. An override
-only reaches the screen on the next paint, and an idle program does not paint,
-so without it a restyle looks like it did nothing. `Restyle` and `Reset` drive
-the repaint themselves and wait for the frame that answers, so a caller that
-restyles and then reads gets the geometry it asked for.
+- `TML_INSPECT_SOCKET` overrides the path. It is an override, not a switch:
+  with it unset the program still serves.
+- `TML_INSPECT_DIR` overrides the directory the default path is built in,
+  which is what a test sets to keep its programs out of the user's listing.
+- The directory is 0700. The socket carries the right to drive the program, so
+  its boundary is the same one the user's own shell already has.
+- A view that cannot be served is not returned: `Load` fails, naming the path.
+  Handing back a working View and a program nothing can reach is the state this
+  exists to remove.
 
-`examples/agent/main.go` wires all four behind its `-inspect` flag.
+That is deliberate, and it is the whole design. Wiring an inspector used to be
+six calls a host made in the right order, and a host that made five of them got
+a program that was inspectable in principle and useless in fact — so its tests
+went back to reading pane captures, which cannot tell a status line that moved
+from one that did not. An environment variable is the same failure with fewer
+steps: a capability every program has is worth more than one every program
+could have.
+
+`tml.NewProgram` is the other half, and the one thing a host does. It builds the
+Bubble Tea program, so the protocol has something to type into and the program
+can be driven as well as read. It returns the program, because a host that kills
+it from a worker or sends to it needs the handle. `tml.Run` is the same plus
+running it, for a host with nothing to say in between.
+
+It cannot be automatic. The inspector delivers a keystroke by sending a message
+to a running `*tea.Program`, which does not exist when this package
+initialises, and Go offers no way to intercept another package's constructor.
+So it is enforced instead: a view still painting `DriveGrace` after its first
+frame with nothing able to drive it takes the program down, naming this
+function. A program the debugger only half works against is not one this
+library keeps running — see `drivable.go`, and `testdata/undrivable` for the
+program that proves the guard still fires.
+
+```go
+program, err := tml.NewProgram(model, tea.WithContext(ctx))
+if err != nil { ... }
+```
+
+`tea.NewProgram` builds a program this library cannot reach. One started that
+way still answers every question about its frames, and refuses every keystroke
+by name — true, unhelpful, and avoided by there being one way to start.
+
+Reloading is nothing either. `Load` bakes in which half of every theme token
+resolves and how a width is measured, so a host that learns either late — a
+terminal answering OSC 11, or mode 2027 — loads again and renders through a new
+`View`. The inspector follows: the new view records, the old one stops, the
+overrides carry over, and frame numbers continue upward so a caller waiting for
+a newer frame is not answered by the new view's first paint.
+
+### The one thing a host writes
+
+`tml.RepaintMsg` arrives after an override, and a model that caches its frame
+must invalidate that cache on it. Bubble Tea redraws after every update, but a
+model answering `View` with the string it answered last time paints the old
+geometry, so the override lands in the layout and never on the screen.
+
+The protocol catches that rather than letting it pass: `Restyle` and `Reset`
+drive the repaint themselves and wait for a frame that is genuinely new, and
+fail by name when none arrives.
+
+`tml.InspectError` reports a socket that was asked for and could not be opened.
+`tml.NewProgram` returns it, and so does `tml.Run`. A session
+that silently is not listening is one every question times out against with
+nothing to read.
 
 ## One protocol, two transports
 
@@ -106,5 +158,5 @@ picture.
 
 `tools/inspector-check/check.mjs` runs `build/agent` under a pty, asks the CLI
 the questions above, then drives the browser with a pointer and reads the result
-back off the socket. It runs in CI. Removing the `OnRepaint` wiring from the
-example is enough to turn it red.
+back off the socket. It runs in CI. Starting the agent with `tea.NewProgram`
+instead of `tml.Run` is enough to turn it red.

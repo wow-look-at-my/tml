@@ -40,6 +40,7 @@ tests:
 			- "  input "
 			- "  restyle "
 			- "  serve "
+			- "  list "
 		"!stdout":
 			- tml-test
 
@@ -68,27 +69,23 @@ tests:
 		stdout:
 			- '"id": "header"'
 
-	- desc: ids fails when no socket is given
-	  cmd: '"$GO_TOOLCHAIN_DATS_BUILD_DIR/tml" ids'
+	- desc: ids fails when no program is running
+	  cmd: 'dir=$(mktemp -d); TML_INSPECT_SOCKET= TML_INSPECT_DIR="$dir" "$GO_TOOLCHAIN_DATS_BUILD_DIR/tml" ids; rc=$?; rmdir "$dir"; exit $rc'
 	  exit: 1
-	  inputs:
-		env:
-			TML_INSPECT_SOCKET: ""
 	  outputs:
 		stderr:
 			- "--socket"
 			- TML_INSPECT_SOCKET
+			- "no TML program is running"
 
-	- desc: query fails when no socket is given
-	  cmd: '"$GO_TOOLCHAIN_DATS_BUILD_DIR/tml" query --id composer'
+	- desc: query fails when no program is running
+	  cmd: 'dir=$(mktemp -d); TML_INSPECT_SOCKET= TML_INSPECT_DIR="$dir" "$GO_TOOLCHAIN_DATS_BUILD_DIR/tml" query --id composer; rc=$?; rmdir "$dir"; exit $rc'
 	  exit: 1
-	  inputs:
-		env:
-			TML_INSPECT_SOCKET: ""
 	  outputs:
 		stderr:
 			- "--socket"
 			- TML_INSPECT_SOCKET
+			- "no TML program is running"
 
 	- desc: ids prints what the socket answers
 	  cmd: 'sock={outputs.inspect.sock}; python3 {shared.inspect_server.py} "$sock" {shared.ids.json} & pid=$!; n=0; while [ "$n" -lt 50 ] && [ ! -S "$sock" ]; do n=$((n+1)); sleep 0.05; done; "$GO_TOOLCHAIN_DATS_BUILD_DIR/tml" ids --socket "$sock"; rc=$?; kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null; exit $rc'

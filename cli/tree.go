@@ -35,7 +35,7 @@ func newTreeCmd() *cobra.Command {
 			"With no file, asks a running program for the frame on screen, including\n" +
 			"boxes nobody gave an id to — a layout usually goes wrong in a wrapper,\n" +
 			"and that box has to be visible for the mistake to be findable. Connects\n" +
-			"via --socket or TML_INSPECT_SOCKET.",
+			"via --socket, $TML_INSPECT_SOCKET, or by discovering the live program."
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 1 {
@@ -50,7 +50,7 @@ func newTreeCmd() *cobra.Command {
 				fmt.Fprint(cmd.OutOrStdout(), node.Dump())
 				return nil
 			}
-			res, err := ask(socketPath(sock), inspect.Request{Op: "tree"})
+			res, err := ask(sock, inspect.Request{Op: "tree"})
 			if err != nil {
 				return err
 			}

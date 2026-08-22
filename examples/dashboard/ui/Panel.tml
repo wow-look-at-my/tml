@@ -2,9 +2,12 @@
 <Component xmlns="urn:tml:v1" name="Panel">
 	<Property name="heading" type="string" required="true"/>
 	<Property name="width" type="length" default="auto"/>
+	<!-- Forwarded to the box, so a caller's panel is one element the inspector
+	     can name rather than an anonymous row in the tree. -->
+	<Property name="id" type="string" default=""/>
 
 	<Template>
-		<Box style="panel" width="{width}">
+		<Box id="{id}" style="panel" width="{width}">
 			<Stack orientation="vertical">
 				<Text style="title">{heading}</Text>
 				<Slot>

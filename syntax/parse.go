@@ -114,11 +114,14 @@ func parseComponent(path string, el *validator.Element) (*Component, error) {
 			}
 			component.Template = parseTemplateBody(path, child)
 		case "Component":
-			helper, err := parseComponent(path, child)
-			if err != nil {
-				return nil, err
-			}
-			component.Helpers = append(component.Helpers, helper)
+			// A file defines exactly one component. Nested definitions used to
+			// be file-private helpers, and the sharing gap that produced is
+			// why there are imports: a helper only one file could see had to
+			// be copied to be reused. The rule is one file, one component;
+			// the fix for a second one is its own file and an <Import>.
+			return nil, errorf(childPos,
+				"one component per file: %s defines \"%s\" and a nested \"%s\"; put \"%s\" in its own file and <Import> it",
+				path, name, componentName(child), componentName(child))
 		case "DataTemplate":
 			// Same shape as a component -- properties and a template -- and a
 			// different way in. A component is written as an element and handed
@@ -131,16 +134,24 @@ func parseComponent(path string, el *validator.Element) (*Component, error) {
 				return nil, err
 			}
 			data.IsData = true
-			component.Helpers = append(component.Helpers, data)
+			component.DataTemplates = append(component.DataTemplates, data)
 		default:
 			return nil, errorf(childPos,
-				"unexpected <%s> in <Component>; expected Import, Property, Template, DataTemplate or a nested Component", child.Local)
+				"unexpected <%s> in <Component>; expected Import, Property, Template or DataTemplate", child.Local)
 		}
 	}
 	if component.Template == nil {
 		return nil, errorf(pos, "<%s> %q has no <Template>", el.Local, name)
 	}
 	return component, nil
+}
+
+// componentName reads the name attribute of an element that is supposed to be
+// a component definition, for the diagnostic that refuses a second one. An
+// absent or empty name is reported as "" rather than panicking.
+func componentName(el *validator.Element) string {
+	name, _ := attr(el, "name")
+	return name
 }
 
 func parseImport(path string, el *validator.Element) (*Import, error) {

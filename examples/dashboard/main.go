@@ -81,17 +81,23 @@ func (m *model) View() tea.View { return tea.NewView(m.frame()) }
 // UI reachable without a terminal, which is what -frame and any future golden
 // test need.
 func (m *model) frame() string {
-	out, err := m.view.Render(tml.Props{
-		"title":    sema.StringValue("Deployments"),
-		"query":    sema.StringValue(m.input.Value()),
-		"services": sema.StringValue(strings.Join(m.matches(), ",")),
-	}, m.width, m.height)
+	out, err := m.view.Render(m.props(), m.width, m.height)
 	if err != nil {
 		// A render failure is shown, never swallowed: a blank frame would look
 		// like an empty dashboard rather than a broken one.
 		return "tml: " + err.Error()
 	}
 	return out
+}
+
+// props is what the document is rendered from, named so that anything else
+// asking about the same frame lays out the same view.
+func (m *model) props() tml.Props {
+	return tml.Props{
+		"title":    sema.StringValue("Deployments"),
+		"query":    sema.StringValue(m.input.Value()),
+		"services": sema.StringValue(strings.Join(m.matches(), ",")),
+	}
 }
 
 func (m *model) matches() []string {
@@ -127,7 +133,7 @@ func main() {
 		fmt.Println(m.frame())
 		return
 	}
-	if _, err := tea.NewProgram(m).Run(); err != nil {
+	if _, err := tml.Run(m); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
 	}
