@@ -2,6 +2,12 @@
 # under dats/ after the build; $GO_TOOLCHAIN_DATS_BUILD_DIR holds a copy of
 # that binary. Live commands talk to a throwaway unix socket served by
 # inspect_server.py, which answers one inspect.Request with canned JSON.
+#
+# image is the docker-backend fallback (bwrap and seatbelt ignore it): the
+# live tests need python3, which debian:stable-slim does not ship.
+
+sandbox:
+	image: python:3-slim
 
 shared:
 	copy:
