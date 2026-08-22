@@ -13,41 +13,9 @@ permissions:
 
 jobs:
   test:
-    # The wow-linux pool (CI_RUNNER) runs in an unprivileged container whose
-    # seccomp profile denies unshare(CLONE_NEWUSER), so bwrap cannot sandbox,
-    # and docker is not on PATH either. dats then fails closed. The dind pool
-    # is the one dats' own action tells consumers to use (CI_RUNNER_DIND).
-    runs-on: ${{ vars.CI_RUNNER_DIND || 'ubuntu-latest' }}
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v4
-
-      # dats always sandboxes. Try bubblewrap first (host python3, host tml);
-      # if the kernel or the job container refuses a user namespace, docker
-      # is the fallback — which is why this job is on the dind pool.
-      - name: Provision a dats sandbox backend
-        run: |
-          command -v bwrap >/dev/null 2>&1 || (sudo apt-get update && sudo apt-get install -y bubblewrap)
-          if bwrap --ro-bind / / --dev /dev --proc /proc --tmpfs /tmp --unshare-pid --die-with-parent true; then
-            echo "bwrap works"
-            exit 0
-          fi
-          for knob in kernel.apparmor_restrict_unprivileged_userns kernel.unprivileged_userns_clone; do
-            path="/proc/sys/${knob//./\/}"
-            if [ -f "$path" ]; then
-              sudo sysctl -w "$knob=0" || true
-            fi
-          done
-          if bwrap --ro-bind / / --dev /dev --proc /proc --tmpfs /tmp --unshare-pid --die-with-parent true; then
-            echo "bwrap works after clearing the restriction"
-            exit 0
-          fi
-          if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
-            echo "bwrap blocked; dats will fall back to docker"
-            exit 0
-          fi
-          echo "::error::No usable sandbox backend: bwrap is blocked and docker is unavailable."
-          exit 1
-
       # Native per-platform binaries, not the default single fat APE. bubbletea
       # and clipboard carry no GOOS=cosmo files, so the APE build cannot
       # compile this tree.
