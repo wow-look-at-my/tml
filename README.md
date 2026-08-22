@@ -87,12 +87,22 @@ tml check   app.tml                      # parse and check, no rendering
 tml tree    app.tml                      # the expanded element tree
 tml render  app.tml --width 80 --height 24
 tml inspect app.tml --width 80 --height 24 --id composer
+
+# a running program, on $TML_INSPECT_SOCKET or --socket
+tml ids
+tml query --id composer
+tml tree                                 # the live frame, including boxes with no id
+tml serve --addr :7777                   # the browser inspector
 ```
 
 `inspect` is the testable half of `render`. It lays the view out and prints JSON for the elements that carry an `id`:
 the rect each one occupies, the content size it was given, its clip, its scroll position, and the lines it drew. With
 `--id` it reports one element, and fails naming the ids that do exist when nothing carries the one asked for. A test
 can then assert that a region is where it should be and says what it should say, without pinning the whole frame.
+
+The live commands talk to a program that called `tml.NewInspector`: `query`, `elements`, `ids`, `at`, `frame`,
+`input`, `restyle`, and `serve`. `tree` with a file is the expanded document; `tree` with no file is the frame on
+screen. See `docs/inspector.md`.
 
 ## What it does
 

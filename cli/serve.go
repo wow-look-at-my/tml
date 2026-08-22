@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"fmt"
@@ -48,7 +48,7 @@ func (p *proxy) note(msg string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if msg != p.last {
-		fmt.Fprintln(os.Stderr, "tml-test:", msg)
+		fmt.Fprintln(os.Stderr, "tml:", msg)
 		p.last = msg
 	}
 }
@@ -56,6 +56,7 @@ func (p *proxy) note(msg string) {
 // newServeCmd runs the browser inspector.
 func newServeCmd() *cobra.Command {
 	var (
+		sock string
 		addr string
 		open bool
 	)
@@ -69,11 +70,12 @@ func newServeCmd() *cobra.Command {
 			"real, so what the browser shows is what the terminal shows.",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			p := &proxy{path: socket}
+			path := socketPath(sock)
+			p := &proxy{path: path}
 			// Fail here rather than after printing a URL that answers nothing:
 			// a page that loads and then says "connection lost" is a worse
 			// error message than the dial's own.
-			probe, err := dial(socket)
+			probe, err := dial(path)
 			if err != nil {
 				return err
 			}
@@ -84,7 +86,7 @@ func newServeCmd() *cobra.Command {
 				return fmt.Errorf("cannot listen on %s: %w", addr, err)
 			}
 			url := "http://" + ln.Addr().String()
-			fmt.Fprintf(cmd.OutOrStdout(), "inspector on %s (program: %s)\n", url, socket)
+			fmt.Fprintf(cmd.OutOrStdout(), "inspector on %s (program: %s)\n", url, path)
 			if open {
 				fmt.Fprintln(cmd.OutOrStdout(), "open that URL in a browser")
 			}
@@ -102,6 +104,7 @@ func newServeCmd() *cobra.Command {
 			return nil
 		},
 	}
+	socketFlag(cmd, &sock)
 	cmd.Flags().StringVar(&addr, "addr", "127.0.0.1:0", "address to serve the inspector on")
 	cmd.Flags().BoolVar(&open, "print-open-hint", true, "print a line telling you to open the URL")
 	return cmd

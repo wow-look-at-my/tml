@@ -474,7 +474,7 @@ func main() {
 	program := tea.NewProgram(m)
 
 	// An inspector is attached only when one is asked for, so an ordinary run
-	// opens no socket and costs nothing. tml-test talks to this.
+	// opens no socket and costs nothing. `tml query` and `tml serve` talk to this.
 	if *socket != "" {
 		insp := tml.NewInspector(m.view)
 		m.view.OnFrame(insp.Publish)

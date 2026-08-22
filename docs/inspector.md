@@ -5,7 +5,7 @@ that frame was laid out from, and answers questions about it. Nothing is
 re-rendered to answer a question, so an answer describes the frame the terminal
 is showing rather than a frame built to be asked about.
 
-The unit of every answer is one element, not the screen. `tml-test query --id
+The unit of every answer is one element, not the screen. `tml query --id
 prompt` reports that element's rectangle, its content size, its clip, its
 scroll offsets, whether it holds focus, and the text it drew. A whole-screen
 dump would say none of that.
@@ -43,9 +43,9 @@ restyles and then reads gets the geometry it asked for.
 ## One protocol, two transports
 
 `inspect.Server.Handle(Request) Response` is the whole protocol. A unix socket
-carries one JSON request per line, which is what `tml-test` speaks; HTTP posts
-the identical objects to `/rpc` and streams frames on `/events`. There is one
-place a protocol bug can be.
+carries one JSON request per line, which is what `tml query` and the other live
+commands speak; HTTP posts the identical objects to `/rpc` and streams frames
+on `/events`. There is one place a protocol bug can be.
 
 | op | answers |
 | --- | --- |
@@ -64,7 +64,7 @@ answer would read like an element that drew nothing.
 ## The CLI
 
 ```
-$ TML_INSPECT_SOCKET=/tmp/agent.sock tml-test tree
+$ TML_INSPECT_SOCKET=/tmp/agent.sock tml tree
 <Agent>                            100x30  @  0,0
   <Canvas>                           100x30  @  0,0
     ...
@@ -72,19 +72,19 @@ $ TML_INSPECT_SOCKET=/tmp/agent.sock tml-test tree
         <Border>                            20x20  @  1,4
           <List> #files *focus*               16x4   @  1,4    > cmd/report.go ...
 
-$ tml-test query --id prompt --field text
+$ tml query --id prompt --field text
 ask for a change, or press space to step the script
 
-$ tml-test at --x 25 --y 4
+$ tml at --x 25 --y 4
 session
 
-$ tml-test input --key space
-$ tml-test restyle --id send --set width=20
+$ tml input --key space
+$ tml restyle --id send --set width=20
 ```
 
 ## The browser inspector
 
-`tml-test serve` opens a local page carrying a live preview of the terminal,
+`tml serve` opens a local page carrying a live preview of the terminal,
 the element tree, and the element you pick. It talks to the program over the
 same socket, so it needs no cooperation from the host beyond the hooks above.
 

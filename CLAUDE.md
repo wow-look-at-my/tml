@@ -115,10 +115,9 @@ lives under `cmd/`.
 - `render/` — composition of a laid-out tree into terminal output
 - `widget/` — the widget seam: registry, typed attributes, the bubbles adapter
 - `widgets/` — the built-in widget library
-- `cli/` — cobra commands, one self-registering command per file
-- `cmd/tml/` — the CLI binary
+- `cli/` — cobra commands, one self-registering command per file: file commands (`check`, `tree`, `render`, `inspect`) and live-program commands (`query`, `ids`, `serve`, …)
+- `cmd/tml/` — the one CLI binary
 - `inspect/` — the per-element inspection protocol, its socket and HTTP transports, and the browser inspector's page
-- `cmd/tml-test/` — `tml-test`, which asks a running program about its elements and drives it
 - `examples/dashboard/` — a Bubble Tea program whose whole view is TML
 - `examples/gallery/` — every library widget on one interactive screen
 - `examples/agent/` — a mock coding agent, the proving ground; see docs/agent.md for what it loads on and what it proved
@@ -128,9 +127,9 @@ lives under `cmd/`.
 ## Inspection
 
 `tml.NewInspector(view)` answers questions about the frame `Render` painted, one element at a time: rectangle, content
-size, clip, scroll, focus, and drawn text by id. `tml-test` asks over a unix socket; `tml-test serve` opens a browser
-inspector on the same protocol, where a click selects and a drag rewrites the element's attributes as a real layout
-override. See docs/inspector.md.
+size, clip, scroll, focus, and drawn text by id. `tml query` (and `ids`, `tree` with no file, …) asks over a unix
+socket; `tml serve` opens a browser inspector on the same protocol, where a click selects and a drag rewrites the
+element's attributes as a real layout override. See docs/inspector.md.
 
 ## Hot reload
 
@@ -153,5 +152,5 @@ pictures per branch to a buildhost site the README embeds. Goldens are the mecha
 string cannot show, like which image protocol the terminal took. See docs/screenshots.md.
 
 `tools/inspector-check/check.mjs` is the end-to-end net for the inspection layer: it runs `build/agent` under a pty,
-queries and drives it through `tml-test`, then drives the browser inspector with a pointer and reads the result back off
+queries and drives it through `tml`, then drives the browser inspector with a pointer and reads the result back off
 the socket. CI runs it after the screenshots, on the browser that step already installed.

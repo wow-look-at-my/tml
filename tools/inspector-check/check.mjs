@@ -1,6 +1,6 @@
 // End-to-end check of the inspection layer against a real program.
 //
-// It starts build/agent under a pty, asks build/tml-test the questions the CLI
+// It starts build/agent under a pty, asks build/tml the questions the live CLI
 // exists to answer, then drives the browser inspector with a pointer and reads
 // the result back off the socket. Every assertion is about what the program
 // reports after the fact, so a pass means the terminal's own layout changed.
@@ -30,7 +30,7 @@ function binary(name) {
 }
 
 const agent = binary('agent');
-const cli = binary('tml-test');
+const cli = binary('tml');
 const work = mkdtempSync(join(tmpdir(), 'tml-inspect-'));
 const sock = join(work, 'agent.sock');
 

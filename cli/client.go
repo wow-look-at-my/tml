@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"bufio"
@@ -6,7 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"os"
 	"time"
+
+	"github.com/spf13/cobra"
 
 	"github.com/wow-look-at-my/tml/inspect"
 )
@@ -16,6 +19,21 @@ type client struct {
 	conn net.Conn
 	dec  *json.Decoder
 	enc  *json.Encoder
+}
+
+// socketFlag adds --socket to a live-program command. The flag is empty by
+// default so TML_INSPECT_SOCKET is read at call time rather than when the
+// command is constructed.
+func socketFlag(cmd *cobra.Command, dest *string) {
+	cmd.Flags().StringVar(dest, "socket", "",
+		"path of the program's inspection socket (default $TML_INSPECT_SOCKET)")
+}
+
+func socketPath(flag string) string {
+	if flag != "" {
+		return flag
+	}
+	return os.Getenv("TML_INSPECT_SOCKET")
 }
 
 // dial connects, or says why it could not in terms of what the caller can do
@@ -53,8 +71,8 @@ func (c *client) do(req inspect.Request) (inspect.Response, error) {
 
 // ask opens a connection, asks one question and closes it. Every one-shot
 // subcommand is this plus a printer.
-func ask(req inspect.Request) (inspect.Response, error) {
-	c, err := dial(socket)
+func ask(path string, req inspect.Request) (inspect.Response, error) {
+	c, err := dial(path)
 	if err != nil {
 		return inspect.Response{}, err
 	}

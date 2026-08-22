@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"encoding/json"
@@ -15,16 +15,17 @@ func init() {
 	root.AddCommand(newQueryCmd(), newElementsCmd(), newIDsCmd(), newAtCmd(), newFrameCmd(), newKeyCmd(), newRestyleCmd())
 }
 
-// newQueryCmd reports one element by id.
+// newQueryCmd reports one element by id from a running program.
 func newQueryCmd() *cobra.Command {
 	var (
+		sock     string
 		id       string
 		keepANSI bool
 		field    string
 	)
 	cmd := &cobra.Command{
 		Use:   "query",
-		Short: "Report one element by id",
+		Short: "Report one element by id from a running program",
 		Long: "Prints the element as JSON: what it is, where it landed, the space it\n" +
 			"was given, its clip, its scroll position, whether it has focus, and the\n" +
 			"lines it drew.\n" +
@@ -34,9 +35,9 @@ func newQueryCmd() *cobra.Command {
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if id == "" {
-				return fmt.Errorf("--id is required; run `tml-test ids` to see what the frame declares")
+				return fmt.Errorf("--id is required; run `tml ids` to see what the frame declares")
 			}
-			res, err := ask(inspect.Request{Op: "query", ID: id, ANSI: keepANSI})
+			res, err := ask(socketPath(sock), inspect.Request{Op: "query", ID: id, ANSI: keepANSI})
 			if err != nil {
 				return err
 			}
@@ -46,6 +47,7 @@ func newQueryCmd() *cobra.Command {
 			return encode(cmd.OutOrStdout(), res.Element)
 		},
 	}
+	socketFlag(cmd, &sock)
 	cmd.Flags().StringVar(&id, "id", "", "id of the element to report")
 	cmd.Flags().BoolVar(&keepANSI, "ansi", false, "include the styled text as well as the plain text")
 	cmd.Flags().StringVar(&field, "field", "", "print one field instead of the whole element")
@@ -94,30 +96,35 @@ func printInt(w io.Writer, n int) error {
 }
 
 func newElementsCmd() *cobra.Command {
-	var keepANSI bool
+	var (
+		sock     string
+		keepANSI bool
+	)
 	cmd := &cobra.Command{
 		Use:   "elements",
-		Short: "Report every id-bearing element, in document order",
+		Short: "Report every id-bearing element of a running program, in document order",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			res, err := ask(inspect.Request{Op: "elements", ANSI: keepANSI})
+			res, err := ask(socketPath(sock), inspect.Request{Op: "elements", ANSI: keepANSI})
 			if err != nil {
 				return err
 			}
 			return encode(cmd.OutOrStdout(), res.Elements)
 		},
 	}
+	socketFlag(cmd, &sock)
 	cmd.Flags().BoolVar(&keepANSI, "ansi", false, "include the styled text as well as the plain text")
 	return cmd
 }
 
 func newIDsCmd() *cobra.Command {
-	return &cobra.Command{
+	var sock string
+	cmd := &cobra.Command{
 		Use:   "ids",
-		Short: "List the ids the current frame declares",
+		Short: "List the ids the current frame of a running program declares",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			res, err := ask(inspect.Request{Op: "ids"})
+			res, err := ask(socketPath(sock), inspect.Request{Op: "ids"})
 			if err != nil {
 				return err
 			}
@@ -125,18 +132,21 @@ func newIDsCmd() *cobra.Command {
 			return err
 		},
 	}
+	socketFlag(cmd, &sock)
+	return cmd
 }
 
 func newAtCmd() *cobra.Command {
+	var sock string
 	var x, y int
 	cmd := &cobra.Command{
 		Use:   "at",
-		Short: "Report which element covers a cell",
+		Short: "Report which element of a running program covers a cell",
 		Long: "Prints the id of the innermost element covering the cell, and exits 1\n" +
 			"when nothing does. It is the pointer's own question, asked from a shell.",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			res, err := ask(inspect.Request{Op: "at", X: x, Y: y})
+			res, err := ask(socketPath(sock), inspect.Request{Op: "at", X: x, Y: y})
 			if err != nil {
 				return err
 			}
@@ -147,6 +157,7 @@ func newAtCmd() *cobra.Command {
 			return err
 		},
 	}
+	socketFlag(cmd, &sock)
 	cmd.Flags().IntVar(&x, "x", 0, "column, in cells")
 	cmd.Flags().IntVar(&y, "y", 0, "row, in cells")
 	return cmd
@@ -154,23 +165,25 @@ func newAtCmd() *cobra.Command {
 
 func newFrameCmd() *cobra.Command {
 	var (
+		sock     string
 		keepANSI bool
 		since    uint64
 	)
 	cmd := &cobra.Command{
 		Use:   "frame",
-		Short: "Report the frame the program has on screen",
+		Short: "Report the frame a running program has on screen",
 		Long: "With --since it waits for a frame newer than that sequence number, so a\n" +
 			"test can say \"after the next paint\" instead of sleeping.",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			res, err := ask(inspect.Request{Op: "frame", ANSI: keepANSI, Since: since})
+			res, err := ask(socketPath(sock), inspect.Request{Op: "frame", ANSI: keepANSI, Since: since})
 			if err != nil {
 				return err
 			}
 			return encode(cmd.OutOrStdout(), res.Frame)
 		},
 	}
+	socketFlag(cmd, &sock)
 	cmd.Flags().BoolVar(&keepANSI, "ansi", false, "include the styled text as well as the plain text")
 	cmd.Flags().Uint64Var(&since, "since", 0, "wait for a frame newer than this sequence number")
 	return cmd
@@ -178,13 +191,14 @@ func newFrameCmd() *cobra.Command {
 
 func newKeyCmd() *cobra.Command {
 	var (
+		sock string
 		key  string
 		x, y int
 		clk  bool
 	)
 	cmd := &cobra.Command{
 		Use:   "input",
-		Short: "Send a keystroke or a click to the program",
+		Short: "Send a keystroke or a click to a running program",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			req := inspect.Request{Op: "key", Key: key}
@@ -193,13 +207,14 @@ func newKeyCmd() *cobra.Command {
 			} else if key == "" {
 				return fmt.Errorf("give --key, or --click with --x and --y")
 			}
-			if _, err := ask(req); err != nil {
+			if _, err := ask(socketPath(sock), req); err != nil {
 				return err
 			}
 			_, err := fmt.Fprintln(cmd.OutOrStdout(), "ok")
 			return err
 		},
 	}
+	socketFlag(cmd, &sock)
 	cmd.Flags().StringVar(&key, "key", "", "key name, such as enter or ctrl+c")
 	cmd.Flags().BoolVar(&clk, "click", false, "click at --x,--y instead of sending a key")
 	cmd.Flags().IntVar(&x, "x", 0, "column to click, in cells")
@@ -209,20 +224,22 @@ func newKeyCmd() *cobra.Command {
 
 func newRestyleCmd() *cobra.Command {
 	var (
+		sock  string
 		id    string
 		set   []string
 		clear bool
 	)
 	cmd := &cobra.Command{
 		Use:   "restyle",
-		Short: "Override an element's attributes, or drop every override",
+		Short: "Override a running program's element attributes, or drop every override",
 		Long: "Overrides land on the next frame the program paints. Any attribute the\n" +
 			"document could carry works, layout and style alike: width, height,\n" +
 			"margin-left, background, foreground.",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			path := socketPath(sock)
 			if clear {
-				if _, err := ask(inspect.Request{Op: "reset"}); err != nil {
+				if _, err := ask(path, inspect.Request{Op: "reset"}); err != nil {
 					return err
 				}
 				_, err := fmt.Fprintln(cmd.OutOrStdout(), "overrides dropped")
@@ -239,13 +256,14 @@ func newRestyleCmd() *cobra.Command {
 				}
 				attrs[name] = value
 			}
-			if _, err := ask(inspect.Request{Op: "restyle", ID: id, Attrs: attrs}); err != nil {
+			if _, err := ask(path, inspect.Request{Op: "restyle", ID: id, Attrs: attrs}); err != nil {
 				return err
 			}
 			_, err := fmt.Fprintln(cmd.OutOrStdout(), "ok")
 			return err
 		},
 	}
+	socketFlag(cmd, &sock)
 	cmd.Flags().StringVar(&id, "id", "", "id of the element to override")
 	cmd.Flags().StringArrayVar(&set, "set", nil, "attribute as name=value (repeatable)")
 	cmd.Flags().BoolVar(&clear, "clear", false, "drop every override")

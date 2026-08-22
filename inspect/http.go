@@ -16,9 +16,9 @@ import (
 var uiFS embed.FS
 
 // Handler answers inspection requests. A Server answers them from a program in
-// this process; tml-test answers them by forwarding over a socket. The browser
-// inspector talks to either without knowing which, because this is the only
-// thing it needs.
+// this process; `tml serve` answers them by forwarding over a socket. The
+// browser inspector talks to either without knowing which, because this is the
+// only thing it needs.
 type Handler interface {
 	Handle(Request) Response
 }
