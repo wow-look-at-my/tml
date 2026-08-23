@@ -18,9 +18,9 @@ import (
 // Server answers inspection requests about a live program.
 //
 // One handler serves two transports. A unix socket carries one JSON request
-// per line, which is what tml-test speaks. HTTP serves the browser inspector
-// and posts the identical objects to /rpc, so there is one protocol to reason
-// about and one place a bug can be.
+// per line, which is what `tml query` and the other live commands speak. HTTP
+// serves the browser inspector and posts the identical objects to /rpc, so
+// there is one protocol to reason about and one place a bug can be.
 type Server struct {
 	source Source
 	// control is the source when it can also be driven. A nil one answers

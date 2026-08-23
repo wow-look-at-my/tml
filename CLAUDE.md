@@ -116,10 +116,9 @@ lives under `cmd/`.
 - `render/` — composition of a laid-out tree into terminal output
 - `widget/` — the widget seam: registry, typed attributes, the bubbles adapter
 - `widgets/` — the built-in widget library
-- `cli/` — cobra commands, one self-registering command per file
-- `cmd/tml/` — the CLI binary
+- `cli/` — cobra commands, one self-registering command per file: file commands (`check`, `tree`, `render`, `inspect`) and live-program commands (`query`, `ids`, `list`, `serve`, …)
+- `cmd/tml/` — the one CLI binary
 - `inspect/` — the per-element inspection protocol, its socket and HTTP transports, and the browser inspector's page
-- `cmd/tml-test/` — `tml-test`, which asks a running program about its elements and drives it
 - `examples/dashboard/` — a Bubble Tea program whose whole view is TML
 - `examples/gallery/` — every library widget on one interactive screen
 - `examples/agent/` — a mock coding agent, the proving ground; see docs/agent.md for what it loads on and what it proved
@@ -132,14 +131,14 @@ Answers questions about the frame `Render` painted, one element at a time: recta
 and drawn text by id. **There is nothing to wire and nothing to turn on.** Every `Load` adopts its view into the
 process's one inspector and opens a socket — `$XDG_RUNTIME_DIR/tml/<pid>.sock`, in a 0700 directory, with no variable
 set and no flag passed. `TML_INSPECT_SOCKET` overrides the path and `TML_INSPECT_DIR` the directory; neither is a
-switch, and a view that cannot be served fails `Load` rather than running unreachable. `tml-test` finds the program by
-dialling what is in that directory (`tml-test list` names them all).
+switch, and a view that cannot be served fails `Load` rather than running unreachable. `tml query` finds the program by
+dialling what is in that directory (`tml list` names them all).
 
 `tml.NewProgram` is the one thing a host does: driving needs a running `*tea.Program`, which cannot exist before the host
 builds it. A program built with `tea.NewProgram` is readable and not drivable, and `drivable.go` takes it down after
 `DriveGrace` rather than leave the debugger half working — `testdata/undrivable` is the program that proves the guard
 still fires. A model that caches its frame must invalidate on `tml.RepaintMsg` — the one line a host writes, and a
-restyle fails by name when it is missing. `tml-test serve` opens a browser inspector on the same protocol, where a click
+restyle fails by name when it is missing. `tml serve` opens a browser inspector on the same protocol, where a click
 selects and a drag rewrites the element's attributes as a real layout override. See docs/inspector.md.
 
 A test waits on the screen rather than sleeping: `query --await REGEX` and `--await-gone` block until the field matches,
@@ -167,5 +166,5 @@ pictures per branch to a buildhost site the README embeds. Goldens are the mecha
 string cannot show, like which image protocol the terminal took. See docs/screenshots.md.
 
 `tools/inspector-check/check.mjs` is the end-to-end net for the inspection layer: it runs `build/agent` under a pty,
-queries and drives it through `tml-test`, then drives the browser inspector with a pointer and reads the result back off
+queries and drives it through `tml`, then drives the browser inspector with a pointer and reads the result back off
 the socket. CI runs it after the screenshots, on the browser that step already installed.

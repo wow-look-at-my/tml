@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"fmt"
@@ -21,13 +21,17 @@ type program struct {
 
 // resolveSocket answers which program to talk to.
 //
-// A path given by hand wins, and everything else is discovery: a program built
-// on this library serves whether or not anybody asked it to, so the common case
-// is that the caller knows a program is running and not where its socket is.
-// Making them find out would put the switch back, one layer along.
-func resolveSocket() (string, error) {
-	if socket != "" {
-		return socket, nil
+// A path given by hand wins, then TML_INSPECT_SOCKET, and everything else is
+// discovery: a program built on this library serves whether or not anybody
+// asked it to, so the common case is that the caller knows a program is
+// running and not where its socket is. Making them find out would put the
+// switch back, one layer along.
+func resolveSocket(flag string) (string, error) {
+	if flag != "" {
+		return flag, nil
+	}
+	if env := os.Getenv(tml.SocketEnv); env != "" {
+		return env, nil
 	}
 	dir := tml.SocketDir()
 	live, err := livePrograms(dir)
@@ -82,8 +86,10 @@ func listing(live []program) string {
 	return strings.TrimRight(b.String(), "\n")
 }
 
-func init() {
-	root.AddCommand(&cobra.Command{
+func init() { root.AddCommand(newListCmd()) }
+
+func newListCmd() *cobra.Command {
+	return &cobra.Command{
 		Use:   "list",
 		Short: "List the TML programs running as this user",
 		Long: "Every program built on TML serves the inspection protocol, so this is\n" +
@@ -102,5 +108,5 @@ func init() {
 			fmt.Fprintln(cmd.OutOrStdout(), listing(live))
 			return nil
 		},
-	})
+	}
 }

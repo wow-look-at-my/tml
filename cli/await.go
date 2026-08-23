@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"fmt"
@@ -35,7 +35,7 @@ func awaitField(id string, ansi bool, field, pattern string, gone bool, timeout 
 		asked  bool
 	)
 	for {
-		res, err := ask(inspect.Request{Op: "query", ID: id, ANSI: ansi})
+		res, err := ask("", inspect.Request{Op: "query", ID: id, ANSI: ansi})
 		switch {
 		case err != nil:
 			// The program may still be starting, or the frame may not declare
