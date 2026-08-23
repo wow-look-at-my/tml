@@ -6,6 +6,17 @@
 shared:
 	copy:
 		inspect_server.mjs: inspect_server.mjs
+# inspect_server.py, which answers one inspect.Request with canned JSON.
+#
+# image is the docker-backend fallback (bwrap and seatbelt ignore it): the
+# live tests need python3, which debian:stable-slim does not ship.
+
+sandbox:
+	image: python:3-slim
+
+shared:
+	copy:
+		inspect_server.py: inspect_server.py
 	files:
 		ids.json: |
 			{"ids":["composer","status"]}
@@ -95,6 +106,7 @@ tests:
 
 	- desc: ids prints what the socket answers
 	  cmd: 'sock={outputs.inspect.sock}; node {shared.inspect_server.mjs} "$sock" {shared.ids.json} & pid=$!; n=0; while [ "$n" -lt 50 ] && [ ! -S "$sock" ]; do n=$((n+1)); sleep 0.05; done; "$GO_TOOLCHAIN_DATS_BUILD_DIR/tml" ids --socket "$sock"; rc=$?; kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null; exit $rc'
+	  cmd: 'sock={outputs.inspect.sock}; python3 {shared.inspect_server.py} "$sock" {shared.ids.json} & pid=$!; n=0; while [ "$n" -lt 50 ] && [ ! -S "$sock" ]; do n=$((n+1)); sleep 0.05; done; "$GO_TOOLCHAIN_DATS_BUILD_DIR/tml" ids --socket "$sock"; rc=$?; kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null; exit $rc'
 	  timeout: 10s
 	  outputs:
 		stdout:
@@ -103,6 +115,7 @@ tests:
 
 	- desc: query --field text prints the element's text
 	  cmd: 'sock={outputs.inspect.sock}; node {shared.inspect_server.mjs} "$sock" {shared.query.json} & pid=$!; n=0; while [ "$n" -lt 50 ] && [ ! -S "$sock" ]; do n=$((n+1)); sleep 0.05; done; "$GO_TOOLCHAIN_DATS_BUILD_DIR/tml" query --socket "$sock" --id prompt --field text; rc=$?; kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null; exit $rc'
+	  cmd: 'sock={outputs.inspect.sock}; python3 {shared.inspect_server.py} "$sock" {shared.query.json} & pid=$!; n=0; while [ "$n" -lt 50 ] && [ ! -S "$sock" ]; do n=$((n+1)); sleep 0.05; done; "$GO_TOOLCHAIN_DATS_BUILD_DIR/tml" query --socket "$sock" --id prompt --field text; rc=$?; kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null; exit $rc'
 	  timeout: 10s
 	  outputs:
 		stdout:
@@ -110,6 +123,7 @@ tests:
 
 	- desc: tree with no file prints the live frame
 	  cmd: 'sock={outputs.inspect.sock}; node {shared.inspect_server.mjs} "$sock" {shared.tree.json} & pid=$!; n=0; while [ "$n" -lt 50 ] && [ ! -S "$sock" ]; do n=$((n+1)); sleep 0.05; done; "$GO_TOOLCHAIN_DATS_BUILD_DIR/tml" tree --socket "$sock"; rc=$?; kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null; exit $rc'
+	  cmd: 'sock={outputs.inspect.sock}; python3 {shared.inspect_server.py} "$sock" {shared.tree.json} & pid=$!; n=0; while [ "$n" -lt 50 ] && [ ! -S "$sock" ]; do n=$((n+1)); sleep 0.05; done; "$GO_TOOLCHAIN_DATS_BUILD_DIR/tml" tree --socket "$sock"; rc=$?; kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null; exit $rc'
 	  timeout: 10s
 	  outputs:
 		stdout:
