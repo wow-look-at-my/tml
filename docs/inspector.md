@@ -141,19 +141,19 @@ A test asserts about a screen that is still changing, so its real question is
 is, and the guess is wrong on somebody else's machine.
 
 ```
-$ tml-test query --id status --field text --await 'turn [0-9]+'
+$ tml query --id status --field text --await 'turn [0-9]+'
 turn 1
 
-$ tml-test query --id notice --field text --await-gone 'working' --timeout 30s
+$ tml query --id notice --field text --await-gone 'working' --timeout 30s
 ```
 
 Both block until the field matches, or stops matching, and both exit non-zero
 on a timeout naming what the element last drew — which "expected output to
-contain X" never says. `tml-test frame --since N` is the same idea for the
+contain X" never says. `tml frame --since N` is the same idea for the
 whole screen: it blocks until a frame newer than N, so a repaint a test is
 waiting for is one it can wait on.
 
-`tml-test frame --max-width` prints the widest line of the frame in DISPLAY
+`tml frame --max-width` prints the widest line of the frame in DISPLAY
 CELLS, which is what catches a region that fits its own rectangle and paints
 past its edge. Bytes and runes are both a different number: a box rule is three
 bytes a cell, and a wide glyph is one rune in two cells.
