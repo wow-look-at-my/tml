@@ -5,7 +5,7 @@ that frame was laid out from, and answers questions about it. Nothing is
 re-rendered to answer a question, so an answer describes the frame the terminal
 is showing rather than a frame built to be asked about.
 
-The unit of every answer is one element, not the screen. `tml-test query --id
+The unit of every answer is one element, not the screen. `tml query --id
 prompt` reports that element's rectangle, its content size, its clip, its
 scroll offsets, whether it holds focus, and the text it drew. A whole-screen
 dump would say none of that.
@@ -19,12 +19,12 @@ program the inspector can reach.
 
 ```sh
 ./myprogram &
-tml-test query --id prompt
+tml query --id prompt
 ```
 
 Neither command names a socket. The program serves on
-`$XDG_RUNTIME_DIR/tml/<pid>.sock`, and `tml-test` looks there, dials what it
-finds and uses the one that answers. `tml-test list` is every program running
+`$XDG_RUNTIME_DIR/tml/<pid>.sock`, and `tml` looks there, dials what it
+finds and uses the one that answers. `tml list` is every program running
 now. Two or more, and it says so and asks for `--socket`.
 
 - `TML_INSPECT_SOCKET` overrides the path. It is an override, not a switch:
@@ -95,9 +95,9 @@ nothing to read.
 ## One protocol, two transports
 
 `inspect.Server.Handle(Request) Response` is the whole protocol. A unix socket
-carries one JSON request per line, which is what `tml-test` speaks; HTTP posts
-the identical objects to `/rpc` and streams frames on `/events`. There is one
-place a protocol bug can be.
+carries one JSON request per line, which is what `tml query` and the other live
+commands speak; HTTP posts the identical objects to `/rpc` and streams frames
+on `/events`. There is one place a protocol bug can be.
 
 | op | answers |
 | --- | --- |
@@ -116,7 +116,7 @@ answer would read like an element that drew nothing.
 ## The CLI
 
 ```
-$ TML_INSPECT_SOCKET=/tmp/agent.sock tml-test tree
+$ TML_INSPECT_SOCKET=/tmp/agent.sock tml tree
 <Agent>                            100x30  @  0,0
   <Canvas>                           100x30  @  0,0
     ...
@@ -124,14 +124,14 @@ $ TML_INSPECT_SOCKET=/tmp/agent.sock tml-test tree
         <Border>                            20x20  @  1,4
           <List> #files *focus*               16x4   @  1,4    > cmd/report.go ...
 
-$ tml-test query --id prompt --field text
+$ tml query --id prompt --field text
 ask for a change, or press space to step the script
 
-$ tml-test at --x 25 --y 4
+$ tml at --x 25 --y 4
 session
 
-$ tml-test input --key space
-$ tml-test restyle --id send --set width=20
+$ tml input --key space
+$ tml restyle --id send --set width=20
 ```
 
 ### Waiting for the screen
@@ -141,26 +141,26 @@ A test asserts about a screen that is still changing, so its real question is
 is, and the guess is wrong on somebody else's machine.
 
 ```
-$ tml-test query --id status --field text --await 'turn [0-9]+'
+$ tml query --id status --field text --await 'turn [0-9]+'
 turn 1
 
-$ tml-test query --id notice --field text --await-gone 'working' --timeout 30s
+$ tml query --id notice --field text --await-gone 'working' --timeout 30s
 ```
 
 Both block until the field matches, or stops matching, and both exit non-zero
 on a timeout naming what the element last drew — which "expected output to
-contain X" never says. `tml-test frame --since N` is the same idea for the
+contain X" never says. `tml frame --since N` is the same idea for the
 whole screen: it blocks until a frame newer than N, so a repaint a test is
 waiting for is one it can wait on.
 
-`tml-test frame --max-width` prints the widest line of the frame in DISPLAY
+`tml frame --max-width` prints the widest line of the frame in DISPLAY
 CELLS, which is what catches a region that fits its own rectangle and paints
 past its edge. Bytes and runes are both a different number: a box rule is three
 bytes a cell, and a wide glyph is one rune in two cells.
 
 ## The browser inspector
 
-`tml-test serve` opens a local page carrying a live preview of the terminal,
+`tml serve` opens a local page carrying a live preview of the terminal,
 the element tree, and the element you pick. It talks to the program over the
 same socket, so it needs no cooperation from the host beyond the hooks above.
 
@@ -182,5 +182,5 @@ picture.
 
 `tools/inspector-check/check.mjs` runs `build/agent` under a pty, asks the CLI
 the questions above, then drives the browser with a pointer and reads the result
-back off the socket. It runs in CI. Removing the `OnRepaint` wiring from the
-example is enough to turn it red.
+back off the socket. It runs in CI. Starting the agent with `tea.NewProgram`
+instead of `tml.Run` is enough to turn it red.

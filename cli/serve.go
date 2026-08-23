@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"fmt"
@@ -48,7 +48,7 @@ func (p *proxy) note(msg string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if msg != p.last {
-		fmt.Fprintln(os.Stderr, "tml-test:", msg)
+		fmt.Fprintln(os.Stderr, "tml:", msg)
 		p.last = msg
 	}
 }
@@ -56,6 +56,7 @@ func (p *proxy) note(msg string) {
 // newServeCmd runs the browser inspector.
 func newServeCmd() *cobra.Command {
 	var (
+		sock string
 		addr string
 		open bool
 	)
@@ -69,7 +70,7 @@ func newServeCmd() *cobra.Command {
 			"real, so what the browser shows is what the terminal shows.",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			path, err := resolveSocket()
+			path, err := resolveSocket(sock)
 			if err != nil {
 				return err
 			}
@@ -106,6 +107,7 @@ func newServeCmd() *cobra.Command {
 			return nil
 		},
 	}
+	socketFlag(cmd, &sock)
 	cmd.Flags().StringVar(&addr, "addr", "127.0.0.1:0", "address to serve the inspector on")
 	cmd.Flags().BoolVar(&open, "print-open-hint", true, "print a line telling you to open the URL")
 	return cmd

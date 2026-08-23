@@ -261,7 +261,7 @@ func TestAViewThatCannotBeServedIsNotReturned(t *testing.T) {
 }
 
 // The socket is not conditional on the environment: a program that sets nothing
-// at all still serves, and the path it serves on is the one tml-test looks in.
+// at all still serves, and the path it serves on is the one tml looks in.
 func TestAProgramServesWithNothingSet(t *testing.T) {
 	tml.ResetInspection()
 	t.Setenv(tml.SocketEnv, "")

@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"testing"
@@ -19,9 +19,9 @@ const awaitView = `<?xml version="1.1" encoding="UTF-8"?>
 	<Template><Stack id="app" width="20"><Text id="status">{body}</Text></Stack></Template>
 </Component>`
 
-// render paints one frame of awaitView through the same path a program uses,
-// so the inspector answers about a frame that was really drawn.
-func render(t *testing.T, body string) *tml.View {
+// renderAwait paints one frame of awaitView through the same path a program
+// uses, so the inspector answers about a frame that was really drawn.
+func renderAwait(t *testing.T, body string) *tml.View {
 	t.Helper()
 	view, err := tml.Load(fstest.MapFS{"app.tml": &fstest.MapFile{Data: []byte(awaitView)}},
 		"app.tml", tml.Options{})
@@ -34,7 +34,7 @@ func render(t *testing.T, body string) *tml.View {
 // An await returns as soon as the element draws the pattern, and it returns the
 // element rather than a bare bool, so the caller can print the value it matched.
 func TestAwaitFieldReturnsWhenTheElementDrawsIt(t *testing.T) {
-	view := render(t, "waiting")
+	view := renderAwait(t, "waiting")
 
 	go func() {
 		time.Sleep(150 * time.Millisecond)
@@ -49,7 +49,7 @@ func TestAwaitFieldReturnsWhenTheElementDrawsIt(t *testing.T) {
 // --await-gone is the same question inverted, for something that has to leave
 // the screen.
 func TestAwaitFieldGoneReturnsWhenTheTextLeaves(t *testing.T) {
-	view := render(t, "working")
+	view := renderAwait(t, "working")
 
 	go func() {
 		time.Sleep(150 * time.Millisecond)
@@ -65,7 +65,7 @@ func TestAwaitFieldGoneReturnsWhenTheTextLeaves(t *testing.T) {
 // X" says nothing about what was on screen, which is the whole reason somebody
 // reads a failure.
 func TestAwaitFieldTimeoutReportsWhatItDrew(t *testing.T) {
-	render(t, "still here")
+	renderAwait(t, "still here")
 
 	_, err := awaitField("status", false, "text", "never appears", false, 200*time.Millisecond)
 	require.Error(t, err)
@@ -76,7 +76,7 @@ func TestAwaitFieldTimeoutReportsWhatItDrew(t *testing.T) {
 // An id the frame does not declare is not a match that has not happened yet, so
 // it fails with the timeout and says the element was never answered.
 func TestAwaitFieldReportsAnIDTheFrameDoesNotDeclare(t *testing.T) {
-	render(t, "here")
+	renderAwait(t, "here")
 
 	_, err := awaitField("no-such-id", false, "text", "anything", false, 200*time.Millisecond)
 	require.Error(t, err)
