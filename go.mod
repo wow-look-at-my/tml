@@ -17,7 +17,7 @@ require (
 
 require go.yaml.in/yaml/v3 v3.0.5 // indirect
 
-replace charm.land/bubbletea/v2 => github.com/wow-look-at-my/bubbletea/v2 v2.0.0-20260823065854-382ece7dac34 // go-toolchain:auto-branch=slh
+replace charm.land/bubbletea/v2 => github.com/wow-look-at-my/bubbletea/v2 v2.0.0-20260823065854-382ece7dac34 // go-toolchain:auto-branch
 
 require (
 	github.com/atotto/clipboard v0.1.4 // indirect
