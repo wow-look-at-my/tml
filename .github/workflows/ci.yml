@@ -16,16 +16,13 @@ jobs:
     runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v4
-      # Native per-platform binaries, not the default single fat APE. bubbletea
-      # and clipboard carry no GOOS=cosmo files, so the APE build cannot
-      # compile this tree.
+      # Native per-platform binaries: bubbletea and clipboard ship no GOOS=cosmo files, so the APE build cannot compile this tree.
       - uses: wow-look-at-my/go-toolchain@v1
         with:
           os: linux,darwin,windows
           arch: amd64,arm64
 
-      # The screenshots are taken from the binaries this job just built, in a
-      # real terminal. see docs/screenshots.md
+      # The screenshots are taken from the binaries this job just built, in a real terminal -- see docs/screenshots.md
       - name: Install ttyd
         run: sudo apt-get update && sudo apt-get install -y ttyd
       - name: Install the capture tool
@@ -39,10 +36,7 @@ jobs:
         env:
           SHOTS_BRANCH: ${{ github.ref_name }}
 
-      # The inspection layer is only worth having if it reports what a running
-      # program actually drew, so it is checked against one: the CLI over the
-      # socket, then the browser inspector driven with a pointer.
-      # see docs/inspector.md
+      # The inspector check proves a running program's own drawn output -- see docs/inspector.md
       - name: Install the inspector check
         run: npm install --no-audit --no-fund
         working-directory: tools/inspector-check
@@ -52,13 +46,9 @@ jobs:
       - name: Publish the screenshots
         uses: wow-look-at-my/buildhost/.github/actions/buildhost-publish-site@master
         with:
-          # The project is the repository name, which is the one buildhost's
-          # OIDC trust covers -- naming anything else 404s with "project not
-          # found" rather than creating it.
+          # The project name must match the repository name: buildhost's OIDC trust only covers that name, and anything else 404s.
           branch: ${{ github.ref_name }}
           source_dir: build/shots
           deployment_ref: ${{ github.ref_name }}
-          # tml is private and the pictures are of example programs, so the site
-          # is served without a credential -- which is what lets the README show
-          # them.
+          # tml is private, but these screenshots are public so the README can embed them.
           public: 'true'
