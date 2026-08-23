@@ -13,11 +13,9 @@ permissions:
 
 jobs:
   test:
-    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ vars.CI_RUNNER_DIND || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v4
-      - name: Install bubblewrap
-        run: sudo apt-get update && sudo apt-get install -y bubblewrap
       # Native per-platform binaries: bubbletea and clipboard ship no GOOS=cosmo files, so the APE build cannot compile this tree.
       - uses: wow-look-at-my/go-toolchain@v1
         with:
