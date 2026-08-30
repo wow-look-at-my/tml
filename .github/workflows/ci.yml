@@ -50,5 +50,5 @@ jobs:
           branch: ${{ github.ref_name }}
           source_dir: build/shots
           deployment_ref: ${{ github.ref_name }}
-          # tml is private, but these screenshots are public so the README can embed them.
+          # The README embeds these, so they are served to anyone who opens it.
           public: 'true'
