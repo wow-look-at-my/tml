@@ -6,8 +6,7 @@ import (
 	"strings"
 )
 
-// Value is a typed value: a property after defaulting, an evaluated expression,
-// or a literal attribute.
+// Value is a typed value: a property after defaulting, an evaluated expression, or a literal attribute.
 type Value struct {
 	typ    Type
 	str    string
@@ -22,8 +21,7 @@ type Value struct {
 // Type reports the value's type.
 func (v Value) Type() Type { return v.typ }
 
-// String returns the underlying text of a string, color or enum value, and a
-// rendered form of anything else. This is what interpolation into text uses.
+// String returns the underlying text of a string, color or enum value, and a rendered form of anything else. This is
 func (v Value) String() string {
 	switch {
 	case v.typ.IsList:
@@ -60,12 +58,7 @@ func (v Value) Thickness() Thickness { return v.thick }
 // Items returns the elements of a list value.
 func (v Value) Items() []Value { return v.items }
 
-// Truthy reports whether the value counts as true for a conditional.
-//
-// Only bools, strings and lists have a defined truth: a bool is itself, and a
-// string or list is true when non-empty. Anything else is an error rather than a
-// silent default, so `if="{count}"` is rejected instead of quietly meaning
-// "non-zero".
+// Truthy reports whether the value counts as true for a conditional. Only bools, strings and lists have a defined
 func (v Value) Truthy() (bool, error) {
 	switch {
 	case v.typ.IsList:
@@ -79,8 +72,7 @@ func (v Value) Truthy() (bool, error) {
 	}
 }
 
-// StringValue builds an untyped string value, which is what text interpolation
-// and any unconstrained attribute produces.
+// StringValue builds an untyped string value, which is what text interpolation and any unconstrained attribute
 func StringValue(s string) Value {
 	return Value{typ: Type{Kind: KindString}, str: s}
 }
@@ -90,13 +82,7 @@ func BoolValue(b bool) Value {
 	return Value{typ: Type{Kind: KindBool}, flag: b}
 }
 
-// ListValue builds a list of strings.
-//
-// This is how a host passes a list, and the only way that survives its own
-// contents: joining the items into one string leaves them to be split on commas
-// again, so anything holding a comma -- a sentence, a CSV cell, a log line --
-// comes back as two items. Nothing escapes a comma in that spelling, and
-// nothing should have to.
+// ListValue builds a list of strings. This is how a host passes a list, and the only way that survives its own
 func ListValue(items []string) Value {
 	value := Value{typ: Type{Kind: KindString, IsList: true}}
 	for _, item := range items {
@@ -105,10 +91,7 @@ func ListValue(items []string) Value {
 	return value
 }
 
-// ParseValue reads raw as a literal of type t.
-//
-// A list splits on commas; an empty string is the empty list, which is what
-// makes `default=""` a usable way to declare an optional list.
+// ParseValue reads raw as a literal of type t. A list splits on commas; an empty string is the empty list, which is
 func ParseValue(t Type, raw string) (Value, error) {
 	if t.IsList {
 		element := t
@@ -178,8 +161,7 @@ func ParseValue(t Type, raw string) (Value, error) {
 	return value, nil
 }
 
-// validateColor accepts a hex triplet or an ANSI palette index. Names are
-// deliberately not accepted: a theme token is how a colour gets a name.
+// validateColor accepts a hex triplet or an ANSI palette index. Names are deliberately not accepted: a theme token is
 func validateColor(raw string) error {
 	if raw == "" {
 		return nil

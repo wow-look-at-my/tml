@@ -25,8 +25,7 @@ func textCell(content, row, column string) *sema.Node {
 	return node
 }
 
-// Track solving runs fixed, then auto, then star: a star track only ever divides
-// what the other two left behind.
+// Track solving runs fixed, then auto, then star: a star track only ever divides what the other a pair of left behind.
 func TestTrackSolvingOrder(t *testing.T) {
 	grid := el("Grid", map[string]string{"columns": "6,auto,*"},
 		el("Box", cell("0", "0", nil)),
@@ -64,8 +63,7 @@ func TestGapSitsBetweenTracksOnly(t *testing.T) {
 	assert.Equal(t, 7, box.Children[1].Rect.X, "the second column starts after the gap")
 }
 
-// A span covers its tracks and swallows the gaps between them, so a spanning
-// child lines up with the columns underneath it.
+// A span covers its tracks and swallows the gaps between them, so a spanning child lines up with the columns
 func TestSpanCoversTracksAndTheGapsBetween(t *testing.T) {
 	grid := el("Grid", map[string]string{"columns": "4,4,4", "gap": "1"},
 		el("Box", cell("0", "0", map[string]string{"Grid.columnSpan": "2"})),
@@ -87,8 +85,7 @@ func TestRowsPlaceChildrenVertically(t *testing.T) {
 	assert.Equal(t, 3, box.Children[1].Rect.H)
 }
 
-// Declaring fewer tracks than a child uses widens the grid rather than dropping
-// the child off it.
+// Declaring fewer tracks than a child uses widens the grid rather than dropping the child off it.
 func TestGridWidensForAChildBeyondTheDeclaredTracks(t *testing.T) {
 	grid := el("Grid", map[string]string{"columns": "auto"},
 		el("Box", cell("0", "0", nil)),

@@ -21,8 +21,7 @@ func TestProgressBarTakesAMaximumAndAPercentLabel(t *testing.T) {
 	assert.Equal(t, "████░░░░  50%", bar.Render(13, 1))
 }
 
-// A value outside the range is the host's arithmetic being wrong. Clamping keeps
-// the bar inside its own track rather than letting it corrupt the row it sits in.
+// A value outside the range is the host's arithmetic being wrong. Clamping keeps the bar inside its own track rather
 func TestProgressBarClampsOutOfRangeValues(t *testing.T) {
 	over := build(t, "ProgressBar", map[string]string{"value": "9"})
 	assert.Equal(t, "████", over.Render(4, 1))

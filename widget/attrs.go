@@ -8,20 +8,14 @@ import (
 	"github.com/wow-look-at-my/tml/sema"
 )
 
-// Attrs are one element's evaluated attributes.
-//
-// Every accessor takes the fallback to use when the attribute is absent and
-// reports a failure rather than substituting one: a widget configured with a
-// value nobody can parse is a mistake in the template, and rendering something
-// plausible instead would hide it.
+// Attrs are a single element's evaluated attributes. Every accessor takes the fallback to use when the attribute is absent
 type Attrs struct {
 	element string
 	values  map[string]sema.Value
 	order   []string
 }
 
-// NewAttrs builds an attribute set for an element. Order fixes the sequence
-// Names reports, which keeps diagnostics stable.
+// NewAttrs builds an attribute set for an element. Order fixes the sequence Names reports, which keeps diagnostics
 func NewAttrs(element string, values map[string]sema.Value, order []string) Attrs {
 	return Attrs{element: element, values: values, order: order}
 }
@@ -38,8 +32,7 @@ func (a Attrs) Has(name string) bool {
 // Names lists the attributes in document order.
 func (a Attrs) Names() []string { return a.order }
 
-// Value returns the raw typed value, for a widget that needs more than the
-// accessors below.
+// Value returns the raw typed value, for a widget that needs more than the accessors below.
 func (a Attrs) Value(name string) (sema.Value, bool) {
 	value, ok := a.values[name]
 	return value, ok
@@ -70,8 +63,7 @@ func (a Attrs) Int(name string, deflt int) (int, error) {
 	return n, nil
 }
 
-// Float reads a fractional number, which is what a ratio such as a progress
-// value needs and the language's own int type cannot express.
+// Float reads a fractional number, which is what a ratio such as a progress value needs and the language's own int
 func (a Attrs) Float(name string, deflt float64) (float64, error) {
 	value, ok := a.values[name]
 	if !ok {
@@ -106,7 +98,7 @@ func (a Attrs) Bool(name string, deflt bool) (bool, error) {
 	}
 }
 
-// Enum reads one of a fixed set of words.
+// Enum reads a word from a fixed set.
 func (a Attrs) Enum(name, deflt string, allowed ...string) (string, error) {
 	raw := a.String(name, deflt)
 	for _, member := range allowed {
@@ -117,8 +109,7 @@ func (a Attrs) Enum(name, deflt string, allowed ...string) (string, error) {
 	return "", a.Errorf(name, "expected one of %s, got %q", strings.Join(allowed, ", "), raw)
 }
 
-// List reads a list attribute. A typed list keeps its elements; anything else
-// splits on commas, which is the same spelling a literal list uses.
+// List reads a list attribute. A typed list keeps its elements; anything else splits on commas, which is the same
 func (a Attrs) List(name string) []string {
 	value, ok := a.values[name]
 	if !ok {
@@ -142,8 +133,7 @@ func (a Attrs) List(name string) []string {
 	return parts
 }
 
-// Rune reads a single-character attribute, which is how a widget takes the
-// glyph it draws with.
+// Rune reads a single-character attribute, which is how a widget takes the glyph it draws with.
 func (a Attrs) Rune(name string, deflt rune) (rune, error) {
 	value, ok := a.values[name]
 	if !ok {
@@ -156,10 +146,7 @@ func (a Attrs) Rune(name string, deflt rune) (rune, error) {
 	return runes[0], nil
 }
 
-// Errorf reports a problem with one attribute. It is exported because a widget
-// built outside this package validates its own attributes and should say so in
-// the same shape the accessors do: which element, which attribute, what was
-// wrong with it.
+// Errorf reports a problem with a single attribute. It is exported because a widget built outside this package validates
 func (a Attrs) Errorf(name, format string, args ...any) error {
 	return fmt.Errorf("<%s> %s: %s", a.element, name, fmt.Sprintf(format, args...))
 }

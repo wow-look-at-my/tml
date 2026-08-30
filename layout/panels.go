@@ -10,20 +10,16 @@ import (
 	"github.com/wow-look-at-my/tml/widget"
 )
 
-// anchors are the corners a canvas child can be positioned from. The anchor
-// picks which edges the coordinates are measured from, so a child pinned to
-// topRight stays in the corner when the terminal is resized.
+// anchors are the corners a canvas child can be positioned from. The anchor picks which edges the coordinates are
 var anchors = []string{"topLeft", "topRight", "bottomLeft", "bottomRight", "center"}
 
-// canvasPlacement is one child's position on a canvas.
+// canvasPlacement is a single child's position on a canvas.
 type canvasPlacement struct {
 	x, y   int
 	anchor string
 }
 
-// initCanvas reads every child's placement. A canvas child needs no attributes
-// at all: without them it sits where its own default anchor says, which is how a
-// dialog lands in the middle without being told to.
+// initCanvas reads every child's placement. A canvas child needs no attributes at all: without them it sits where its
 func initCanvas(box *Box) error {
 	for _, child := range box.Children {
 		place := canvasPlacement{anchor: defaultAnchor(child)}
@@ -59,8 +55,7 @@ func initCanvas(box *Box) error {
 	return nil
 }
 
-// defaultAnchor asks a widget where it belongs when nobody said. A dialog
-// answers center; everything else starts in the corner.
+// defaultAnchor asks a widget where it belongs when nobody said. A dialog answers center; everything else starts in
 func defaultAnchor(box *Box) string {
 	anchored, ok := box.Native.(widget.Anchored)
 	if !ok {
@@ -72,9 +67,7 @@ func defaultAnchor(box *Box) string {
 	return "topLeft"
 }
 
-// measureFill is what a positioning surface asks for: everything on offer. A
-// canvas has no content of its own to shrink to, and a canvas that shrank would
-// leave a child pinned to its bottom-right corner nowhere to sit.
+// measureFill is what a positioning surface asks for: everything on offer. A canvas has no content of its own to
 func (e *Engine) measureFill(box *Box, inner Constraints) Size {
 	for _, child := range box.Children {
 		e.measure(child, inner)

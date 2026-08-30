@@ -55,8 +55,7 @@ func TestParseComponentCapturesPropertiesAndTemplate(t *testing.T) {
 	assert.Equal(t, "vertical", orientation)
 }
 
-// Dotted names carry the property-element slot syntax and attached layout
-// properties. Syntax must pass them through untouched for sema to split.
+// Dotted names carry the property-element slot syntax and attached layout properties. Syntax must pass them through
 func TestParsePreservesDottedNames(t *testing.T) {
 	file := mustParse(t, `<Component xmlns="urn:tml:v1" name="App">
 	<Template>
@@ -78,8 +77,7 @@ func TestParsePreservesDottedNames(t *testing.T) {
 	assert.Equal(t, "1", row)
 }
 
-// A file defines exactly one component; a nested <Component> is a second
-// definition and is refused with the file and both names.
+// A file defines exactly a single component; a nested <Component> is another definition and is refused with the file and
 func TestParseRefusesANestedComponent(t *testing.T) {
 	_, err := parseSource(t, `<Component xmlns="urn:tml:v1" name="App">
 	<Component name="Row"><Template/></Component>
@@ -112,8 +110,7 @@ func TestParseTheme(t *testing.T) {
 	assert.Equal(t, "bold", theme.Styles[1].Attrs[0].Name)
 }
 
-// Indentation must not become content, or every panel gains phantom text
-// children and every wrapped sentence keeps its source layout.
+// Indentation must not become content, or every panel gains phantom text children and every wrapped sentence keeps its
 func TestTextNormalization(t *testing.T) {
 	tests := []struct {
 		name string
@@ -208,10 +205,7 @@ func TestParseRejects(t *testing.T) {
 			wantErr: "more than one <Template>",
 		},
 		{
-			// One definition per file, per CLAUDE.md: a file's root is exactly one
-			// <Component> or <Theme>. XML forbids a second root element outright, so
-			// this is what actually enforces the rule -- this case pins it, rather
-			// than leaving it as an accident of the XML grammar nobody tests.
+			// A single definition per file, per CLAUDE.md: a file's root is exactly a single <Component> or <Theme>. XML forbids more than that
 			name:    "a second root component",
 			body:    `<Component xmlns="urn:tml:v1" name="A"><Template/></Component><Component xmlns="urn:tml:v1" name="B"><Template/></Component>`,
 			wantErr: "unexpected content after root element",
@@ -236,8 +230,7 @@ func TestParseRejects(t *testing.T) {
 	}
 }
 
-// The strict XML rules come from xml-validator, and their diagnostics must reach
-// the user with the file name attached rather than being swallowed or reworded.
+// The strict XML rules come from xml-validator, and their diagnostics must reach the user with the file name attached
 func TestXMLFailuresArePositionedAndAttributed(t *testing.T) {
 	_, err := Parse("card.tml", []byte(`<Component xmlns="urn:tml:v1" name="A"><Template/></Component>`))
 	require.Error(t, err, "a missing XML 1.1 declaration is rejected")

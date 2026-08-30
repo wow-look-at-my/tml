@@ -24,10 +24,7 @@ func TestScrollboxShowsTheWindowTheOffsetSelects(t *testing.T) {
 	assert.Equal(t, "c\nd\ne", box.Compose(content(lines(8)...), 1, 3))
 }
 
-// Scrolling stops at the last screenful. How many lines the content wraps to
-// depends on the width the widget was handed, so the end is a number only this
-// side can work out -- which makes "a big number" the only way a host can ask
-// for the bottom of something that is still growing.
+// Scrolling stops at the last screenful. How many lines the content wraps to depends on the width the widget was
 func TestScrollboxStopsAtTheEnd(t *testing.T) {
 	box := composer(t, "Scrollbox", map[string]string{"offset": "9999", "scrollbar": "never"})
 
@@ -47,8 +44,7 @@ func TestScrollboxScrollsSideways(t *testing.T) {
 	assert.Equal(t, "cde", box.Compose(content("abcdefgh"), 3, 1))
 }
 
-// A short line still fills the viewport, or the rows below would be ragged and
-// the box's background would show through in stripes.
+// A short line still fills the viewport, or the rows below would be ragged and the box's background would show through
 func TestScrollboxPadsShortLines(t *testing.T) {
 	box := composer(t, "Scrollbox", map[string]string{"scrollbar": "never"})
 
@@ -56,7 +52,6 @@ func TestScrollboxPadsShortLines(t *testing.T) {
 }
 
 func TestScrollbarTracksTheOffset(t *testing.T) {
-	// Four rows showing eight means a thumb half the height of the track.
 	top := composer(t, "Scrollbox", map[string]string{"offset": "0"})
 	assert.Equal(t, []string{"a█", "b█", "c│", "d│"}, split(top.Compose(content(lines(8)...), 2, 4)))
 
@@ -64,9 +59,7 @@ func TestScrollbarTracksTheOffset(t *testing.T) {
 	assert.Equal(t, []string{"e│", "f│", "g█", "h█"}, split(bottom.Compose(content(lines(8)...), 2, 4)))
 }
 
-// Content that fits needs no thumb. Auto leaves the column blank rather than
-// dropping it, because reflowing the moment the content grew would shift
-// everything sideways.
+// Content that fits needs no thumb. Auto leaves the column blank rather than dropping it, because reflowing the moment
 func TestScrollbarIsBlankWhenEverythingFits(t *testing.T) {
 	auto := composer(t, "Scrollbox", nil)
 	assert.Equal(t, []string{"a ", "b "}, split(auto.Compose(content(lines(2)...), 2, 2)))
@@ -84,10 +77,7 @@ func TestScrollboxGutter(t *testing.T) {
 	assert.Equal(t, 0, w)
 }
 
-// The content is measured against unlimited height -- that is the whole point --
-// the region itself takes the full width so its scrollbar sits at the edge, and
-// layout is told how far the content has been shifted so a control scrolled
-// halfway off is clicked where it is drawn.
+// The content is measured against unlimited height -- that is the whole point -- the region itself takes the full
 func TestScrollboxDeclaresHowItsChildrenAreLaidOut(t *testing.T) {
 	box := composer(t, "Scrollbox", map[string]string{"offset": "3", "offsetX": "2"})
 
@@ -96,8 +86,7 @@ func TestScrollboxDeclaresHowItsChildrenAreLaidOut(t *testing.T) {
 	assert.Equal(t, widget.Layout{FreeH: true, FillW: true, OffsetX: 2, OffsetY: 3}, arranger.Arrange())
 }
 
-// A negative offset is meaningless, and letting it through would put the content
-// below the top of its own viewport.
+// A negative offset is meaningless, and letting it through would put the content below the top of its own viewport.
 func TestScrollboxClampsNegativeOffsets(t *testing.T) {
 	box := build(t, "Scrollbox", map[string]string{"offset": "-4", "offsetX": "-2"})
 
@@ -123,10 +112,7 @@ func TestEmptyScrollboxFillsItsSpace(t *testing.T) {
 
 func split(s string) []string { return strings.Split(s, "\n") }
 
-// A host with more content than it can afford to lay out every frame hands over
-// the rows on screen and says how many there are altogether. The widget draws
-// what it was given rather than cutting into it again: the host already cut at
-// the offset, so a second cut would show the rows after the ones it meant.
+// A host with more content than it can afford to lay out every frame hands over the rows on screen and says how many
 func TestScrollboxDrawsTheWindowItWasHanded(t *testing.T) {
 	box := composer(t, "Scrollbox", map[string]string{
 		"offset":        "500",
@@ -137,9 +123,7 @@ func TestScrollboxDrawsTheWindowItWasHanded(t *testing.T) {
 	assert.Equal(t, "a\nb\nc", box.Compose(content(lines(3)...), 1, 3))
 }
 
-// The bar describes the whole content, which is the only reason to be told its
-// size: a thumb sized against the window would fill the track and say the
-// conversation was three lines long.
+// The bar describes the whole content, which is the only reason to be told its size: a thumb sized against the window
 func TestScrollboxBarMeasuresTheContentNotTheWindow(t *testing.T) {
 	windowed := composer(t, "Scrollbox", map[string]string{
 		"offset":        "0",
@@ -154,8 +138,7 @@ func TestScrollboxBarMeasuresTheContentNotTheWindow(t *testing.T) {
 		"4 rows of 4 does not scroll, so there is no thumb at all")
 }
 
-// contentHeight is what the maximum offset is derived from, so a host can ask
-// for the end of the content rather than the end of the window.
+// contentHeight is what the maximum offset is derived from, so a host can ask for the end of the content rather than
 func TestScrollboxClampsToTheContentItWasToldAbout(t *testing.T) {
 	box := composer(t, "Scrollbox", map[string]string{
 		"offset":        "9999",

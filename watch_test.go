@@ -19,8 +19,7 @@ func component(body string) string {
 	return watchHeader + `<Component xmlns="urn:tml:v1" name="App"><Template>` + body + `</Template></Component>`
 }
 
-// reloads collects what the watcher delivers, so a test can wait for the next
-// result rather than sleeping for a fixed time.
+// reloads collects what the watcher delivers, so a test can wait for the next result rather than sleeping for a fixed
 type reloads struct {
 	views chan *tml.View
 	errs  chan error
@@ -38,12 +37,7 @@ func (r *reloads) onChange(view *tml.View, err error) {
 	r.views <- view
 }
 
-// awaitView keeps applying the edit until a reload arrives.
-//
-// The watcher takes its baseline fingerprint when its goroutine first runs, and
-// a test cannot know when that happens. A single write can therefore land before
-// the baseline and be absorbed into it. Re-applying the edit is what makes the
-// test independent of that scheduling, without sleeping for a guessed interval.
+// awaitView keeps applying the edit until a reload arrives. The watcher takes its baseline fingerprint when its
 func (r *reloads) awaitView(t *testing.T, edit func()) *tml.View {
 	t.Helper()
 	deadline := time.Now().Add(10 * time.Second)
@@ -100,8 +94,7 @@ func TestWatchReloadsOnChange(t *testing.T) {
 	assert.Contains(t, out, "after", "the reloaded view reflects the edit")
 }
 
-// A reload that fails must reach the caller. Keeping the last good view quietly
-// would hide the very typo hot reload exists to surface.
+// A reload that fails must reach the caller. Keeping the last good view quietly would hide the very typo hot reload
 func TestWatchDeliversReloadFailures(t *testing.T) {
 	dir := t.TempDir()
 	writeApp(t, dir, `<Text>fine</Text>`)
@@ -135,10 +128,7 @@ func TestWatchStopsWhenTheContextIsCancelled(t *testing.T) {
 	}
 }
 
-// How fast a save should show up is the caller's judgement. A program that keeps
-// the watcher armed for a whole session wants seconds, not four directory walks
-// of every one, and the only way to prove the interval is honoured is to pick one
-// nothing could fire inside of.
+// How fast a save should show up is the caller's judgement. A program that keeps the watcher armed for a whole session
 func TestWatchIntervalIsTheCallersToChoose(t *testing.T) {
 	dir := t.TempDir()
 	writeApp(t, dir, `<Text>before</Text>`)

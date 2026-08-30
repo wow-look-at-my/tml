@@ -7,8 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// testScope is a fixed set of names, standing in for a component's properties
-// and its theme.
+// testScope is a fixed set of names, standing in for a component's properties and its theme.
 type testScope struct {
 	props  map[string]Value
 	tokens map[string]Value
@@ -64,8 +63,7 @@ func TestEscapedBracesProduceLiteralText(t *testing.T) {
 	assert.Equal(t, "{title}", value.String(), "{{ and }} are the only escaping the language has")
 }
 
-// A lone reference keeps its type, so padding="{gutter}" is still a thickness.
-// Mixing a reference with text produces a string.
+// A lone reference keeps its type, so padding="{gutter}" is still a thickness. Mixing a reference with text produces a
 func TestSoleReferenceKeepsItsTypeButInterpolationDoesNot(t *testing.T) {
 	thickness, err := ParseType("thickness")
 	require.NoError(t, err)

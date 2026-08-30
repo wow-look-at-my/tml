@@ -6,8 +6,7 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
-// paint builds a style from an optional colour, so a widget can colour one part
-// of itself without the element's own style bleeding onto the rest.
+// paint builds a style from an optional colour, so a widget can colour a single part of itself without the element's own
 func paint(color string) lipgloss.Style {
 	style := lipgloss.NewStyle()
 	if color == "" {
@@ -16,8 +15,7 @@ func paint(color string) lipgloss.Style {
 	return style.Foreground(lipgloss.Color(color))
 }
 
-// repeat draws n copies of r, guarding the negative counts that arithmetic on a
-// too-small box produces.
+// repeat draws n copies of r, guarding the negative counts that arithmetic on a too-small box produces.
 func repeat(r rune, n int) string {
 	if n <= 0 {
 		return ""

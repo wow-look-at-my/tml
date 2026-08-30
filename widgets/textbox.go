@@ -11,13 +11,7 @@ import (
 
 var textboxAttrs = []string{"value", "placeholder", "cursor", "disabled", "password"}
 
-// textbox is a text field.
-//
-// It draws a value; it does not edit one. Editing is keys, history, selection
-// and a cursor, all of which are state, and state lives in the host's model --
-// which is also where the value it is showing came from. A host that wants a
-// real editor binds bubbles' textinput as its own element; this is the
-// declarative half, for a field whose value the host already has.
+// textbox is a text field. It draws a value; it does not edit the value. Editing is keys, history, selection and a cursor,
 type textbox struct {
 	value       string
 	placeholder string
@@ -52,9 +46,7 @@ func (t *textbox) AcceptsFocus() bool { return !t.disabled }
 func (t *textbox) SetState(state widget.State) { t.state = state }
 
 func (t *textbox) Measure(maxW, _ int) (int, int) {
-	// A field has no natural width: it is as wide as it is allowed to be. Twenty
-	// is the fallback when nothing constrains it, which is about the width of a
-	// search box.
+	// A field has no natural width: it is as wide as it is allowed to be. A default width applies when nothing constrains
 	if maxW <= 0 {
 		return 20, 1
 	}
@@ -64,9 +56,7 @@ func (t *textbox) Measure(maxW, _ int) (int, int) {
 func (t *textbox) Render(w, _ int) string {
 	shown, empty := t.text()
 
-	// The whole field is underlined, not just the text in it: an empty box with
-	// nothing under it is indistinguishable from a gap, and a field nobody can
-	// see is a field nobody clicks.
+	// The whole field is underlined, not just the text in it: an empty box with nothing under it is indistinguishable
 	style := lipgloss.NewStyle().Underline(true)
 	if t.disabled {
 		style = style.Faint(true).Underline(false)
@@ -74,8 +64,7 @@ func (t *textbox) Render(w, _ int) string {
 		style = style.Faint(true)
 	}
 
-	// The window follows the cursor, so a value longer than the field still shows
-	// the part being typed rather than its beginning.
+	// The window follows the cursor, so a value longer than the field still shows the part being typed rather than its
 	body, start := t.window(shown, w)
 	if gap := w - t.measure.Width(body); gap > 0 {
 		body += strings.Repeat(" ", gap)
@@ -86,8 +75,7 @@ func (t *textbox) Render(w, _ int) string {
 	return caret(style, body, t.column(shown)-start, t.measure)
 }
 
-// column is where the caret sits in the value. An unset cursor means the end,
-// which is where a host that is only appending characters wants it.
+// column is where the caret sits in the value. An unset cursor means the end, which is where a host that is only
 func (t *textbox) column(shown string) int {
 	if t.value == "" {
 		return 0
@@ -98,13 +86,7 @@ func (t *textbox) column(shown string) int {
 	return min(t.cursor, t.measure.Width(shown))
 }
 
-// caret draws one cell of the field reversed. The host owns the text, so this is
-// the only thing left that says where the next character will land.
-//
-// The caret cell is styled from scratch rather than from the field: lipgloss
-// drops Reverse from a whitespace-only render that also carries Underline, and
-// the caret sits on a blank cell whenever it is at the end of the value.
-// render/lipgloss_contract_test.go pins that.
+// caret draws a single cell of the field reversed. The host owns the text, so this is the only thing left that says where
 func caret(style lipgloss.Style, body string, col int, measure widget.Measurer) string {
 	width := measure.Width(body)
 	if col < 0 || col >= width {
@@ -126,8 +108,7 @@ func (t *textbox) text() (string, bool) {
 	return t.value, false
 }
 
-// window is the slice of the text the field shows, and the column of the text
-// that slice starts at.
+// window is the slice of the text the field shows, and the column of the text that slice starts at.
 func (t *textbox) window(s string, w int) (string, int) {
 	if w <= 0 {
 		return "", 0

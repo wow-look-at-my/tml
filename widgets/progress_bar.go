@@ -43,9 +43,7 @@ func newProgressBar(ctx widget.Context) (widget.Native, error) {
 	return bar, nil
 }
 
-// ratio is the fill fraction, clamped: a value outside the range is the host's
-// arithmetic being off, and a bar longer than its own track would corrupt the
-// layout rather than report it.
+// ratio is the fill fraction, clamped: a value outside the range is the host's arithmetic being off, and a bar longer
 func (b *progressBar) ratio() float64 {
 	return min(1, max(0, b.value/b.limit))
 }
@@ -58,8 +56,7 @@ func (b *progressBar) label() string {
 }
 
 func (b *progressBar) Measure(maxW, _ int) (int, int) {
-	// A bar has no natural length: it is as long as it is allowed to be, with
-	// enough room for the label when there is one.
+	// A bar has no natural length: it is as long as it is allowed to be, with enough room for the label when a label exists.
 	width := maxW
 	if width <= 0 {
 		width = 20 + b.measure.Width(b.label())

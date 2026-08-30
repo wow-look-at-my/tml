@@ -1,28 +1,20 @@
 package syntax
 
-// File is one parsed .tml source file. A file holds exactly one definition:
-// either a component or a theme.
+// File is a single parsed .tml source file. A file holds exactly a single definition: either a component or a theme.
 type File struct {
 	Path      string
 	Component *Component
 	Theme     *Theme
 }
 
-// Component is a reusable element definition.
-//
-// DataTemplates are the file's <DataTemplate> declarations: the same shape as
-// a component, but instantiated per item by an items control instead of being
-// written as an element. They are the only nested definitions a file may hold
-// — a file defines exactly one <Component>.
+// Component is a reusable element definition. DataTemplates are the file's <DataTemplate> declarations: the same shape
 type Component struct {
 	Name          string
 	Imports       []*Import
 	Properties    []*Property
 	Template      *Node
 	DataTemplates []*Component
-	// IsData marks a <DataTemplate>: a component instantiated once per item by
-	// an items control, with the item supplying its property values, rather than
-	// written as an element with attributes.
+	// IsData marks a <DataTemplate>: a component instantiated as soon as per item by an items control, with the item supplying
 	IsData bool
 	Pos    Pos
 }
@@ -33,9 +25,7 @@ type Import struct {
 	Pos Pos
 }
 
-// Property declares one typed input to a component. Type is kept as source text
-// here; sema parses it, so an unknown type is reported with the language's own
-// diagnostics rather than a syntax error.
+// Property declares a single typed input to a component. Type is kept as source text here; sema parses it, so an unknown
 type Property struct {
 	Name       string
 	Type       string
@@ -53,8 +43,7 @@ type Theme struct {
 	Pos    Pos
 }
 
-// Token is a named theme value. A token either has a single Value or a
-// light/dark pair, never both.
+// Token is a named theme value. A token either has a single Value or a light/dark pair, never both.
 type Token struct {
 	Name  string
 	Value string
@@ -63,8 +52,7 @@ type Token struct {
 	Pos   Pos
 }
 
-// Style is a named bundle of style attributes. Extends names another style whose
-// unset attributes are inherited.
+// Style is a named bundle of style attributes. Extends names another style whose unset attributes are inherited.
 type Style struct {
 	Name    string
 	Extends string
@@ -72,22 +60,17 @@ type Style struct {
 	Pos     Pos
 }
 
-// NodeKind distinguishes the two things that can appear in a template body.
+// NodeKind distinguishes both things that can appear in a template body.
 type NodeKind int
 
 const (
-	// ElementNode is a markup element: a panel, a native element, a component
-	// instance, or a language directive such as Slot or For.
+	// ElementNode is a markup element: a panel, a native element, a component instance, or a language directive such as
 	ElementNode NodeKind = iota
 	// TextNode is character data, which may contain {expr} interpolations.
 	TextNode
 )
 
-// Node is one entry in a template body.
-//
-// Name holds the element's local name, including any dot: "Stack", "Card", and
-// the property-element form "Card.actions" all arrive here verbatim. Sema splits
-// the dotted form; syntax does not interpret names.
+// Node is a single entry in a template body. Name holds the element's local name, including any dot: "Stack", "Card", and
 type Node struct {
 	Kind     NodeKind
 	Name     string
@@ -97,8 +80,7 @@ type Node struct {
 	Pos      Pos
 }
 
-// Attr is one attribute on an element. Name keeps any dot, so an attached
-// property such as "Grid.row" arrives intact.
+// Attr is a single attribute on an element. Name keeps any dot, so an attached property such as "Grid.row" arrives intact.
 type Attr struct {
 	Name  string
 	Value string

@@ -52,8 +52,7 @@ func TestBorderTitleAligns(t *testing.T) {
 	assert.Equal(t, "┌── Logs ───┐", firstLine(middle.Compose(content("x"), 13, 3)))
 }
 
-// A title with nowhere to go is left off rather than overrunning the corner it
-// would otherwise write over.
+// A title with nowhere to go is left off rather than overrunning the corner it would otherwise write over.
 func TestBorderDropsATitleThatCannotFit(t *testing.T) {
 	border := composer(t, "Border", map[string]string{"title": "A very long title"})
 
@@ -69,20 +68,18 @@ func TestBorderKindsAreNamed(t *testing.T) {
 	assert.Contains(t, err.Error(), "expected one of ascii, block, double, hidden, normal, rounded, thick")
 }
 
-// An empty frame is still a frame: it measures and draws itself, because layout
-// only takes over the children when there are some.
+// An empty frame is still a frame: it measures and draws itself, because layout only takes over the children when
 func TestEmptyBorderStillDrawsItself(t *testing.T) {
 	border := build(t, "Border", nil)
 
 	w, h := border.Measure(0, 0)
 	assert.Equal(t, 4, w)
 	assert.Equal(t, 2, h)
-	// Three rows, not two: a bordered block always has at least one content line.
+	// Several rows, not a pair of: a bordered block always has at least a single content line.
 	assert.Equal(t, "┌──┐\n│  │\n└──┘", border.Render(4, 3))
 }
 
-// A popup is the same frame with a dialog's defaults, and it says where it
-// belongs so a canvas puts it in the middle without being told.
+// A popup is the same frame with a dialog's defaults, and it says where it belongs so a canvas puts it in the middle
 func TestPopupIsADialogShapedFrame(t *testing.T) {
 	popup := composer(t, "Popup", map[string]string{"title": "Confirm"})
 

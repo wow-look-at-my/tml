@@ -10,8 +10,7 @@ import (
 	"github.com/wow-look-at-my/tml/widget"
 )
 
-// build makes one widget the way the engine does, from the element's name and
-// its attributes.
+// build makes a single widget the way the engine does, from the element's name and its attributes.
 func build(t *testing.T, element string, pairs map[string]string) widget.Native {
 	t.Helper()
 	native, err := tryBuild(element, pairs)

@@ -13,24 +13,20 @@ import (
 	"github.com/wow-look-at-my/tml/inspect"
 )
 
-// client is one connection to a program's inspection socket.
+// client is a single connection to a program's inspection socket.
 type client struct {
 	conn net.Conn
 	dec  *json.Decoder
 	enc  *json.Encoder
 }
 
-// socketFlag adds --socket to a live-program command. The flag is empty by
-// default so discovery (and TML_INSPECT_SOCKET) run at call time rather than
-// when the command is constructed.
+// socketFlag adds --socket to a live-program command. The flag is empty by default so discovery (and
 func socketFlag(cmd *cobra.Command, dest *string) {
 	cmd.Flags().StringVar(dest, "socket", "",
 		"path of the program's inspection socket (default: discover, or $TML_INSPECT_SOCKET)")
 }
 
-// dial connects, or says why it could not in terms of what the caller can do
-// about it. A missing socket file and a program that died holding one are
-// different problems with different fixes.
+// dial connects, or says why it could not in terms of what the caller can do about it. A missing socket file and a
 func dial(path string) (*client, error) {
 	if path == "" {
 		return nil, errors.New("no socket resolved")
@@ -45,8 +41,7 @@ func dial(path string) (*client, error) {
 
 func (c *client) Close() error { return c.conn.Close() }
 
-// do sends one request and returns its answer. A protocol error is returned as
-// an error, so every caller reports it the same way.
+// do sends a single request and returns its answer. A protocol error is returned as an error, so every caller reports it
 func (c *client) do(req inspect.Request) (inspect.Response, error) {
 	if err := c.enc.Encode(req); err != nil {
 		return inspect.Response{}, fmt.Errorf("cannot send %s: %w", req.Op, err)
@@ -61,10 +56,7 @@ func (c *client) do(req inspect.Request) (inspect.Response, error) {
 	return res, nil
 }
 
-// ask opens a connection, asks one question and closes it. Every one-shot
-// subcommand is this plus a printer. flag is the command's --socket value;
-// resolveSocket turns it into a path, discovering the live program when it is
-// empty.
+// ask opens a connection, asks a single question and closes it. A single-shot subcommand is this plus a printer. flag is
 func ask(flag string, req inspect.Request) (inspect.Response, error) {
 	path, err := resolveSocket(flag)
 	if err != nil {

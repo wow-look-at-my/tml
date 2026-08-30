@@ -11,8 +11,7 @@ import (
 	"github.com/wow-look-at-my/tml/widget"
 )
 
-// ring publishes a frame the way layout does, so the UI has geometry to resolve
-// against.
+// ring publishes a frame the way layout does, so the UI has geometry to resolve against.
 func ring(u *UI, targets ...layout.Target) {
 	u.Frame(targets)
 }
@@ -21,16 +20,14 @@ func target(id, action string, x, y, w, h int) layout.Target {
 	return layout.Target{ID: id, Action: action, Focus: true, Rect: layout.Rect{X: x, Y: y, W: w, H: h}}
 }
 
-// pointerOnly is an element the pointer can reach and the keyboard cannot, which
-// is what a scrolling region is.
+// pointerOnly is an element the pointer can reach and the keyboard cannot, which is what a scrolling region is.
 func pointerOnly(id, action string, x, y, w, h int) layout.Target {
 	found := target(id, action, x, y, w, h)
 	found.Focus = false
 	return found
 }
 
-// state is how the element at index draws in the frame the UI has published,
-// which is what layout asks for before it measures anything.
+// state is how the element at index draws in the frame the UI has published, which is what layout asks for before it
 func state(u *UI, index int) widget.State {
 	return u.States(u.Targets())[index]
 }
@@ -39,8 +36,7 @@ func press(u *UI, stroke string) []Event {
 	return u.key(stroke)
 }
 
-// Nothing has been focused on the first frame, so the ring starts at its first
-// control. A view whose buttons are all unfocused to begin with looks broken.
+// Nothing has been focused on the opening frame, so the ring starts at its earliest control. A view whose buttons are all
 func TestFocusStartsOnTheFirstControl(t *testing.T) {
 	u := NewUI()
 
@@ -103,8 +99,7 @@ func TestUnboundKeysAreIgnored(t *testing.T) {
 	assert.Empty(t, press(u, "ctrl+c"))
 }
 
-// A host that needs the arrows takes them back, and the ring must stop using
-// them the moment it does.
+// A host that needs the arrows takes them back, and the ring must stop using them the moment it does.
 func TestKeyMapIsReplaceable(t *testing.T) {
 	u := NewUI()
 	u.SetKeyMap(KeyMap{Next: []string{"n"}, Prev: []string{"p"}, Activate: []string{"x"}})
@@ -136,8 +131,7 @@ func TestPointerHoversAndActivatesOnRelease(t *testing.T) {
 	assert.False(t, state(u, 1).Pressed)
 }
 
-// Releasing somewhere else takes the click back, which is what every other
-// button in every other toolkit does.
+// Releasing somewhere else takes the click back, which is what every other button in every other toolkit does.
 func TestReleasingElsewhereCancels(t *testing.T) {
 	u := NewUI()
 	ring(u, target("save", "save", 0, 0, 8, 1), target("quit", "quit", 0, 2, 8, 1))
@@ -155,8 +149,7 @@ func TestClickingNothingDoesNothing(t *testing.T) {
 	assert.Empty(t, u.Update(tea.MouseClickMsg{X: 1, Y: 0, Button: tea.MouseRight}))
 }
 
-// Overlapping controls are painted in document order, so the later one is the
-// one the user can see and therefore the one they clicked.
+// Overlapping controls are painted in document order, so the later control is the only control the user can see and therefore the
 func TestTheTopmostControlWinsAClick(t *testing.T) {
 	u := NewUI()
 	ring(u, target("under", "", 0, 0, 10, 3), target("over", "", 2, 1, 4, 1))
@@ -181,8 +174,7 @@ func TestWheelReportsScrollOverAControl(t *testing.T) {
 	assert.Empty(t, u.Update(tea.MouseWheelMsg{X: 40, Y: 40, Button: tea.MouseWheelUp}))
 }
 
-// A control can vanish between frames -- a popup closes, an `if` flips. Focus
-// falls back to the first rather than being stranded on something not drawn.
+// A control can vanish between frames -- a popup closes, an `if` flips. Focus falls back to the leading rather than
 func TestFocusRecoversWhenItsControlDisappears(t *testing.T) {
 	u := NewUI()
 	ring(u, target("save", "", 0, 0, 8, 1), target("quit", "", 0, 1, 8, 1))
@@ -198,8 +190,7 @@ func TestFocusRecoversWhenItsControlDisappears(t *testing.T) {
 	assert.Empty(t, press(u, "tab"))
 }
 
-// Without an id a control is known by where it sits in the ring, which is all
-// there is to go on.
+// Without an id a control is known by where it sits in the ring, which is all there is to go on.
 func TestControlsWithoutIdsStillFocus(t *testing.T) {
 	u := NewUI()
 	ring(u, target("", "first", 0, 0, 4, 1), target("", "second", 0, 1, 4, 1))
@@ -222,9 +213,7 @@ func TestFocusByIDReportsWhetherItLanded(t *testing.T) {
 	assert.Len(t, u.Targets(), 2)
 }
 
-// A scrolling region answers the wheel without ever being a tab stop: the
-// pointer reaches everything the frame published, the keyboard only the part of
-// it that can do something with a key.
+// A scrolling region answers the wheel without ever being a tab stop: the pointer reaches everything the frame
 func TestThePointerReachesWhatTheKeyboardSkips(t *testing.T) {
 	u := NewUI()
 	ring(u, target("save", "save", 0, 0, 8, 1), pointerOnly("log", "scroll-log", 0, 2, 10, 5))
@@ -238,8 +227,7 @@ func TestThePointerReachesWhatTheKeyboardSkips(t *testing.T) {
 	assert.Equal(t, Event{Kind: Scrolled, ID: "log", Action: "scroll-log", Delta: 1, X: 2, Y: 1}, events[0])
 }
 
-// Clicking one leaves the keyboard where it was rather than sending focus
-// somewhere it cannot come back from.
+// Clicking a control leaves the keyboard where it was rather than sending focus somewhere it cannot come back from.
 func TestClickingAPointerOnlyElementDoesNotMoveFocus(t *testing.T) {
 	u := NewUI()
 	ring(u, target("save", "save", 0, 0, 8, 1), pointerOnly("log", "", 0, 2, 10, 5))
@@ -250,9 +238,7 @@ func TestClickingAPointerOnlyElementDoesNotMoveFocus(t *testing.T) {
 	assert.False(t, u.Focus("log"), "it never takes focus by name either")
 }
 
-// One widget can draw many things -- a list's rows, a table's columns -- and the
-// ring sees one element. Where inside it the pointer landed is what lets the host
-// tell them apart, so it is reported in cells from the control's own corner.
+// A single widget can draw many things -- a list's rows, a table's columns -- and the ring sees a single element. Where inside
 func TestPointerEventsSayWhereInTheControlTheyLanded(t *testing.T) {
 	u := NewUI()
 	ring(u, target("services", "pick", 4, 2, 12, 5))
@@ -264,8 +250,7 @@ func TestPointerEventsSayWhereInTheControlTheyLanded(t *testing.T) {
 	assert.Equal(t, 3, events[0].Y)
 }
 
-// The keyboard has no pointer, and reporting the corner would read as a click on
-// the first row of whatever was focused.
+// The keyboard has no pointer, and reporting the corner would read as a click on the leading row of whatever was focused.
 func TestKeyboardEventsHaveNoPointer(t *testing.T) {
 	u := NewUI()
 	ring(u, target("services", "pick", 4, 2, 12, 5))

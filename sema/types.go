@@ -17,9 +17,7 @@ const (
 	KindLength
 	KindThickness
 	KindEnum
-	// KindRecord is a value with named fields. It is the only kind a host can
-	// build but a document cannot write as a literal: a record comes from the
-	// program, and the document reads its fields.
+	// KindRecord is a value with named fields. It is the only kind a host can build but a document cannot write as a
 	KindRecord
 )
 
@@ -64,9 +62,7 @@ func (t Type) String() string {
 	return base
 }
 
-// ParseType reads a type as written in a type attribute: "string", "int[]",
-// "enum(left|center|right)". The list suffix is "[]" rather than a generic
-// spelling so a type never needs XML escaping.
+// ParseType reads a type as written in a type attribute: "string", "int[]", "enum(left|center|right)". The list suffix
 func ParseType(src string) (Type, error) {
 	var t Type
 	if rest, ok := strings.CutSuffix(src, "[]"); ok {
@@ -101,10 +97,7 @@ func ParseType(src string) (Type, error) {
 	case "thickness":
 		t.Kind = KindThickness
 	case "record":
-		// A record has no literal spelling: `default="..."` cannot write one, and
-		// an attribute cannot either. It is the type of a value the PROGRAM
-		// supplies, which is what `record[]` on a property means -- the items an
-		// items control repeats a template over.
+		// A record has no literal spelling: `default="..."` cannot write a record, and an attribute cannot either. It is the type
 		t.Kind = KindRecord
 	default:
 		return Type{}, fmt.Errorf("unknown type %q", src)
@@ -119,7 +112,7 @@ func cutEnum(src string) (string, bool) {
 	return src[len("enum(") : len(src)-1], true
 }
 
-// LengthKind distinguishes the three ways a size can be expressed.
+// LengthKind distinguishes the several ways a size can be expressed.
 type LengthKind int
 
 const (
@@ -131,7 +124,7 @@ const (
 	LengthStar
 )
 
-// Length is a size along one axis.
+// Length is a size along a single axis.
 type Length struct {
 	Kind   LengthKind
 	Cells  int
@@ -154,7 +147,7 @@ func (l Length) String() string {
 	}
 }
 
-// ParseLength reads "auto", a cell count, or a star share such as "*" or "2*".
+// ParseLength reads "auto", a cell count, or a star share such as "*".
 func ParseLength(src string) (Length, error) {
 	if src == "auto" {
 		return Length{Kind: LengthAuto}, nil
@@ -191,8 +184,7 @@ func (t Thickness) Horizontal() int { return t.Left + t.Right }
 // Vertical is the total space consumed on the vertical axis.
 func (t Thickness) Vertical() int { return t.Top + t.Bottom }
 
-// ParseThickness reads the CSS-style shorthand: one value for all sides, two for
-// vertical then horizontal, or four clockwise from the top.
+// ParseThickness reads the CSS-style shorthand: a single value for all sides, a pair of for vertical then horizontal, or several
 func ParseThickness(src string) (Thickness, error) {
 	fields := strings.Fields(src)
 	nums := make([]int, 0, len(fields))

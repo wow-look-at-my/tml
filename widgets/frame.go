@@ -10,8 +10,7 @@ import (
 	"github.com/wow-look-at-my/tml/widget"
 )
 
-// borders are named rather than described, so a template never spells out box
-// drawing characters.
+// borders are named rather than described, so a template never spells out box drawing characters.
 var borders = map[string]func() lipgloss.Border{
 	"normal":  lipgloss.NormalBorder,
 	"rounded": lipgloss.RoundedBorder,
@@ -26,29 +25,21 @@ var borderKinds = []string{"ascii", "block", "double", "hidden", "normal", "roun
 
 var frameAttrs = []string{"kind", "title", "titleAlign", "color", "pad"}
 
-// frame draws a box around whatever is written inside it, with an optional title
-// let into the top edge.
-//
-// It is a widget rather than a language panel on purpose: everything it does is
-// drawing, and it is built from the same [widget.Composer] seam anything outside
-// the language would use. If this needed something the seam does not offer, the
-// seam would be the thing that was wrong.
+// frame draws a box around whatever is written inside it, with an optional title let into the top edge. It is a widget
 type frame struct {
 	border     lipgloss.Border
 	title      string
 	titleAlign string
 	color      string
 	pad        int
-	// dialog marks the popup spelling, which sits in the middle of a canvas
-	// rather than in its corner.
+	// dialog marks the popup spelling, which sits in the middle of a canvas rather than in its corner.
 	dialog  bool
 	measure widget.Measurer
 }
 
 func newFrame(dialog bool) builder {
 	return func(ctx widget.Context) (widget.Native, error) {
-		// A frame with its content jammed against the edge reads badly, so both
-		// spellings breathe by default. pad="0" is how you get the tight one.
+		// A frame with its content jammed against the edge reads badly, so both spellings breathe by default. An explicit empty pad is how
 		deflt, pad := "normal", 1
 		if dialog {
 			deflt = "rounded"
@@ -80,11 +71,10 @@ func newFrame(dialog bool) builder {
 	}
 }
 
-// Inset is the border on all four sides plus the horizontal padding.
+// Inset is the border on all several sides plus the horizontal padding.
 func (f *frame) Inset() (int, int) { return 2 + f.pad*2, 2 }
 
-// DefaultAnchor puts a dialog in the middle of a canvas. A frame is a decoration
-// and stays where it was put.
+// DefaultAnchor puts a dialog in the middle of a canvas. A frame is a decoration and stays where it was put.
 func (f *frame) DefaultAnchor() string {
 	if f.dialog {
 		return "center"
@@ -92,8 +82,7 @@ func (f *frame) DefaultAnchor() string {
 	return ""
 }
 
-// Measure is only reached when the element is empty, since layout measures a
-// composer's children itself. An empty frame is still a frame.
+// Measure is only reached when the element is empty, since layout measures a composer's children itself. An empty
 func (f *frame) Measure(_, _ int) (int, int) {
 	insetW, insetH := f.Inset()
 	if f.title != "" {
@@ -107,9 +96,7 @@ func (f *frame) Render(w, h int) string { return f.Compose(nil, w, h) }
 func (f *frame) Compose(slots widget.Slots, w, h int) string {
 	body := lipgloss.JoinVertical(lipgloss.Left, slots.Default()...)
 
-	// Width and Height on a lipgloss style are the whole block, border included,
-	// so the inset is not subtracted here -- it was already spent when layout
-	// sized the children.
+	// Width and Height on a lipgloss style are the whole block, border included, so the inset is not subtracted here --
 	style := lipgloss.NewStyle().
 		Border(f.border).
 		Padding(0, f.pad).
@@ -121,10 +108,7 @@ func (f *frame) Compose(slots widget.Slots, w, h int) string {
 	return title(style.Render(body), f.title, f.titleAlign, f.measure)
 }
 
-// title writes a label into the top edge of an already-bordered block.
-//
-// It runs after the border is drawn because that is the only point at which the
-// edge exists as characters.
+// title writes a label into the top edge of an already-bordered block. It runs after the border is drawn because that
 func title(rendered, label, align string, measure widget.Measurer) string {
 	if label == "" {
 		return rendered

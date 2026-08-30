@@ -37,11 +37,10 @@ func layoutTree(t *testing.T, node *sema.Node, w, h int) *Box {
 	return box
 }
 
-// Star children share whatever is left after the fixed ones, in proportion to
-// their weights.
+// Star children share whatever is left after the fixed ones, in proportion to their weights.
 func TestStarSharesLeftoverByWeight(t *testing.T) {
 	root := el("Stack", map[string]string{"orientation": "horizontal"},
-		text("ab"), // auto: 2 cells
+		text("ab"),
 		el("Box", map[string]string{"width": "1*"}),
 		el("Box", map[string]string{"width": "3*"}),
 	)
@@ -57,8 +56,7 @@ func TestStarSharesLeftoverByWeight(t *testing.T) {
 	assert.Equal(t, 22, total, "the row fills exactly, with no cell lost to rounding")
 }
 
-// The remainder from an uneven division goes to the last star child rather than
-// being dropped, so a row always adds up.
+// The remainder from an uneven division goes to the last star child rather than being dropped, so a row always adds up.
 func TestStarRoundingLeavesNoGap(t *testing.T) {
 	root := el("Stack", map[string]string{"orientation": "horizontal"},
 		el("Box", map[string]string{"width": "*"}),
@@ -96,8 +94,7 @@ func TestVerticalIsTheDefaultOrientation(t *testing.T) {
 	assert.Equal(t, 1, box.Children[1].Rect.Y, "children stack downward by default")
 }
 
-// Wrapping changes how much vertical space a text needs, so measure has to
-// account for it or the parent under-budgets the row.
+// Wrapping changes how much vertical space a text needs, so measure has to account for it or the parent under-budgets
 func TestTextMeasuresItsWrappedHeight(t *testing.T) {
 	root := el("Stack", nil, text("the quick brown fox jumps"))
 
@@ -108,16 +105,13 @@ func TestTextMeasuresItsWrappedHeight(t *testing.T) {
 	assert.Equal(t, 1, wide.Children[0].Rect.H, "given room, it stays on one line")
 }
 
-// Padding and borders come out of the content box, so a box's content area is
-// smaller than its rect by exactly the frame.
+// Padding and borders come out of the content box, so a box's content area is smaller than its rect by exactly the
 func TestFrameReducesTheContentBox(t *testing.T) {
 	root := el("Box", map[string]string{"width": "20", "height": "5", "padding": "1 2", "border": "normal"})
 	box := layoutTree(t, root, 40, 10)
 
 	assert.Equal(t, 20, box.Rect.W)
-	// 2 cells of border plus 4 of horizontal padding.
 	assert.Equal(t, 14, box.Content.W)
-	// 2 cells of border plus 2 of vertical padding.
 	assert.Equal(t, 1, box.Content.H)
 }
 

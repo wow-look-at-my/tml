@@ -10,19 +10,10 @@ import (
 	"github.com/wow-look-at-my/tml/inspect"
 )
 
-// pollInterval is how often an await asks again. A question over a unix socket
-// costs nothing next to a frame, so this is short enough that a test does not
-// wait noticeably longer than the program took.
+// pollInterval is how often an await asks again. A question over a unix socket costs nothing next to a frame, so this
 const pollInterval = 50 * time.Millisecond
 
-// awaitField asks one element until its field matches, and answers with the
-// element it matched on.
-//
-// A test asserts about a screen that is still changing, so its real question is
-// "has it happened yet". A sleep answers that by guessing at how fast the
-// machine is, and the guess is wrong on somebody else's machine.
-//
-// gone inverts the match, for something that has to stop being on screen.
+// awaitField asks a single element until its field matches, and answers with the element it matched on. A test asserts
 func awaitField(id string, ansi bool, field, pattern string, gone bool, timeout time.Duration) (*inspect.Element, error) {
 	re, err := regexp.Compile(pattern)
 	if err != nil {
@@ -38,9 +29,7 @@ func awaitField(id string, ansi bool, field, pattern string, gone bool, timeout 
 		res, err := ask("", inspect.Request{Op: "query", ID: id, ANSI: ansi})
 		switch {
 		case err != nil:
-			// The program may still be starting, or the frame may not declare
-			// this id yet. Both are answered by asking again, so the error is
-			// kept for the deadline to report rather than returned here.
+			// The program may still be starting, or the frame may not declare this id yet. Both are answered by asking again,
 			answer = err
 		case res.Element != nil:
 			value, err := fieldValue(*res.Element, field)
@@ -66,8 +55,7 @@ func awaitField(id string, ansi bool, field, pattern string, gone bool, timeout 
 	return nil, fmt.Errorf("%q never matched /%s/ within %s. It last drew:\n%s", id, pattern, timeout, drew)
 }
 
-// fieldValue is one field of an element as text, which is both what --field
-// prints and what --await matches against.
+// fieldValue is a single field of an element as text, which is both what --field prints and what --await matches against.
 func fieldValue(el inspect.Element, field string) (string, error) {
 	switch field {
 	case "", "text":
@@ -93,8 +81,7 @@ func fieldValue(el inspect.Element, field string) (string, error) {
 	}
 }
 
-// printField writes one value bare, so a test can compare it without a JSON
-// parser in the way.
+// printField writes a single value bare, so a test can compare it without a JSON parser in the way.
 func printField(w io.Writer, el inspect.Element, field string) error {
 	value, err := fieldValue(el, field)
 	if err != nil {

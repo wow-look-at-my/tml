@@ -8,19 +8,12 @@ import (
 	"github.com/wow-look-at-my/tml/syntax"
 )
 
-// Builtins are the element names the language defines itself. A host adds its
-// own native elements on top; anything not in either set and not a component in
-// scope is an unknown element.
-//
-// This list is what the layout engine actually implements. A panel is added
-// here only once it lays out, so an unimplemented one is reported as an unknown
-// element rather than silently rendering nothing.
+// Builtins are the element names the language defines itself. A host adds its own native elements on top; anything not
 var Builtins = []string{
 	"Stack", "Grid", "Canvas", "Box", "Text", "Spacer",
 }
 
-// Directives are element names with meaning in the language rather than in the
-// rendered output.
+// Directives are element names with meaning in the language rather than in the rendered output.
 var Directives = []string{"Slot", "For"}
 
 // Program is a checked unit, ready to instantiate.
@@ -34,8 +27,7 @@ type Program struct {
 	tokens     map[string]*syntax.Token
 }
 
-// compiled is a component with its declarations parsed and its template
-// expressions pre-parsed, so expansion never re-parses source text.
+// compiled is a component with its declarations parsed and its template expressions pre-parsed, so expansion never
 type compiled struct {
 	def   *syntax.Component
 	file  string
@@ -64,8 +56,7 @@ type tnode struct {
 	pos      syntax.Pos
 }
 
-// tattr carries its own position so an attribute-scoped diagnostic points at the
-// attribute rather than at the element, which is several attributes to the left.
+// tattr carries its own position so an attribute-scoped diagnostic points at the attribute rather than at the element,
 type tattr struct {
 	name string
 	expr *Expr
@@ -76,18 +67,11 @@ type tattr struct {
 type Options struct {
 	// Natives are widget element names, on top of the builtins.
 	Natives []string
-	// Slots are the slot names each widget accepts, keyed by element name. A
-	// widget that takes no slot content has no entry.
+	// Slots are the slot names each widget accepts, keyed by element name. A widget that takes no slot content has no
 	Slots map[string][]string
 }
 
-// Analyze checks a loaded unit and prepares it for expansion.
-//
-// Everything that can be decided without values is decided here: types parse,
-// defaults parse, every element name resolves, every property-element names a
-// slot on its own parent, every expression parses, every reference names
-// something in scope, and no component can instantiate itself. What remains for
-// expansion is only what genuinely depends on the caller's arguments.
+// Analyze checks a loaded unit and prepares it for expansion. Everything that can be decided without values is decided
 func Analyze(unit *syntax.Unit, opts Options) (*Program, error) {
 	if unit.Root == nil {
 		return nil, fmt.Errorf("nothing was loaded")
@@ -100,10 +84,7 @@ func Analyze(unit *syntax.Unit, opts Options) (*Program, error) {
 		components: make(map[string]*compiled),
 		tokens:     make(map[string]*syntax.Token),
 	}
-	// A theme has no properties and nothing to instantiate, so it is checked for
-	// its own sake -- duplicate tokens, an unknown or cyclic style extends -- and
-	// never expanded. Program.Expand reports the clear refusal; nothing here
-	// needs a root component to exist.
+	// A theme has no properties and nothing to instantiate, so it is checked for its own sake -- duplicate tokens, an
 	if unit.Root.Component != nil {
 		program.root = unit.Root.Component
 		program.rootFile = unit.Root.Path
@@ -165,8 +146,7 @@ func (p *Program) compileOne(path string, def *syntax.Component) error {
 			if err != nil {
 				return &syntax.Error{Pos: declared.Pos, Message: fmt.Sprintf("property %q default: %v", declared.Name, err)}
 			}
-			// A literal default must be valid for its type right now; one that
-			// reads a token cannot be checked until the theme is known.
+			// A literal default must be valid for its type right now; a default that reads a token cannot be checked until the theme
 			if expr.IsLiteral() {
 				if _, err := ParseValue(typ, declared.Default); err != nil {
 					return &syntax.Error{Pos: declared.Pos, Message: fmt.Sprintf("property %q default: %v", declared.Name, err)}
@@ -230,7 +210,7 @@ func (p *Program) compileNode(node *syntax.Node) (*tnode, error) {
 	return compiled, nil
 }
 
-// checkComponent validates one component's template against its own declarations.
+// checkComponent validates a single component's template against its own declarations.
 func (p *Program) checkComponent(c *compiled) error {
 	names := map[string]bool{}
 	for name := range c.props {
@@ -279,15 +259,13 @@ func (p *Program) checkNode(c *compiled, node *tnode, names map[string]bool) err
 	return p.checkNodes(c, node.children, scoped)
 }
 
-// forBindings returns the names visible inside a For, which are the enclosing
-// names plus the loop variable and optional index.
+// forBindings returns the names visible inside a For, which are the enclosing names plus the loop variable and
 func forBindings(node *tnode, names map[string]bool) (map[string]bool, error) {
 	as, ok := attrOf(node, "as")
 	if !ok {
 		return nil, &syntax.Error{Pos: node.pos, Message: "<For> requires an as attribute naming the loop variable"}
 	}
-	// `each` is normally an expression, so its presence is checked directly
-	// rather than through attrOf, which only reads literal values.
+	// `each` is normally an expression, so its presence is checked directly rather than through attrOf, which only reads
 	if !hasAttr(node, "each") {
 		return nil, &syntax.Error{Pos: node.pos, Message: "<For> requires an each attribute"}
 	}
@@ -311,8 +289,7 @@ func hasAttr(node *tnode, name string) bool {
 	return false
 }
 
-// attrOf reads a literal attribute value at analysis time. Attributes that name
-// a binding, such as `as`, cannot themselves be expressions.
+// attrOf reads a literal attribute value at analysis time. Attributes that name a binding, such as `as`, cannot
 func attrOf(node *tnode, name string) (string, bool) {
 	for _, attr := range node.attrs {
 		if attr.name == name && attr.expr.IsLiteral() {
@@ -339,16 +316,14 @@ func (p *Program) checkRefs(c *compiled, expr *Expr, pos syntax.Pos, names map[s
 	return nil
 }
 
-// checkElementName resolves an element to a directive, a native element, a
-// component in scope, or a property element naming a slot on its parent.
+// checkElementName resolves an element to a directive, a native element, a component in scope, or a property element
 func (p *Program) checkElementName(c *compiled, node *tnode) error {
 	name := node.name
 	if contains(Directives, name) || p.natives[name] {
 		return nil
 	}
 	if owner, slot, ok := strings.Cut(name, "."); ok {
-		// A property element is checked against its parent when the parent is
-		// walked; here only the owner has to be something that has slots.
+		// A property element is checked against its parent when the parent is walked; here only the owner has to be
 		if _, found := p.unit.Lookup(c.file, owner); found {
 			return nil
 		}
@@ -365,10 +340,7 @@ func (p *Program) checkElementName(c *compiled, node *tnode) error {
 		"unknown element <%s>%s", name, didYouMean(name, p.knownElements(c.file)))}
 }
 
-// checkSlotName rejects a slot a widget does not have. A component's slots are
-// declared in its own template and checked there; a widget's are declared by the
-// widget, and a misspelt one would otherwise be content that silently goes
-// nowhere.
+// checkSlotName rejects a slot a widget does not have. A component's slots are declared in its own template and
 func (p *Program) checkSlotName(node *tnode, owner, slot string) error {
 	accepted := p.slots[owner]
 	if len(accepted) == 0 {
@@ -395,8 +367,7 @@ func (p *Program) knownElements(file string) []string {
 	return known
 }
 
-// checkCycles rejects a component that can reach itself, which would expand
-// forever.
+// checkCycles rejects a component that can reach itself, which would expand forever.
 func (p *Program) checkCycles() error {
 	var walk func(c *compiled, stack []string) error
 	walk = func(c *compiled, stack []string) error {
@@ -476,9 +447,7 @@ func tokenNames(set map[string]*syntax.Token) []string {
 	return names
 }
 
-// didYouMean appends the available names to a diagnostic. Listing what exists
-// turns "unknown reference" into something the author can act on without
-// going back to the definition.
+// didYouMean appends the available names to a diagnostic. Listing what exists turns "unknown reference" into something
 func didYouMean(_ string, available []string) string {
 	if len(available) == 0 {
 		return ""

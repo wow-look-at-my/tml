@@ -5,19 +5,13 @@ import (
 	"strings"
 )
 
-// Expr is an attribute value or a run of text, split into literal and
-// interpolated parts.
-//
-// The grammar is deliberately tiny: a reference to a property, a loop variable
-// or a theme token, optionally negated. There is no arithmetic and there are no
-// calls, so every expression can be checked statically against the names in
-// scope and can never fail at render time for a reason the author cannot see.
+// Expr is an attribute value or a run of text, split into literal and interpolated parts. The grammar is deliberately
 type Expr struct {
 	Segments []Segment
 	Source   string
 }
 
-// Segment is either literal text or one interpolated reference.
+// Segment is either literal text or a single interpolated reference.
 type Segment struct {
 	Literal string
 	Ref     *Ref
@@ -27,8 +21,7 @@ type Segment struct {
 type Ref struct {
 	// Name is the property, loop variable or token being read.
 	Name string
-	// Theme marks a `{theme.x}` reference, which reads a token rather than a
-	// property.
+	// Theme marks a `{theme.x}` reference, which reads a token rather than a property.
 	Theme bool
 	// Not marks `{not x}`.
 	Not bool
@@ -48,8 +41,7 @@ func (r *Ref) String() string {
 	return b.String()
 }
 
-// IsLiteral reports whether the expression interpolates nothing, in which case
-// its value is the source text.
+// IsLiteral reports whether the expression interpolates nothing, in which case its value is the source text.
 func (e *Expr) IsLiteral() bool {
 	for _, s := range e.Segments {
 		if s.Ref != nil {
@@ -59,9 +51,7 @@ func (e *Expr) IsLiteral() bool {
 	return true
 }
 
-// SoleRef returns the reference when the expression is exactly one
-// interpolation and nothing else. Such an expression keeps the referenced
-// value's type; anything mixed with literal text becomes a string.
+// SoleRef returns the reference when the expression is exactly a single interpolation and nothing else. Such an expression
 func (e *Expr) SoleRef() (*Ref, bool) {
 	if len(e.Segments) == 1 && e.Segments[0].Ref != nil {
 		return e.Segments[0].Ref, true
@@ -69,8 +59,7 @@ func (e *Expr) SoleRef() (*Ref, bool) {
 	return nil, false
 }
 
-// Refs lists every reference in the expression, so analysis can check each name
-// against what is in scope before anything is rendered.
+// Refs lists every reference in the expression, so analysis can check each name against what is in scope before
 func (e *Expr) Refs() []*Ref {
 	var refs []*Ref
 	for _, s := range e.Segments {
@@ -81,9 +70,7 @@ func (e *Expr) Refs() []*Ref {
 	return refs
 }
 
-// ParseExpr splits raw into literal and interpolated segments.
-//
-// `{{` and `}}` are literal braces, which is the only escaping the language has.
+// ParseExpr splits raw into literal and interpolated segments. `{{` and `}}` are literal braces, which is the only
 func ParseExpr(raw string) (*Expr, error) {
 	expr := &Expr{Source: raw}
 	var literal strings.Builder
@@ -157,9 +144,7 @@ func parseRef(body string) (*Ref, error) {
 	return ref, nil
 }
 
-// isIdent reports whether s is a bare name. Anything else -- an operator, a
-// call, a path -- is outside the grammar and must be rejected rather than
-// mistaken for a property name.
+// isIdent reports whether s is a bare name. Anything else -- an operator, a call, a path -- is outside the grammar and
 func isIdent(s string) bool {
 	if s == "" {
 		return false
@@ -183,11 +168,7 @@ type Scope interface {
 	Token(name string) (Value, bool)
 }
 
-// Eval resolves the expression against a scope.
-//
-// A lone reference keeps its value's type. Anything else concatenates into a
-// string, which is why `padding="{gutter}"` stays a thickness while
-// `title="Hi {name}"` is text.
+// Eval resolves the expression against a scope. A lone reference keeps its value's type. Anything else concatenates
 func (e *Expr) Eval(scope Scope) (Value, error) {
 	if ref, ok := e.SoleRef(); ok {
 		return evalRef(ref, scope)

@@ -12,11 +12,7 @@ import (
 
 func init() { root.AddCommand(newTreeCmd()) }
 
-// newTreeCmd prints either a file's expanded document or a running program's
-// laid-out frame. The two share a name because both are "the tree", and they
-// are told apart by the argument: a path is a file; no path talks to the
-// socket. Dropping either would leave a hole the other cannot fill — expansion
-// is what layout sees, the live tree is what the terminal is showing.
+// newTreeCmd prints either a file's expanded document or a running program's laid-out frame. Both share a name
 func newTreeCmd() *cobra.Command {
 	var (
 		dark   bool
@@ -68,9 +64,7 @@ func newTreeCmd() *cobra.Command {
 	return cmd
 }
 
-// printNode writes one node and its children as an indented outline. Geometry
-// rides on the same line, because the question asked of a tree is nearly
-// always "which box is the wrong size".
+// printNode writes a single node and its children as an indented outline. Geometry rides on the same line, because the
 func printNode(w io.Writer, node inspect.Node, indent string, idsOnly bool) error {
 	show := !idsOnly || node.ID != ""
 	next := indent

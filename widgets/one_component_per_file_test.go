@@ -13,16 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestOneComponentPerFile pins the layout basic.go, data.go and input.go used
-// to violate: five widget structs (rule, progressBar, spinner, sparkline,
-// badge) sat in one file, and a reader had to scroll past four unrelated
-// components to find the one they came for. Parses every source file with
-// go/parser -- the actual Go parser, not a text scan -- and counts its
-// top-level struct declarations.
-//
-// A file may declare zero structs (a registry file, a shared helper) or
-// exactly one (a component). More than one fails, by name, so the fix is
-// obvious from the failure alone.
+// TestOneComponentPerFile pins the layout basic.go, data.go and input.go used to violate: several widget structs (rule,
 func TestOneComponentPerFile(t *testing.T) {
 	entries, err := os.ReadDir(".")
 	require.NoError(t, err)

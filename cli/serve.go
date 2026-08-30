@@ -17,14 +17,10 @@ import (
 
 func init() { root.AddCommand(newServeCmd()) }
 
-// proxy answers inspection requests by forwarding them over the program's
-// socket. One connection per request keeps a long-blocking frame wait from
-// holding up an ordinary query, which matters because the page streams frames
-// and answers clicks at the same time.
+// proxy answers inspection requests by forwarding them over the program's socket. A single connection per request keeps a
 type proxy struct {
 	path string
-	// mu guards nothing but the error the last dial produced, so the page can
-	// be told why it went quiet.
+	// mu guards nothing but the error the last dial produced, so the page can be told why it went quiet.
 	mu   sync.Mutex
 	last string
 }
@@ -75,9 +71,7 @@ func newServeCmd() *cobra.Command {
 				return err
 			}
 			p := &proxy{path: path}
-			// Fail here rather than after printing a URL that answers nothing:
-			// a page that loads and then says "connection lost" is a worse
-			// error message than the dial's own.
+			// Fail here rather than after printing a URL that answers nothing: a page that loads and then says "connection
 			probe, err := dial(path)
 			if err != nil {
 				return err

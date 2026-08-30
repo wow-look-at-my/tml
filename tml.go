@@ -1,9 +1,4 @@
-// Package tml loads and renders Terminal Markup Language views.
-//
-// A .tml file declares a reusable component: typed properties, slots for
-// injected content, layout panels and styling. TML solves the layout
-// constraints and Lip Gloss renders the result, so a view drops straight into a
-// Bubble Tea View().
+// Package tml loads and renders Terminal Markup Language views. A .tml file declares a reusable component: typed
 package tml
 
 import (
@@ -25,22 +20,11 @@ type Props = map[string]sema.Value
 type Options struct {
 	// Dark selects the dark half of every adaptive theme token.
 	Dark bool
-	// Widgets are the host's own elements, layered over the built-in library.
-	// A name bound here wins, so a host can replace <Button> and keep the rest.
-	// Every name is checked when the view loads, so a template naming a widget
-	// nobody bound fails there rather than rendering a blank.
+	// Widgets are the host's own elements, layered over the built-in library. A name bound here wins, so a host can
 	Widgets *widget.Registry
-	// Bare drops the built-in widget library, leaving only the host's own
-	// bindings. A view that never uses the library does not need it, and a host
-	// replacing the lot should not have to shadow every name to prove it.
+	// Bare drops the built-in widget library, leaving only the host's own bindings. A view that never uses the library
 	Bare bool
-	// Measure is how wide a string is, in cells; nil means lipgloss.Width. See
-	// widget.Measurer for why a host would have its own answer.
-	//
-	// It governs layout: what is measured, where a box lands, and therefore what a
-	// click hits. Lip Gloss still measures internally while it paints, and that is
-	// not reachable from here, so a pathological grapheme can be padded a cell
-	// differently inside a styled block.
+	// Measure is how wide a string is, in cells; nil means lipgloss.Width. See widget.Measurer for why a host would have
 	Measure widget.Measurer
 }
 
@@ -50,22 +34,14 @@ type View struct {
 	engine  *layout.Engine
 	dark    bool
 	ui      *UI
-	// frames is the last painted frame, kept only while an inspector is
-	// attached. A view without one pays a single atomic load per render.
+	// frames is the last painted frame, kept only while an inspector is attached. A view without an inspector pays a single atomic
 	frames *frameRecord
 }
 
-// UI is the view's interaction state: which element has focus, which one the
-// pointer is over, and what the last frame's geometry was. Feed it messages and
-// the view's controls come alive; ignore it and they render unfocused.
+// UI is the view's interaction state: which element has focus, which element the pointer is over, and what the last
 func (v *View) UI() *UI { return v.ui }
 
-// Load parses, checks and prepares the view rooted at entry.
-//
-// Everything that can fail without knowing the caller's arguments fails here:
-// malformed XML, unknown elements, bad types, unresolved references. Rendering
-// afterwards can still fail, but only on things that genuinely depend on the
-// arguments.
+// Load parses, checks and prepares the view rooted at entry. Everything that can fail without knowing the caller's
 func Load(fsys fs.FS, entry string, opts Options) (*View, error) {
 	unit, err := syntax.Load(fsys, entry)
 	if err != nil {
@@ -94,19 +70,14 @@ func Load(fsys fs.FS, entry string, opts Options) (*View, error) {
 		Interaction: view.ui,
 		Measure:     opts.Measure,
 	})
-	// Every view this library builds is inspectable, with nothing asked of the
-	// caller, and a view that cannot be is not returned. Making it a step a
-	// host takes is what leaves a program that could answer questions about its
-	// own frames answering none; letting the socket fail quietly is the same
-	// program with an excuse.
+	// Every view this library builds is inspectable, with nothing asked of the caller, and a view that cannot be is not
 	if err := inspection.adopt(view); err != nil {
 		return nil, err
 	}
 	return view, nil
 }
 
-// Expand instantiates the view and returns the expanded element tree, with
-// components, slots and control flow resolved away.
+// Expand instantiates the view and returns the expanded element tree, with components, slots and control flow resolved
 func (v *View) Expand(props Props) (*sema.Node, error) {
 	return v.program.Expand(props, sema.ExpandOptions{Dark: v.dark})
 }
@@ -120,8 +91,7 @@ func (v *View) Layout(props Props, width, height int) (*layout.Box, error) {
 	return v.engine.Layout(node, width, height)
 }
 
-// Render produces the terminal output for a viewport. The result is a styled
-// string ready to hand to tea.NewView.
+// Render produces the terminal output for a viewport. The result is a styled string ready to hand to tea.NewView.
 func (v *View) Render(props Props, width, height int) (string, error) {
 	box, err := v.Layout(props, width, height)
 	if err != nil {
@@ -129,9 +99,7 @@ func (v *View) Render(props Props, width, height int) (string, error) {
 	}
 	out := render.Render(box)
 	v.record(box, out, width, height)
-	// Readable is half. A view still painting after the grace window with
-	// nothing able to drive it is a program the debugger only half works
-	// against, and this is where that gets noticed.
+	// Readable is half. A view still painting after the grace window with nothing able to drive it is a program the
 	drives.painted(inspection.isDriven())
 	return out, nil
 }

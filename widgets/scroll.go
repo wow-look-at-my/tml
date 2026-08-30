@@ -11,18 +11,7 @@ import (
 
 var scrollboxAttrs = []string{"offset", "offsetX", "scrollbar", "contentHeight"}
 
-// scrollbox shows part of content that is taller than the space it has, with a
-// scrollbar beside it when there is more than fits.
-//
-// The offset is a property, not state: the host owns how far it has scrolled, the
-// same way it owns everything else a view is rendered from. Wheel events come
-// back through the UI as Scrolled events for the host to act on.
-//
-// contentHeight says the children are a window rather than the whole content:
-// the rows handed over start at offset and there are contentHeight of them in
-// all. A host whose content is longer than it can afford to lay out every frame
-// needs this, and without it the scrollbar and the maximum offset would describe
-// the window instead. See docs/widgets.md.
+// scrollbox shows part of content that is taller than the space it has, with a scrollbar beside it when there is more
 type scrollbox struct {
 	offsetX, offsetY int
 	contentHeight    int
@@ -51,13 +40,7 @@ func newScrollbox(ctx widget.Context) (widget.Native, error) {
 	return box, nil
 }
 
-// Arrange is the whole point of a scrolling region: the content is measured
-// against unlimited height, so it is free to be taller than the hole it is seen
-// through, while the region itself takes the full width on offer -- one that
-// shrank to its content would put its scrollbar somewhere in the middle.
-//
-// The offset goes back to layout as well, so a control scrolled halfway off the
-// top is clicked where it is drawn.
+// Arrange is the whole point of a scrolling region: the content is measured against unlimited height, so it is free to
 func (s *scrollbox) Arrange() widget.Layout {
 	return widget.Layout{
 		FreeH:    true,
@@ -68,10 +51,7 @@ func (s *scrollbox) Arrange() widget.Layout {
 	}
 }
 
-// Inset reserves the scrollbar column. Auto cannot know yet whether there is
-// anything to scroll -- that needs the drawn content -- so it reserves the
-// column and draws a blank one when there is not. Reflowing the content the
-// moment it grew past the edge would be worse: everything would shift sideways.
+// Inset reserves the scrollbar column. Auto cannot know yet whether there is anything to scroll -- that needs the
 func (s *scrollbox) Inset() (int, int) {
 	if s.bar == "never" {
 		return 0, 0
@@ -90,17 +70,12 @@ func (s *scrollbox) Compose(slots widget.Slots, w, h int) string {
 	content := lipgloss.JoinVertical(lipgloss.Left, slots.Default()...)
 	all := strings.Split(content, "\n")
 
-	// The offset is clamped to the content, so scrolling stops at the last
-	// screenful instead of running off into blank space -- and a host that wants
-	// the end of a growing transcript can just ask for a big number. Layout
-	// clamps its copy the same way, or a click would land a line off.
+	// The offset is clamped to the content, so scrolling stops at the last screenful instead of running off into blank
 	total := len(all)
 	offset := clamp(s.offsetY, 0, max(0, total-h))
 	from := offset
 	if s.contentHeight > 0 {
-		// The children ARE the window: the host cut it at the offset, so cutting
-		// again here would show the rows after the ones it meant. The bar still
-		// describes the whole content, which is the point of being told its size.
+		// The children ARE the window: the host cut it at the offset, so cutting again here would show the rows after the
 		total = s.contentHeight
 		offset = clamp(s.offsetY, 0, max(0, total-h))
 		from = 0
@@ -123,8 +98,7 @@ func (s *scrollbox) Compose(slots widget.Slots, w, h int) string {
 	return strings.Join(lines, "\n")
 }
 
-// scrollbar is the gutter column: a track with a thumb sized and placed in
-// proportion to what is on screen.
+// scrollbar is the gutter column: a track with a thumb sized and placed in proportion to what is on screen.
 func (s *scrollbox) scrollbar(offset, total, view int) []string {
 	bar := make([]string, max(0, view))
 	blank := " "
@@ -154,10 +128,7 @@ func (s *scrollbox) scrollbar(offset, total, view int) []string {
 	return bar
 }
 
-// window takes height rows starting at offset, padding with blanks when the
-// content is shorter than the space. The offset is already clamped by the
-// caller: how many lines the content wraps to depends on the width the widget
-// was given, so the end is a number only this side can work out.
+// window takes height rows starting at offset, padding with blanks when the content is shorter than the space. The
 func window(lines []string, offset, height int) []string {
 	if height <= 0 {
 		return nil
@@ -173,8 +144,7 @@ func window(lines []string, offset, height int) []string {
 	return out
 }
 
-// columns takes width cells starting at offset, measured in display cells so an
-// escape sequence is carried along rather than counted.
+// columns takes width cells starting at offset, measured in display cells so an escape sequence is carried along
 func columns(line string, offset, width int, measure widget.Measurer) string {
 	if width <= 0 {
 		return ""

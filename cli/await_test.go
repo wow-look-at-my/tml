@@ -19,8 +19,7 @@ const awaitView = `<?xml version="1.1" encoding="UTF-8"?>
 	<Template><Stack id="app" width="20"><Text id="status">{body}</Text></Stack></Template>
 </Component>`
 
-// renderAwait paints one frame of awaitView through the same path a program
-// uses, so the inspector answers about a frame that was really drawn.
+// renderAwait paints a single frame of awaitView through the same path a program uses, so the inspector answers about a
 func renderAwait(t *testing.T, body string) *tml.View {
 	t.Helper()
 	view, err := tml.Load(fstest.MapFS{"app.tml": &fstest.MapFile{Data: []byte(awaitView)}},
@@ -31,8 +30,7 @@ func renderAwait(t *testing.T, body string) *tml.View {
 	return view
 }
 
-// An await returns as soon as the element draws the pattern, and it returns the
-// element rather than a bare bool, so the caller can print the value it matched.
+// An await returns as soon as the element draws the pattern, and it returns the element rather than a bare bool, so
 func TestAwaitFieldReturnsWhenTheElementDrawsIt(t *testing.T) {
 	view := renderAwait(t, "waiting")
 
@@ -46,8 +44,7 @@ func TestAwaitFieldReturnsWhenTheElementDrawsIt(t *testing.T) {
 	assert.Contains(t, el.Text, "turn 1")
 }
 
-// --await-gone is the same question inverted, for something that has to leave
-// the screen.
+// --await-gone is the same question inverted, for something that has to leave the screen.
 func TestAwaitFieldGoneReturnsWhenTheTextLeaves(t *testing.T) {
 	view := renderAwait(t, "working")
 
@@ -61,9 +58,7 @@ func TestAwaitFieldGoneReturnsWhenTheTextLeaves(t *testing.T) {
 	assert.NotContains(t, el.Text, "working")
 }
 
-// A timeout names what the element actually drew. "expected output to contain
-// X" says nothing about what was on screen, which is the whole reason somebody
-// reads a failure.
+// A timeout names what the element actually drew. "expected output to contain X" says nothing about what was on
 func TestAwaitFieldTimeoutReportsWhatItDrew(t *testing.T) {
 	renderAwait(t, "still here")
 
@@ -73,8 +68,7 @@ func TestAwaitFieldTimeoutReportsWhatItDrew(t *testing.T) {
 	assert.Contains(t, err.Error(), "still here")
 }
 
-// An id the frame does not declare is not a match that has not happened yet, so
-// it fails with the timeout and says the element was never answered.
+// An id the frame does not declare is not a match that has not happened yet, so it fails with the timeout and says the
 func TestAwaitFieldReportsAnIDTheFrameDoesNotDeclare(t *testing.T) {
 	renderAwait(t, "here")
 
@@ -83,9 +77,7 @@ func TestAwaitFieldReportsAnIDTheFrameDoesNotDeclare(t *testing.T) {
 	assert.Contains(t, err.Error(), "no-such-id")
 }
 
-// A bad pattern is the caller's mistake, and it is reported before anything
-// waits: a regular expression that cannot compile will not start matching
-// twenty seconds from now.
+// A bad pattern is the caller's mistake, and it is reported before anything waits: a regular expression that cannot
 func TestAwaitFieldRejectsAPatternThatCannotCompile(t *testing.T) {
 	_, err := awaitField("status", false, "text", "(unclosed", false, time.Second)
 	require.Error(t, err)
@@ -120,8 +112,7 @@ func TestFieldValueNamesTheFieldsItKnows(t *testing.T) {
 	assert.Contains(t, err.Error(), "unknown field")
 }
 
-// The width is the one a terminal draws in, so a box rule measures its cells
-// rather than its bytes and a wide glyph counts two.
+// The width is the only a terminal draws in, so a box rule measures its cells rather than its bytes and a wide glyph
 func TestWidestLineMeasuresDisplayCells(t *testing.T) {
 	assert.Equal(t, 5, widestLine("abc\nabcde\nab"))
 	assert.Equal(t, 4, widestLine("────"))

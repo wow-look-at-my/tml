@@ -6,9 +6,7 @@ import (
 
 var badgeAttrs = []string{"label"}
 
-// badge is a short label with breathing room, for a status chip or a count. Its
-// colours come from the element's own style attributes, so a badge is themed the
-// same way anything else is.
+// badge is a short label with breathing room, for a status chip or a count. Its colours come from the element's own
 type badge struct {
 	label   string
 	measure widget.Measurer

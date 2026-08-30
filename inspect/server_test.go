@@ -17,8 +17,7 @@ import (
 	"github.com/wow-look-at-my/tml/layout"
 )
 
-// fake is a Source with a frame built by hand, so the protocol is tested
-// without a terminal program in the way.
+// fake is a Source with a frame built by hand, so the protocol is tested without a terminal program in the way.
 type fake struct {
 	frame   Frame
 	ok      bool
@@ -30,9 +29,7 @@ type fake struct {
 
 func (f *fake) Frame() (Frame, bool) { return f.frame, f.ok }
 
-// readOnly hides the Controller half, which is how a program that only reports
-// its frames is represented. It wraps rather than embeds, so none of fake's
-// driving methods are promoted.
+// readOnly hides the Controller half, which is how a program that only reports its frames is represented. It wraps
 type readOnly struct{ src Source }
 
 func (r readOnly) Frame() (Frame, bool) { return r.src.Frame() }
@@ -60,7 +57,7 @@ func (f *fake) Reset() error {
 	return nil
 }
 
-// box builds a two-element frame: a root with one child carrying an id.
+// box builds a parent-and-child frame: a root with a single child carrying an id.
 func box() *layout.Box {
 	child := &layout.Box{
 		Name: "Text", ID: "status", Action: "refresh", Text: "ready",
@@ -105,8 +102,7 @@ func TestQueryReportsOneElementByID(t *testing.T) {
 	assert.Equal(t, []string{"ready"}, res.Element.Lines)
 }
 
-// A typo has to name the mistake. An empty answer would read like an element
-// that drew nothing.
+// A typo has to name the mistake. An empty answer would read like an element that drew nothing.
 func TestQueryNamesTheIDsThatDoExist(t *testing.T) {
 	s := NewServer(newFake())
 
@@ -130,8 +126,7 @@ func TestElementsAndIDsCoverEveryIDInDocumentOrder(t *testing.T) {
 	assert.Equal(t, []string{"app", "status"}, ids.IDs)
 }
 
-// The tree carries boxes with no id, which is where a layout mistake usually
-// is.
+// The tree carries boxes with no id, which is where a layout mistake usually is.
 func TestTreeCarriesEveryBoxWithItsPath(t *testing.T) {
 	f := newFake()
 	f.frame.Box.Children = append(f.frame.Box.Children, &layout.Box{Name: "Spacer"})
@@ -173,8 +168,7 @@ func TestFrameReportsWhatIsOnScreen(t *testing.T) {
 	assert.Contains(t, styled.Frame.ANSI, "\x1b[31m")
 }
 
-// A program that has not painted is a real state, and saying so beats an empty
-// frame that reads like an empty screen.
+// A program that has not painted is a real state, and saying so beats an empty frame that reads like an empty screen.
 func TestEveryReadSaysWhenThereIsNoFrameYet(t *testing.T) {
 	s := NewServer(&fake{ok: false})
 
@@ -246,8 +240,7 @@ func TestSocketAnswersOneRequestPerLine(t *testing.T) {
 	require.NotNil(t, first.Element)
 	assert.Equal(t, "status", first.Element.ID)
 
-	// The same connection answers again, which is what lets a watcher hold one
-	// open instead of reconnecting per question.
+	// The same connection answers again, which is what lets a watcher hold a single open instead of reconnecting per question.
 	require.NoError(t, enc.Encode(Request{Op: "ids"}))
 	var second Response
 	require.NoError(t, dec.Decode(&second))

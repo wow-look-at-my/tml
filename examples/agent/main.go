@@ -1,11 +1,4 @@
-// Command agent is a mock coding agent: the shape of an AI harness, with a
-// script where the model would be.
-//
-// It exists to put TML under the load a real one applies -- a transcript that
-// grows past its viewport, tool output that arrives as cards, a permission
-// prompt that has to interrupt, a prompt line that keeps its own text, all of
-// it redrawn on every tick -- and to make what the language cannot do obvious.
-// Nothing here talks to a model, and nothing here runs a command.
+// Command agent is a mock coding agent: the shape of an AI harness, with a script where the model would be. It exists
 package main
 
 import (
@@ -28,7 +21,7 @@ import (
 //go:embed ui
 var uiFS embed.FS
 
-// beat is one step of the script. The model is a list.
+// beat is a single step of the script. The model is a list.
 type beat struct {
 	role, text string
 	status     string
@@ -37,8 +30,7 @@ type beat struct {
 	file       int
 	patch      bool
 	results    bool
-	// ask stops the script until the user answers. Everything after it happens
-	// only if they allowed it.
+	// ask stops the script until the user answers. Everything after it happens only if they allowed it.
 	ask string
 }
 
@@ -95,9 +87,7 @@ type model struct {
 	offset  int
 	prompt  string
 
-	// patchAt and resultsAt are how many turns had been said when each card
-	// arrived, which is what puts the cards back in the middle of the transcript
-	// they belong in. Both are len(entries) until then.
+	// patchAt and resultsAt are how many turns had been said when each card arrived, which is what puts the cards back in
 	patchAt, resultsAt int
 
 	asking  bool
@@ -121,8 +111,7 @@ func newModel() (*model, error) {
 		return nil, err
 	}
 
-	// The transcript and the diff are this program's own widgets, bound by name
-	// and used in the template exactly like a built-in.
+	// The transcript and the diff are this program's own widgets, bound by name and used in the template exactly like a
 	widgets := widget.NewRegistry().
 		BindFactory("Transcript", widget.NewFactory([]string{"entries"}, newTranscript)).
 		BindFactory("Diff", widget.NewFactory([]string{"lines"}, newDiff))
@@ -144,8 +133,7 @@ func newModel() (*model, error) {
 
 func (m *model) Init() tea.Cmd { return ticker() }
 
-// step runs the next beat. A beat that asks for permission stops the script
-// where it is until the answer arrives.
+// step runs the next beat. A beat that asks for permission stops the script where it is until the answer arrives.
 func (m *model) step() {
 	if m.waiting || m.at >= len(script) {
 		return
@@ -165,8 +153,7 @@ func (m *model) apply(next beat) {
 	if next.role != "" {
 		m.entries = append(m.entries, next.role+"|"+next.text)
 	}
-	// A card belongs where it happened, so the turn count when it first appeared
-	// is the point the transcript is cut at.
+	// A card belongs where it happened, so the turn count when it leading appeared is the point the transcript is cut at.
 	if next.patch && m.patchAt < 0 {
 		m.patchAt = len(m.entries)
 	}
@@ -178,8 +165,7 @@ func (m *model) apply(next beat) {
 	m.follow()
 }
 
-// split cuts the transcript where the cards sit in it. A card that has not
-// arrived yet takes no cut, so everything said so far stays above it.
+// split cuts the transcript where the cards sit in it. A card that has not arrived yet takes no cut, so everything
 func (m *model) split() (before, between, after []string) {
 	patchAt, resultsAt := len(m.entries), len(m.entries)
 	if m.patchAt >= 0 {
@@ -191,20 +177,13 @@ func (m *model) split() (before, between, after []string) {
 	return m.entries[:patchAt], m.entries[patchAt:resultsAt], m.entries[resultsAt:]
 }
 
-// tail is further down than any transcript reaches. How far the bottom actually
-// is depends on how the text wrapped at the width the widget was given, so the
-// host asks to go too far and the scrolling region stops at the end.
+// tail is further down than any transcript reaches. How far the bottom actually is depends on how the text wrapped at
 const tail = 1 << 20
 
-// follow pins the session to the bottom, which is where a transcript anyone is
-// reading actually is.
+// follow pins the session to the bottom, which is where a transcript anyone is reading actually is.
 func (m *model) follow() { m.offset = tail }
 
-// scroll moves the session by delta. While the host is following the tail its
-// own offset is a number past the end, so the first notch starts from where the
-// last frame actually stopped; after that it is counting real lines and adds to
-// what it has, which is what keeps a burst of wheel events arriving between two
-// frames from collapsing into one notch.
+// scroll moves the session by delta. While the host is following the tail its own offset is a number past the end, so
 func (m *model) scroll(delta int) int {
 	from, limit := m.offset, tail
 	if target, ok := m.view.UI().Target("session"); ok {
@@ -273,8 +252,7 @@ func (m *model) act(action, id string, row int) {
 	}
 }
 
-// send is the prompt being submitted. The script is what answers, because there
-// is nothing else here to answer.
+// send is the prompt being submitted. The script is what answers, because there is nothing else here to answer.
 func (m *model) send() {
 	if m.prompt != "" {
 		m.entries = append(m.entries, "you|"+m.prompt)
@@ -380,8 +358,7 @@ func (m *model) render() string {
 	return out
 }
 
-// cost is the going rate for a model that does not exist, so the meter has
-// something to show.
+// cost is the going rate for a model that does not exist, so the meter has something to show.
 func cost(tokens int) string {
 	return fmt.Sprintf("$%.2f", float64(tokens)*0.000003)
 }
@@ -408,9 +385,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// The flags set the starting state either way round: a still frame and a
-	// terminal session are the same program, and a screenshot of one beat is
-	// only reproducible if it can be asked for.
+	// The flags set the starting state either way round: a still frame and a terminal session are the same program, and a
 	if *frame {
 		m.width, m.height = *width, *height
 	}
@@ -428,8 +403,7 @@ func main() {
 		os.Exit(1)
 	}
 	if *focus != "" {
-		// Focus resolves against a frame's controls, so there has to be one
-		// before there is anything to name.
+		// Focus resolves against a frame's controls, so there has to be a frame before there is anything to name.
 		m.render()
 		if !m.view.UI().Focus(*focus) {
 			fmt.Fprintf(os.Stderr, "error: no control with id %q on this frame\n", *focus)
@@ -440,9 +414,7 @@ func main() {
 		fmt.Println(m.render())
 		return
 	}
-	// Nothing here wires an inspector. Load adopted the view and opened the
-	// socket, and Run gave the protocol a program to type into. The only
-	// thing this program does about being inspectable is start the one way.
+	// Nothing here wires an inspector. Load adopted the view and opened the socket, and Run gave the protocol a program
 	if _, err := tml.Run(m); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)

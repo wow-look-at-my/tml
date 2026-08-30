@@ -6,7 +6,7 @@ import (
 	"sort"
 )
 
-// Unit is one root file together with everything reachable from it.
+// Unit is a single root file together with everything reachable from it.
 type Unit struct {
 	// Root is the file Load was asked for.
 	Root *File
@@ -18,10 +18,7 @@ type Unit struct {
 	scopes map[string]map[string]*Component
 }
 
-// Lookup resolves a component name as it is visible from the given file. The
-// name resolves against that file's own definition, its data templates and
-// whatever it imports -- imports are not transitive, so a component sees only
-// what it imported itself.
+// Lookup resolves a component name as it is visible from the given file. The name resolves against that file's own
 func (u *Unit) Lookup(fromFile, name string) (*Component, bool) {
 	scope, ok := u.scopes[fromFile]
 	if !ok {
@@ -31,8 +28,7 @@ func (u *Unit) Lookup(fromFile, name string) (*Component, bool) {
 	return component, ok
 }
 
-// InScope lists the component names visible from a file, sorted. It exists so a
-// diagnostic can say what was available instead of only what was missing.
+// InScope lists the component names visible from a file, sorted. It exists so a diagnostic can say what was available
 func (u *Unit) InScope(fromFile string) []string {
 	names := make([]string, 0, len(u.scopes[fromFile]))
 	for name := range u.scopes[fromFile] {
@@ -42,10 +38,7 @@ func (u *Unit) InScope(fromFile string) []string {
 	return names
 }
 
-// Load parses entry and everything it imports, transitively.
-//
-// Paths are slash-separated and relative to the root of fsys, as io/fs requires.
-// An <Import src> is resolved against the directory of the file that declares it.
+// Load parses entry and everything it imports, transitively. Paths are slash-separated and relative to the root of
 func Load(fsys fs.FS, entry string) (*Unit, error) {
 	unit := &Unit{
 		Files:  make(map[string]*File),
@@ -59,11 +52,7 @@ func Load(fsys fs.FS, entry string) (*Unit, error) {
 	return unit, nil
 }
 
-// loadFile parses one file and its imports. Already-loaded files are returned
-// from the cache, which is also what stops an import cycle from recursing: a
-// cycle between files is harmless, since importing only brings a name into
-// scope. A component that instantiates itself is a different problem, and sema
-// reports it at expansion.
+// loadFile parses a single file and its imports. Already-loaded files are returned from the cache, which is also what stops
 func (u *Unit) loadFile(fsys fs.FS, filePath string, from Pos) (*File, error) {
 	filePath = path.Clean(filePath)
 	if existing, ok := u.Files[filePath]; ok {

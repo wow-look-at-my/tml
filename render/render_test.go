@@ -35,16 +35,12 @@ func renderTree(t *testing.T, node *sema.Node, w, h int) string {
 	return Render(box)
 }
 
-// Regression: a container whose composed content is wider than its box must be
-// CLIPPED. Setting only Width makes lipgloss wrap the block, which folds a
-// too-wide row onto the next line and interleaves the pieces -- a row of buttons
-// came out as alternating fragments before this was fixed.
+// Regression: a container whose composed content is wider than its box must be CLIPPED. Setting only Width makes
 func TestOverflowingContentIsClippedNotWrapped(t *testing.T) {
 	row := el("Stack", map[string]string{"orientation": "horizontal", "gap": "1"},
 		text("aaaaaaaaaa"),
 		text("bbbbbbbbbb"),
 	)
-	// The row wants 21 cells and is given 12.
 	out := renderTree(t, el("Box", map[string]string{"width": "12"}, row), 40, 6)
 
 	for _, line := range strings.Split(out, "\n") {
@@ -64,11 +60,7 @@ func TestVerticalGapProducesBlankLines(t *testing.T) {
 	assert.Contains(t, lines[2], "two")
 }
 
-// Regression: a Stack that measures to zero on the stacking axis -- an empty
-// items control, or a component whose own body drew nothing -- must not push
-// its siblings down by a row. Layout gives it zero height; joining had still
-// spent one line on its empty string, so the sibling after it rendered one row
-// short of where the arranged geometry actually placed it.
+// Regression: a Stack that measures to nothing on the stacking axis -- an empty items control, or a component whose own
 func TestAZeroHeightChildAddsNoRow(t *testing.T) {
 	empty := el("Stack", nil)
 	stack := el("Stack", nil, text("one"), empty, text("two"))
@@ -80,8 +72,7 @@ func TestAZeroHeightChildAddsNoRow(t *testing.T) {
 	assert.Contains(t, lines[1], "two", "the empty child contributed no row between them")
 }
 
-// The horizontal counterpart: a zero-width child must not open a gap between
-// the columns on either side of it.
+// The horizontal counterpart: a nothing-width child must not open a gap between the columns on either side of it.
 func TestAZeroWidthChildAddsNoColumn(t *testing.T) {
 	empty := el("Stack", nil)
 	stack := el("Stack", map[string]string{"orientation": "horizontal"}, text("ab"), empty, text("cd"))
@@ -107,8 +98,7 @@ func TestTextStillWrapsWithinItsOwnBox(t *testing.T) {
 	}
 }
 
-// A grid cannot be produced by joining: its children sit at coordinates, so the
-// renderer composites them through lipgloss layers instead.
+// A grid cannot be produced by joining: its children sit at coordinates, so the renderer composites them through
 func TestGridComposesChildrenAtTheirCoordinates(t *testing.T) {
 	grid := el("Grid", map[string]string{"columns": "6,6", "rows": "1,1"},
 		gridCell("aa", "0", "0"),
@@ -132,7 +122,6 @@ func gridCell(content, row, column string) *sema.Node {
 }
 
 func TestBorderAndPaddingSurroundTheContent(t *testing.T) {
-	// 2 cells of border, 2 of padding, 2 of content.
 	box := el("Box", map[string]string{"border": "normal", "padding": "0 1", "width": "6"}, text("hi"))
 	out := renderTree(t, box, 20, 5)
 

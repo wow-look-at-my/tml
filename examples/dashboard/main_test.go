@@ -10,12 +10,7 @@ import (
 	"github.com/wow-look-at-my/tml/inspect"
 )
 
-// The document renders, and a failure to render is a failing test.
-//
-// frame() turns a render error into the string it draws, which is right for a
-// user staring at a terminal and invisible to everything else: a document that
-// stopped analysing shipped past a green run once already. This is the check
-// that stops it happening again.
+// The document renders, and a failure to render is a failing test. frame() turns a render error into the string it
 func TestTheDashboardRenders(t *testing.T) {
 	m, err := newModel()
 	require.NoError(t, err)
@@ -26,16 +21,12 @@ func TestTheDashboardRenders(t *testing.T) {
 	assert.Contains(t, out, "Filter")
 }
 
-// Every region names itself, so the inspector can be asked about one rather
-// than handed the whole tree. An element that stops naming itself is a
-// question the debugger stops being able to answer.
+// Every region names itself, so the inspector can be asked about a region rather than handed the whole tree. An element
 func TestTheDashboardNamesItsElements(t *testing.T) {
 	m, err := newModel()
 	require.NoError(t, err)
 
-	// The box tree, which is what the inspector reads. UI().Target answers a
-	// narrower question -- the focus and pointer ring -- so a Stack or a Text
-	// is absent from it and present on screen.
+	// The box tree, which is what the inspector reads. UI().Target answers a narrower question -- the focus and pointer
 	box, err := m.view.Layout(m.props(), m.width, m.height)
 	require.NoError(t, err)
 

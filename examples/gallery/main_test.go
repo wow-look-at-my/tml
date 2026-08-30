@@ -16,10 +16,7 @@ import (
 
 var update = flag.Bool("update", false, "rewrite the golden files")
 
-// gallery builds the model the binary builds, with the terminal pinned to one
-// that can only do colour. Otherwise the image lands on whichever graphics
-// protocol the machine running the test happens to advertise, and the golden
-// records that machine rather than the layout.
+// gallery builds the model the binary builds, with the terminal pinned to a profile that can only do colour. Otherwise the
 func gallery(t *testing.T) *model {
 	t.Helper()
 	for _, name := range []string{
@@ -37,9 +34,7 @@ func gallery(t *testing.T) *model {
 	return m
 }
 
-// Every widget the library ships is on one of these three sections, so the
-// goldens are the library's own regression net: a widget that stops drawing
-// shows up here as a diff rather than as a blank rectangle nobody noticed.
+// Every widget the library ships is in some of these sections, so the goldens are the library's own regression
 func TestEverySectionRenders(t *testing.T) {
 	for _, section := range []struct {
 		name  string
@@ -65,10 +60,7 @@ func TestEverySectionRenders(t *testing.T) {
 	}
 }
 
-// The gallery routes every control through its action string, so an action the
-// model has no case for is a button that does nothing when it is pressed. Every
-// section's ring is walked, because a control only joins the ring on the frame
-// its section is showing.
+// The gallery routes every control through its action string, so an action the model has no case for is a button that
 func TestEveryControlInTheRingIsWiredUp(t *testing.T) {
 	m := gallery(t)
 	seen := 0
@@ -98,8 +90,7 @@ func TestAnUnknownActionIsRejected(t *testing.T) {
 	assert.True(t, m.act("save"))
 }
 
-// Clicking a tab is the whole loop: the click lands on a rect the last frame
-// published, the ring turns it into an action, and the model switches section.
+// Clicking a tab is the whole loop: the click lands on a rect the last frame published, the ring turns it into an
 func TestClickingATabSwitchesSection(t *testing.T) {
 	m := gallery(t)
 	require.NotContains(t, m.frameOf(), "tml: ")
@@ -111,8 +102,7 @@ func TestClickingATabSwitchesSection(t *testing.T) {
 	assert.Contains(t, ansi.Strip(m.frameOf()), "Media ─", "the media section is the one drawn")
 }
 
-// Typing belongs to the field while the field has focus, so the ring's own keys
-// and the quit key both have to stand aside there.
+// Typing belongs to the field while the field has focus, so the ring's own keys and the quit key both have to stand
 func TestTypingGoesToTheFocusedField(t *testing.T) {
 	m := gallery(t)
 	require.NotContains(t, m.frameOf(), "tml: ")
@@ -136,8 +126,7 @@ func TestQuitKeysOnlyBindOutsideAField(t *testing.T) {
 	assert.NotNil(t, cmd, "q quits when the keyboard is not in a field")
 }
 
-// Escape backs out of the popup before it backs out of the program: a modal that
-// quits the whole thing on the key everyone presses to dismiss it is a trap.
+// Escape backs out of the popup before it backs out of the program: a modal that quits the whole thing on the key
 func TestEscapeClosesThePopupFirst(t *testing.T) {
 	m := gallery(t)
 	m.confirming = true
@@ -150,8 +139,7 @@ func TestEscapeClosesThePopupFirst(t *testing.T) {
 	assert.NotNil(t, cmd, "with nothing left to dismiss it quits")
 }
 
-// Activating Quit and then Yes leaves through the popup, which is the one path
-// where an action has to reach the program rather than just the model.
+// Activating Quit and then Yes leaves through the popup, which is the only path where an action has to reach the
 func TestConfirmingQuitEndsTheProgram(t *testing.T) {
 	m := gallery(t)
 	require.NotContains(t, m.frameOf(), "tml: ")
@@ -166,9 +154,7 @@ func TestConfirmingQuitEndsTheProgram(t *testing.T) {
 	assert.NotNil(t, cmd)
 }
 
-// The log is a scrolling region, not a tab stop, so the wheel over it is the
-// only way to reach it -- which is the whole reason the pointer resolves against
-// more than the focus ring.
+// The log is a scrolling region, not a tab stop, so the wheel over it is the only way to reach it -- which is the
 func TestTheWheelScrollsTheLog(t *testing.T) {
 	m := gallery(t)
 	m.tab = "data"
@@ -181,8 +167,7 @@ func TestTheWheelScrollsTheLog(t *testing.T) {
 	assert.NotContains(t, ansi.Strip(m.frameOf()), "step 1 finished", "the first line has scrolled off")
 }
 
-// A list is one control to the ring, so clicking a row is the host reading the
-// event's own coordinates. This is the case the coordinates exist for.
+// A list is a single control to the ring, so clicking a row is the host reading the event's own coordinates. This is the
 func TestClickingAListRowSelectsIt(t *testing.T) {
 	m := gallery(t)
 	m.tab = "data"
@@ -195,9 +180,7 @@ func TestClickingAListRowSelectsIt(t *testing.T) {
 	assert.Contains(t, ansi.Strip(m.frameOf()), "> scheduler", "the cursor moved to the row that was clicked")
 }
 
-// press clicks and releases over one point, which is what actually activates a
-// control: a press alone is only the start of a click that can still be taken
-// back by releasing somewhere else.
+// press clicks and releases over a single point, which is what actually activates a control: a press alone is only the
 func press(m *model, x, y int) (tea.Model, tea.Cmd) {
 	m.Update(tea.MouseClickMsg{X: x, Y: y, Button: tea.MouseLeft})
 	return m.Update(tea.MouseReleaseMsg{X: x, Y: y, Button: tea.MouseLeft})
@@ -224,9 +207,7 @@ func golden(t *testing.T, name, got string) {
 	assert.Equal(t, readGolden(t, path, got), got)
 }
 
-// readGolden returns the recorded frame. An empty golden is seeded from this run
-// and then fails: seeding silently would bless whatever a broken frame happened
-// to contain and turn the first run green for the wrong reason.
+// readGolden returns the recorded frame. An empty golden is seeded from this run and then fails: seeding silently
 func readGolden(t *testing.T, path, got string) string {
 	t.Helper()
 	info, err := os.Stat(path)

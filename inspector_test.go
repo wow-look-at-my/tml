@@ -16,8 +16,7 @@ import (
 	"github.com/wow-look-at-my/tml/inspect"
 )
 
-// inspectorView is a small real view: two ids, one inside the other, rendered
-// through the same path a program uses.
+// inspectorView is a small real view: a pair of ids, a single id inside the other, rendered through the same path a program uses.
 const inspectorView = `<?xml version="1.1" encoding="UTF-8"?>
 <Component xmlns="urn:tml:v1" name="Inspected">
 	<Template>
@@ -36,8 +35,7 @@ func loadInspectorView(t *testing.T) *tml.View {
 	return view
 }
 
-// The frame the inspector answers from is the frame Render painted, so an
-// assertion is about what the program actually put on screen.
+// The frame the inspector answers from is the frame Render painted, so an assertion is about what the program actually
 func TestInspectorAnswersFromTheFrameTheViewPainted(t *testing.T) {
 	tml.ResetInspection()
 	view := loadInspectorView(t)
@@ -61,9 +59,7 @@ func TestInspectorAnswersFromTheFrameTheViewPainted(t *testing.T) {
 	assert.Equal(t, "world", inspect.Describe(body, frame.State, inspect.Options{}).Text)
 }
 
-// A restyle is a real override: the next layout uses it, so the geometry the
-// inspector reports back is the geometry the terminal got. Restyle drives the
-// repaint itself, which is what makes an edit visible on an idle program.
+// A restyle is a real override: the next layout uses it, so the geometry the inspector reports back is the geometry
 func TestRestyleChangesTheNextFramesLayout(t *testing.T) {
 	tml.ResetInspection()
 	view := loadInspectorView(t)
@@ -94,8 +90,7 @@ func TestRestyleChangesTheNextFramesLayout(t *testing.T) {
 	assert.Equal(t, 20, inspect.Find(restored.Box, "app").Screen.W, "reset gives the document back")
 }
 
-// A host that never wired a repaint says so, rather than reporting an override
-// that stays off the screen.
+// A host that never wired a repaint says so, rather than reporting an override that stays off the screen.
 func TestRestyleWithNoRepaintWiringSaysSo(t *testing.T) {
 	tml.ResetInspection()
 	view := loadInspectorView(t)
@@ -108,8 +103,7 @@ func TestRestyleWithNoRepaintWiringSaysSo(t *testing.T) {
 	assert.ErrorContains(t, insp.Reset(), "tml.NewProgram")
 }
 
-// A host that wires no input says so, rather than accepting a keystroke and
-// dropping it.
+// A host that wires no input says so, rather than accepting a keystroke and dropping it.
 func TestAnInspectorWithNoInputWiringRefusesToDrive(t *testing.T) {
 	tml.ResetInspection()
 	loadInspectorView(t)
@@ -124,8 +118,7 @@ func TestAnInspectorWithNoInputWiringRefusesToDrive(t *testing.T) {
 	assert.Equal(t, "ctrl+c", got)
 }
 
-// OnFrame is what wakes a watcher: the hook fires on the paint, not on a
-// timer.
+// OnFrame is what wakes a watcher: the hook fires on the paint, not on a timer.
 func TestOnFrameFiresPerPaint(t *testing.T) {
 	tml.ResetInspection()
 	view := loadInspectorView(t)
@@ -139,8 +132,7 @@ func TestOnFrameFiresPerPaint(t *testing.T) {
 	assert.Equal(t, 3, painted)
 }
 
-// The socket is the CLI's whole contract, so it is exercised here against a
-// real view rather than only against a hand-built frame.
+// The socket is the CLI's whole contract, so it is exercised here against a real view rather than only against a
 func TestSocketServesARealViewsFrame(t *testing.T) {
 	tml.ResetInspection()
 	view := loadInspectorView(t)
@@ -158,10 +150,7 @@ func TestSocketServesARealViewsFrame(t *testing.T) {
 	assert.Equal(t, "hello", res.Element.Text)
 }
 
-// A host that recompiles its document renders through a new View, and the only
-// thing it does about that is load. The inspector follows on its own, and keeps
-// numbering frames upward so a caller waiting for a newer one is not answered
-// by the new View's first paint.
+// A host that recompiles its document renders through a new View, and the only thing it does about that is load. The
 func TestLoadingAgainMovesTheInspectorToTheNewView(t *testing.T) {
 	tml.ResetInspection()
 	first := loadInspectorView(t)
@@ -182,8 +171,7 @@ func TestLoadingAgainMovesTheInspectorToTheNewView(t *testing.T) {
 	assert.Equal(t, 60, after.Width, "the frame is the new view's, not the old one's")
 	assert.Greater(t, after.Seq, before.Seq, "frame numbers continue across the swap")
 
-	// The old view stops recording, so a stray paint on it cannot come back as
-	// the current frame.
+	// The old view stops recording, so a stray paint on it cannot come back as the current frame.
 	_, err = first.Render(nil, 11, 11)
 	require.NoError(t, err)
 	still, ok := insp.Frame()
@@ -191,8 +179,7 @@ func TestLoadingAgainMovesTheInspectorToTheNewView(t *testing.T) {
 	assert.Equal(t, 60, still.Width, "the detached view no longer feeds the inspector")
 }
 
-// Overrides are the inspector's, not the view's, so they survive a reload and
-// the new view lays them out.
+// Overrides are the inspector's, not the view's, so they survive a reload and the new view lays them out.
 func TestOverridesSurviveAReload(t *testing.T) {
 	tml.ResetInspection()
 	loadInspectorView(t)
@@ -212,8 +199,7 @@ func TestOverridesSurviveAReload(t *testing.T) {
 		"the new view lays out the override the old one was given")
 }
 
-// The socket is Load's doing, not a host's. Nothing below wires an inspector,
-// serves anything, or knows one exists: it sets the variable and loads.
+// The socket is Load's doing, not a host's. Nothing below wires an inspector, serves anything, or knows an inspector exists: it
 func TestLoadServesTheSocketWithNoHostWiring(t *testing.T) {
 	tml.ResetInspection()
 	path := filepath.Join(t.TempDir(), "auto.sock")
@@ -237,17 +223,10 @@ func TestLoadServesTheSocketWithNoHostWiring(t *testing.T) {
 	assert.Equal(t, "hello", res.Element.Text)
 }
 
-// A view that cannot be served is not returned at all.
-//
-// Reporting it and handing back a working View would leave a program running
-// that nothing can reach -- which is the state this whole mechanism exists to
-// make unreachable. Load is where it has to fail, because Load is the last
-// point at which the host has not started drawing.
+// A view that cannot be served is not returned at all. Reporting it and handing back a working View would leave a
 func TestAViewThatCannotBeServedIsNotReturned(t *testing.T) {
 	tml.ResetInspection()
-	// A regular file where the socket's directory has to be. ListenSocket
-	// creates a missing directory on purpose, so an absent path is servable
-	// and this is what genuinely is not.
+	// A regular file where the socket's directory has to be. ListenSocket creates a missing directory on purpose, so an
 	blocker := filepath.Join(t.TempDir(), "not-a-dir")
 	require.NoError(t, os.WriteFile(blocker, []byte("x"), 0o600))
 	t.Setenv(tml.SocketEnv, filepath.Join(blocker, "x.sock"))
@@ -260,8 +239,7 @@ func TestAViewThatCannotBeServedIsNotReturned(t *testing.T) {
 	assert.ErrorContains(t, tml.InspectError(), "serve the inspection protocol")
 }
 
-// The socket is not conditional on the environment: a program that sets nothing
-// at all still serves, and the path it serves on is the one tml looks in.
+// The socket is not conditional on the environment: a program that sets nothing at all still serves, and the path it
 func TestAProgramServesWithNothingSet(t *testing.T) {
 	tml.ResetInspection()
 	t.Setenv(tml.SocketEnv, "")
@@ -276,8 +254,7 @@ func TestAProgramServesWithNothingSet(t *testing.T) {
 	require.NoError(t, conn.Close())
 }
 
-// The directory carries the right to drive every program in it, so it is this
-// user's and nobody else's.
+// The directory carries the right to drive every program in it, so it is this user's and nobody else's.
 func TestTheSocketDirectoryIsPrivateToThisUser(t *testing.T) {
 	tml.ResetInspection()
 	t.Setenv(tml.SocketEnv, "")

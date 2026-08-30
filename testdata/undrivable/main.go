@@ -1,17 +1,4 @@
-// Command undrivable is the program the drivable guard exists to stop.
-//
-// It loads a document and then builds its Bubble Tea program with
-// tea.NewProgram, which returns a program tml never sees. The inspector can
-// read every frame it paints and drive none of them. Running it is the
-// negative control for drivable.go: a guard that has never been watched fire
-// is a guard nobody knows still works.
-//
-// It lives in testdata so it is not part of the module's own build and cannot
-// be published by mistake. drivable_e2e_test.go builds and runs it.
-//
-// Input is disabled and output discarded so it runs with no terminal, which is
-// what CI has. Neither choice touches the thing under test: what matters is
-// which constructor built the program.
+// Command undrivable is the program the drivable guard exists to stop. It loads a document and then builds its Bubble
 package main
 
 import (
@@ -32,10 +19,7 @@ const doc = `<?xml version="1.1" encoding="UTF-8"?>
 
 type model struct{ view *tml.View }
 
-// It paints once and then waits, which is what a terminal program does between
-// keystrokes and the harder case for the guard: there is no second frame to
-// notice anything on. It also refuses to end on its own, so if it exits, the
-// guard is why.
+// It paints as soon as and then waits, which is what a terminal program does between keystrokes and the harder case for the
 func (m model) Init() tea.Cmd {
 	return tea.Tick(time.Hour, func(time.Time) tea.Msg { return struct{}{} })
 }

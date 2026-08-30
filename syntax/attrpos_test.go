@@ -8,8 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// colOf is the 1-based column of needle on the given 1-based line, which is the
-// column the parser reports for a construct starting there.
+// colOf is the column of needle on the given line, counted from its start, which is the column the parser reports for a
 func colOf(t *testing.T, src string, line int, needle string) int {
 	t.Helper()
 	lines := strings.Split(src, "\n")
@@ -19,9 +18,7 @@ func colOf(t *testing.T, src string, line int, needle string) int {
 	return idx + 1
 }
 
-// requirePos asserts a diagnostic lands on the attribute rather than the element.
-// Both checks matter: the element's column is the position this used to report,
-// so asserting only the message would pass without the fix.
+// requirePos asserts a diagnostic lands on the attribute rather than the element. Both checks matter: the element's
 func requirePos(t *testing.T, err error, src string, line int, attr, element string) {
 	t.Helper()
 	var syntaxErr *Error
@@ -59,8 +56,7 @@ func TestBadBooleanIsReportedAtTheAttribute(t *testing.T) {
 	requirePos(t, err, src, 3, `required=`, `<Property`)
 }
 
-// Template and style attributes keep their own positions on the way through, so
-// the later passes that report against them have somewhere accurate to point.
+// Template and style attributes keep their own positions on the way through, so the later passes that report against
 func TestParsedAttributesCarryTheirOwnPositions(t *testing.T) {
 	src := header + `<Component xmlns="urn:tml:v1" name="Card">
 	<Template>

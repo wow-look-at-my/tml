@@ -1,10 +1,4 @@
-// Command dashboard is a Bubble Tea program whose entire view is declared in
-// TML.
-//
-// The point of the example is the division of labour: the model still owns the
-// text input and still runs its own Update, while app.tml owns the layout, the
-// theme and the component structure. Binding the input as a <Search> element is
-// the only place the two meet.
+// Command dashboard is a Bubble Tea program whose entire view is declared in TML. The point of the example is the
 package main
 
 import (
@@ -77,21 +71,17 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *model) View() tea.View { return tea.NewView(m.frame()) }
 
-// frame renders the view to a string. Splitting it out of View keeps the whole
-// UI reachable without a terminal, which is what -frame and any future golden
-// test need.
+// frame renders the view to a string. Splitting it out of View keeps the whole UI reachable without a terminal, which
 func (m *model) frame() string {
 	out, err := m.view.Render(m.props(), m.width, m.height)
 	if err != nil {
-		// A render failure is shown, never swallowed: a blank frame would look
-		// like an empty dashboard rather than a broken one.
+		// A render failure is shown, never swallowed: a blank frame would look like an empty dashboard rather than a broken
 		return "tml: " + err.Error()
 	}
 	return out
 }
 
-// props is what the document is rendered from, named so that anything else
-// asking about the same frame lays out the same view.
+// props is what the document is rendered from, named so that anything else asking about the same frame lays out the
 func (m *model) props() tml.Props {
 	return tml.Props{
 		"title":    sema.StringValue("Deployments"),
@@ -115,8 +105,7 @@ func (m *model) matches() []string {
 }
 
 func main() {
-	// -frame renders a single frame and exits, so the example can be smoke
-	// tested without a terminal. Bubble Tea needs a TTY; the view does not.
+	// -frame renders a single frame and exits, so the example can be smoke tested without a terminal. Bubble Tea needs a
 	frame := flag.Bool("frame", false, "render one frame to stdout and exit")
 	width := flag.Int("width", 60, "viewport width for -frame")
 	height := flag.Int("height", 18, "viewport height for -frame")

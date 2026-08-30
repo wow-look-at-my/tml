@@ -10,8 +10,7 @@ import (
 	"github.com/wow-look-at-my/tml/widget"
 )
 
-// plain drops the styling, for a test about what the text says rather than about
-// how it is decorated.
+// plain drops the styling, for a test about what the text says rather than about how it is decorated.
 func plain(s string) []string {
 	return strings.Split(ansi.Strip(s), "\n")
 }
@@ -22,8 +21,7 @@ func TestListMarksTheSelectedItem(t *testing.T) {
 	assert.Equal(t, []string{"  one  ", "> two  ", "  three"}, plain(l.Render(7, 3)))
 }
 
-// The gutter is kept on every row, or the text shifts sideways as the selection
-// moves and the whole list appears to jitter.
+// The gutter is kept on every row, or the text shifts sideways as the selection moves and the whole list appears to
 func TestListKeepsItsGutterOnEveryRow(t *testing.T) {
 	l := build(t, "List", map[string]string{"items": "a,b"})
 
@@ -59,8 +57,7 @@ func TestFocusedListHighlightsItsSelection(t *testing.T) {
 	assert.NotEqual(t, resting, l.Render(5, 2))
 }
 
-// A row wider than the space is cut, not wrapped: wrapping would push every row
-// below it down a line, and the list's geometry would stop matching the screen.
+// A row wider than the space is cut, not wrapped: wrapping would push every row below it down a line, and the list's
 func TestListCutsRowsTooWideForIt(t *testing.T) {
 	l := build(t, "List", map[string]string{"items": "cmd/report.go,report/table.go", "selected": "1"})
 
