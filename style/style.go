@@ -1,10 +1,4 @@
-// Package style resolves TML style attributes into a lipgloss.Style.
-//
-// The cascade lives here rather than in lipgloss. Style.Inherit deliberately
-// skips padding and margin, so a named style that sets padding could not be
-// extended through it. Resolving the attribute maps first and building one
-// finished lipgloss.Style at the end also gives layout the box model it needs
-// before any rendering happens. See docs/lipgloss-contract.md.
+// Package style resolves TML style attributes into a lipgloss.Style. The cascade lives here rather than in lipgloss.
 package style
 
 import (
@@ -19,12 +13,7 @@ import (
 	"github.com/wow-look-at-my/tml/syntax"
 )
 
-// Resolved is one element's finished styling.
-//
-// Margin is kept out of the lipgloss.Style on purpose: lipgloss treats the width
-// set on a style as the border box, excluding margin, so mixing the two would
-// make every width ambiguous. Layout subtracts margin itself and hands lipgloss
-// the border-box width.
+// Resolved is a single element's finished styling. Margin is kept out of the lipgloss.Style on purpose: lipgloss treats the
 type Resolved struct {
 	Style  lipgloss.Style
 	Margin sema.Thickness
@@ -37,25 +26,19 @@ func (r Resolved) Frame() (horizontal, vertical int) {
 	return r.Style.GetHorizontalFrameSize(), r.Style.GetVerticalFrameSize()
 }
 
-// ContentOffset is the distance from a box's outer top-left corner to the first
-// cell of its content. A child's rect is relative to that point, so this is what
-// turns nested rects into screen coordinates.
+// ContentOffset is the distance from a box's outer top-left corner to the leading cell of its content. A child's rect is
 func (r Resolved) ContentOffset() (x, y int) {
 	x = r.Margin.Left + r.Style.GetPaddingLeft() + r.Style.GetBorderLeftSize()
 	y = r.Margin.Top + r.Style.GetPaddingTop() + r.Style.GetBorderTopSize()
 	return x, y
 }
 
-// Sheet holds the named styles declared across every theme in scope, with each
-// extends chain already flattened.
+// Sheet holds the named styles declared across every theme in scope, with each extends chain already flattened.
 type Sheet struct {
 	styles map[string]map[string]string
 }
 
-// NewSheet flattens the named styles from the given themes.
-//
-// Token references in style attributes are resolved here, so a style is a plain
-// attribute map by the time anything asks for it.
+// NewSheet flattens the named styles from the given themes. Token references in style attributes are resolved here, so
 func NewSheet(themes []*syntax.Theme, tokens map[string]string) (*Sheet, error) {
 	declared := map[string]*syntax.Style{}
 	for _, theme := range themes {
@@ -115,8 +98,7 @@ func (s *Sheet) flatten(declared map[string]*syntax.Style, name string, tokens m
 	return attrs, nil
 }
 
-// resolveTokens evaluates the theme references a style attribute may contain.
-// Styles live in a theme, so a token is the only name they can see.
+// resolveTokens evaluates the theme references a style attribute may contain. Styles live in a theme, so a token is
 func resolveTokens(raw string, tokens map[string]string) (string, error) {
 	expr, err := sema.ParseExpr(raw)
 	if err != nil {
@@ -143,8 +125,7 @@ func resolveTokens(raw string, tokens map[string]string) (string, error) {
 	return b.String(), nil
 }
 
-// Resolve builds the finished style for an element: the named style if it has
-// one, with inline attributes layered on top.
+// Resolve builds the finished style for an element: the named style when the element names a style, with inline attributes layered on
 func (s *Sheet) Resolve(named string, inline map[string]string) (Resolved, error) {
 	attrs := map[string]string{}
 	if named != "" {
@@ -224,8 +205,7 @@ func applyTextFlag(resolved *Resolved, name, raw string) error {
 	return nil
 }
 
-// borders are named rather than described, so a template never spells out box
-// drawing characters.
+// borders are named rather than described, so a template never spells out box drawing characters.
 var borders = map[string]func() lipgloss.Border{
 	"normal":  lipgloss.NormalBorder,
 	"rounded": lipgloss.RoundedBorder,

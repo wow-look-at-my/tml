@@ -1,5 +1,4 @@
-// Package cli is the tml command line. Each subcommand lives in its own file
-// and registers itself, so adding one never means editing this file.
+// Package cli is the tml command line. Each subcommand lives in its own file and registers itself, so adding a command never
 package cli
 
 import (
@@ -17,14 +16,12 @@ import (
 var root = &cobra.Command{
 	Use:   "tml",
 	Short: "Terminal Markup Language: declarative, reusable terminal components",
-	// A diagnostic is the product here, so cobra must not add usage noise
-	// underneath one. Execute prints the error itself, so letting cobra print
-	// it too says everything twice.
+	// A diagnostic is the product here, so cobra must not add usage noise underneath a diagnostic. Execute prints the error
 	SilenceUsage:  true,
 	SilenceErrors: true,
 }
 
-// Execute runs the CLI, exiting non-zero on any diagnostic.
+// Execute runs the CLI, exiting non-nothing on any diagnostic.
 func Execute() {
 	if err := root.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
@@ -32,8 +29,7 @@ func Execute() {
 	}
 }
 
-// loadView opens a .tml file by path. The file's directory becomes the root
-// imports resolve against, so a view is portable as a directory.
+// loadView opens a .tml file by path. The file's directory becomes the root imports resolve against, so a view is
 func loadView(path string, dark bool, props []string) (*tml.View, tml.Props, error) {
 	dir, file := filepath.Split(path)
 	if dir == "" {
@@ -50,8 +46,7 @@ func loadView(path string, dark bool, props []string) (*tml.View, tml.Props, err
 	return view, parsed, nil
 }
 
-// parseProps reads --prop name=value pairs. Values arrive untyped and are
-// coerced against the component's declaration during expansion.
+// parseProps reads --prop name=value pairs. Values arrive untyped and are coerced against the component's declaration
 func parseProps(pairs []string) (tml.Props, error) {
 	props := tml.Props{}
 	for _, pair := range pairs {

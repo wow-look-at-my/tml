@@ -58,8 +58,7 @@ App
       "Deploy"`), strings.TrimSpace(got))
 }
 
-// Slot content is a closure over the call site: it sees the caller's properties,
-// never the component it is passed into.
+// Slot content is a closure over the call site: it sees the caller's properties, never the component it is passed into.
 func TestSlotContentEvaluatesInTheCallersScope(t *testing.T) {
 	got, err := expand(t, map[string]string{
 		"app.tml": `<Component xmlns="urn:tml:v1" name="App">
@@ -179,8 +178,7 @@ func TestThemeTokensResolveAndFollowDarkMode(t *testing.T) {
 	assert.Contains(t, dark.Dump(), `fg="#e0af68"`, "an adaptive token follows the mode")
 }
 
-// A theme token is text until it reaches a typed property, where it is re-read
-// as that type. A token that is not a valid colour must fail there.
+// A theme token is text until it reaches a typed property, where it is re-read as that type. A token that is not a
 func TestTokenIsCheckedAgainstTheTargetType(t *testing.T) {
 	_, err := expand(t, map[string]string{
 		"app.tml": `<Component xmlns="urn:tml:v1" name="App">

@@ -50,9 +50,7 @@ func TestAttrsFallBackWhenAbsent(t *testing.T) {
 	assert.Nil(t, a.List("missing"))
 }
 
-// An attribute nobody can parse is a mistake in the template. Reporting it beats
-// rendering something plausible, which would leave the author hunting for why
-// the number they wrote had no effect.
+// An attribute nobody can parse is a mistake in the template. Reporting it beats rendering something plausible, which
 func TestAttrsRejectUnparseableValues(t *testing.T) {
 	a := strs(map[string]string{
 		"count": "many", "ratio": "half", "on": "yes", "glyph": "ab",
@@ -104,8 +102,7 @@ func TestAttrsReadTypedValues(t *testing.T) {
 	assert.Equal(t, []string{"count", "on", "values"}, sorted(a.Names()))
 }
 
-// A native element's attributes are untyped text, so a list written there has to
-// split the same way a typed list does.
+// A native element's attributes are untyped text, so a list written there has to split the same way a typed list does.
 func TestAttrsSplitAnUntypedList(t *testing.T) {
 	a := strs(map[string]string{"values": "3, 1 ,2", "blank": "  "})
 

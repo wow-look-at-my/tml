@@ -13,8 +13,7 @@ import (
 	"github.com/wow-look-at-my/tml"
 )
 
-// The failure names the fix. A guard that takes a program down and leaves the
-// reader to guess why has traded one broken state for a worse one.
+// The failure names the fix. A guard that takes a program down and leaves the reader to guess why has traded a real fix for a puzzle
 func TestTheRefusalNamesTheFix(t *testing.T) {
 	tml.ResetDrivable()
 	assert.PanicsWithValue(t,
@@ -22,10 +21,7 @@ func TestTheRefusalNamesTheFix(t *testing.T) {
 		func() { tml.CheckDrivable() })
 }
 
-// A program tml built is driven from the frame it starts on, so the guard has
-// nothing to say about it however long it runs. Rendering is exercised through
-// the real path rather than the seam: what matters is that a driven session is
-// not a case the guard can reach at all.
+// A program tml built is driven from the frame it starts on, so the guard has nothing to say about it however long it
 func TestADrivenProgramIsNeverTouched(t *testing.T) {
 	tml.ResetInspection()
 	tml.ResetDrivable()

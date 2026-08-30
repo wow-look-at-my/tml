@@ -17,7 +17,7 @@ func init() {
 	root.AddCommand(newQueryCmd(), newElementsCmd(), newIDsCmd(), newAtCmd(), newFrameCmd(), newKeyCmd(), newRestyleCmd())
 }
 
-// newQueryCmd reports one element by id from a running program.
+// newQueryCmd reports a single element by id from a running program.
 func newQueryCmd() *cobra.Command {
 	var (
 		sock      string
@@ -186,8 +186,7 @@ func newFrameCmd() *cobra.Command {
 	return cmd
 }
 
-// widestLine measures in the cells a terminal draws, through the same function
-// the engine lays out with.
+// widestLine measures in the cells a terminal draws, through the same function the engine lays out with.
 func widestLine(text string) int {
 	widest := 0
 	for _, line := range strings.Split(text, "\n") {

@@ -12,9 +12,7 @@ import (
 
 const themeXMLHeader = "<?xml version=\"1.1\" encoding=\"UTF-8\"?>\n"
 
-// A theme has no properties and nothing to instantiate. Loading one on its own
-// -- rather than only when some component happens to import it -- is what lets
-// `tml check theme.tml` catch a broken theme before anything ships with it.
+// A theme has no properties and nothing to instantiate. Loading a theme on its own -- rather than only when some component
 func TestAThemeEntryLoadsOnItsOwn(t *testing.T) {
 	fsys := fstest.MapFS{"theme.tml": &fstest.MapFile{Data: []byte(themeXMLHeader + `
 <Theme xmlns="urn:tml:v1" name="slh">
@@ -25,9 +23,7 @@ func TestAThemeEntryLoadsOnItsOwn(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-// An extends chain that cycles is a defect in the theme itself, and a theme
-// entry is exactly where it should surface -- not the first component that
-// happens to import it.
+// An extends chain that cycles is a defect in the theme itself, and a theme entry is exactly where it should surface
 func TestAThemeEntryStillCatchesACyclicExtends(t *testing.T) {
 	fsys := fstest.MapFS{"theme.tml": &fstest.MapFile{Data: []byte(themeXMLHeader + `
 <Theme xmlns="urn:tml:v1" name="slh">
@@ -39,8 +35,7 @@ func TestAThemeEntryStillCatchesACyclicExtends(t *testing.T) {
 	assert.ErrorContains(t, err, "extends itself")
 }
 
-// A theme entry declares no component, so there is no root to instantiate: the
-// refusal has to name that plainly rather than panic on a nil root.
+// A theme entry declares no component, so there is no root to instantiate: the refusal has to name that plainly rather
 func TestAThemeEntryRefusesToExpand(t *testing.T) {
 	fsys := fstest.MapFS{"theme.tml": &fstest.MapFile{Data: []byte(themeXMLHeader + `
 <Theme xmlns="urn:tml:v1" name="slh">

@@ -10,21 +10,10 @@ import (
 	"github.com/wow-look-at-my/tml/widget"
 )
 
-// marginZero is the absent margin; setting a zero margin on a style is harmless
-// but pointless, so it is skipped.
+// marginZero is the absent margin; setting a nothing margin on a style is harmless but pointless, so it is skipped.
 var marginZero sema.Thickness
 
-// Render composes a laid-out tree into terminal output.
-//
-// Composition is bottom-up: every box renders its children to strings and then
-// hands the result to its own lipgloss.Style, which adds padding, border and
-// alignment. Because layout already sized each box to exactly the cells it was
-// given, joining the pieces reproduces the arranged geometry.
-//
-// Margin goes back onto the style here and nowhere else. lipgloss treats the
-// width set on a style as the border box and adds margin outside it, so the two
-// only compose unambiguously at render time; layout keeps margin separate so it
-// can reason about sizes.
+// Render composes a laid-out tree into terminal output. Composition is bottom-up: every box renders its children to
 func Render(box *layout.Box) string {
 	if box.Name == "#text" {
 		return box.Text
@@ -33,9 +22,7 @@ func Render(box *layout.Box) string {
 	content := box.Text
 	switch {
 	case box.Native != nil && len(box.Children) == 0:
-		// The widget draws itself into the space layout settled on. A widget with
-		// children is a composer and goes the other way, so its children are drawn
-		// before it wraps them.
+		// The widget draws itself into the space layout settled on. A widget with children is a composer and goes the other
 		content = box.Native.Render(box.Content.W, box.Content.H)
 	case box.Name != "Text":
 		content = renderChildren(box)
@@ -47,8 +34,7 @@ func Render(box *layout.Box) string {
 		st = st.Margin(margin.Top, margin.Right, margin.Bottom, margin.Left)
 	}
 
-	// Width and Height are the border box: what is left of the rect once margin
-	// is removed.
+	// Width and Height are the border box: what is left of the rect as soon as margin is removed.
 	w := box.Rect.W - margin.Horizontal()
 	h := box.Rect.H - margin.Vertical()
 	if w > 0 {
@@ -58,10 +44,7 @@ func Render(box *layout.Box) string {
 		st = st.Height(h)
 	}
 
-	// A container's content is already composed, so overflow has to be clipped.
-	// Width alone would make lipgloss WRAP the block, which folds a too-wide row
-	// onto the next line and shreds the arranged geometry. Text is the one place
-	// wrapping is wanted, so it keeps Width on its own.
+	// A container's content is already composed, so overflow has to be clipped. Width alone would make lipgloss WRAP the
 	if box.Name != "Text" || box.Native != nil {
 		if w > 0 {
 			st = st.MaxWidth(w)
@@ -84,8 +67,7 @@ func renderChildren(box *layout.Box) string {
 	}
 
 	if composer := box.Composer(); composer != nil {
-		// The widget draws itself around its children, which reach it grouped by
-		// the slot they were written into.
+		// The widget draws itself around its children, which reach it grouped by the slot they were written into.
 		slots := widget.Slots{}
 		for i, child := range box.Children {
 			slots[child.Slot()] = append(slots[child.Slot()], parts[i])
@@ -101,19 +83,12 @@ func renderChildren(box *layout.Box) string {
 	case "Canvas":
 		return canvas(box, parts)
 	default:
-		// A decorator holds a single child in practice; stacking any extras
-		// vertically keeps the output well-formed rather than silently dropping
-		// them.
+		// A decorator holds a single child in practice; stacking any extras vertically keeps the output well-formed rather
 		return lipgloss.JoinVertical(lipgloss.Left, parts...)
 	}
 }
 
-// compose places children at the coordinates arrange gave them, which joining
-// cannot express once children sit on a grid rather than in a line.
-//
-// Every layer gets a distinct, increasing z in document order. The compositor
-// sorts on each layer's own z with an unstable sort, so equal values would leave
-// the paint order of overlapping cells undefined. See docs/lipgloss-contract.md.
+// compose places children at the coordinates arrange gave them, which joining cannot express as soon as children sit on a
 func compose(box *layout.Box, parts []string) string {
 	layers := make([]*lipgloss.Layer, 0, len(parts))
 	for i, child := range box.Children {
@@ -129,13 +104,7 @@ func joinStack(box *layout.Box, parts []string) string {
 	gap := box.Gap()
 	vertical := box.Vertical()
 
-	// A child measured to zero on the stacking axis (an items control with no
-	// items, or a component whose own body drew nothing) contributed no rows or
-	// columns during layout. Joining its rendered string unconditionally would
-	// still add one, because an empty string is one blank line to
-	// lipgloss.JoinVertical/JoinHorizontal: the row layout measured as absent
-	// reappears in the output, and everything after it renders one cell short
-	// of where the arranged geometry placed it.
+	// A child measured to nothing on the stacking axis (an items control with no items, or a component whose own body drew
 	kept := parts[:0:0]
 	for i, child := range box.Children {
 		size := child.Rect.W
@@ -166,8 +135,7 @@ func joinStack(box *layout.Box, parts []string) string {
 	return lipgloss.JoinHorizontal(box.Style.VAlign, parts...)
 }
 
-// gapFiller is the blank run between two stacked children: blank lines down the
-// page, blank columns across it.
+// gapFiller is the blank run between a pair of stacked children: blank lines down the page, blank columns across it.
 func gapFiller(box *layout.Box, gap int, vertical bool) string {
 	if vertical {
 		return strings.Repeat("\n", gap-1)

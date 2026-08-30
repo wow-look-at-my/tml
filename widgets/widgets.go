@@ -1,14 +1,4 @@
-// Package widgets is the language's own widget library: the controls a terminal
-// view needs before it needs anything specific to one program.
-//
-// Every widget here is declarative. It draws from its attributes and holds no
-// state of its own, because state lives in the host's Bubble Tea model and
-// arrives as properties. What the library does own is presentation: a focused
-// button looks focused, a checkbox looks checked, a progress bar fills.
-//
-// The library is registered by default, so a template can use <Button> without
-// the host binding anything. A host that wants its own <Button> binds one and
-// wins the name; tml.Options.Bare drops the library entirely.
+// Package widgets is the language's own widget library: the controls a terminal view needs before it needs anything
 package widgets
 
 import (
@@ -35,25 +25,18 @@ func Library() *widget.Registry {
 		BindFactory("Badge", factory(newBadge, badgeAttrs))
 }
 
-// Names lists every element the library binds, for documentation and for a host
-// that wants to know what it is getting.
+// Names lists every element the library binds, for documentation and for a host that wants to know what it is getting.
 func Names() []string { return Library().Names() }
 
-// builder makes one widget from one element's context.
+// builder makes a single widget from a single element's context.
 type builder func(widget.Context) (widget.Native, error)
 
-// factory pairs a builder with the attribute names it reads. The engine hands
-// anything not on that list to the stylesheet instead, which is what lets
-// <Badge label="new" bg="#f00"/> mean both things at once.
-//
-// This library goes through the same public constructor a host does, so the
-// seam cannot rot on the side nobody uses.
+// factory pairs a builder with the attribute names it reads. The engine hands anything not on that list to the
 func factory(build builder, attrs []string) widget.Factory {
 	return widget.NewFactory(attrs, build)
 }
 
-// slotted is a factory that also names the regions content can be written into,
-// so a misspelt <Button.Contnt> is rejected when the view loads.
+// slotted is a factory that also names the regions content can be written into, so a misspelt <Button.Contnt> is
 func slotted(build builder, attrs, slots []string) widget.Factory {
 	return widget.NewSlottedFactory(attrs, slots, build)
 }

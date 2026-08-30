@@ -11,12 +11,7 @@ import (
 
 var tableAttrs = []string{"columns", "rows", "separator", "border"}
 
-// dataTable is a grid of text with headers.
-//
-// Rows arrive as a list of delimited strings because that is the shape the host
-// already has: it built the values, and it can join them. The alternative --
-// repeating elements per row -- is what <For> over a <Grid> is for, and this
-// widget exists for the case where the data is a table rather than a layout.
+// dataTable is a grid of text with headers. Rows arrive as a list of delimited strings because that is the shape the
 type dataTable struct {
 	columns   []string
 	rows      [][]string
@@ -48,8 +43,7 @@ func (t *dataTable) build(w int) *table.Table {
 		built = built.Width(w)
 	}
 	if !t.bordered {
-		// The column rule stays on: hidden, it is the space that keeps two full
-		// cells from running together into one word.
+		// The column rule stays on: hidden, it is the space that keeps a pair of full cells from running together into a single word.
 		built = built.Border(lipgloss.HiddenBorder()).BorderTop(false).BorderBottom(false).
 			BorderLeft(false).BorderRight(false)
 	}

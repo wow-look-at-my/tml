@@ -9,25 +9,21 @@ import (
 	"github.com/wow-look-at-my/tml/widget"
 )
 
-// Target is one focusable control in the last rendered frame: what it is called,
-// what it does, and where on the screen it ended up.
+// Target is a single focusable control in the last rendered frame: what it is called, what it does, and where on the screen
 type Target = layout.Target
 
-// Scroll is how far a scrolling region's content is shifted, and how far it
-// could be.
+// Scroll is how far a scrolling region's content is shifted, and how far it could be.
 type Scroll = layout.Scroll
 
 // EventKind is what happened to an interactive element.
 type EventKind int
 
 const (
-	// Activated is a control being pressed: enter or space on the focused one,
-	// or a click released over it.
+	// Activated is a control being pressed: enter or space on the focused control, or a click released over it.
 	Activated EventKind = iota
 	// FocusMoved is the keyboard landing on a different control.
 	FocusMoved
-	// Scrolled is a wheel turn over a control, with Delta in notches: negative
-	// up, positive down.
+	// Scrolled is a wheel turn over a control, with Delta in notches: negative up, positive down.
 	Scrolled
 )
 
@@ -44,36 +40,24 @@ func (k EventKind) String() string {
 	}
 }
 
-// Event is one interaction, reported back to the host.
-//
-// Action is the element's action attribute: the string the template author
-// chose to name what this control does. Matching on it keeps the host's Update
-// free of any knowledge of where the control sits in the layout.
+// Event is a single interaction, reported back to the host. Action is the element's action attribute: the string the
 type Event struct {
 	Kind   EventKind
 	ID     string
 	Action string
 	Delta  int
-	// X and Y are where the pointer was inside the control, in cells from its
-	// top-left. A widget that draws several things -- a list's rows, a table's
-	// columns -- is one element to the ring, so this is how the host works out
-	// which of them was clicked. Both are -1 when the keyboard did it.
+	// X and Y are where the pointer was inside the control, in cells from its top-left. A widget that draws several
 	X, Y int
 }
 
-// KeyMap is which keys drive the focus ring. Replace it when the host wants a
-// key for itself -- a list that owns the arrows, say.
+// KeyMap is which keys drive the focus ring. Replace it when the host wants a key for itself -- a list that owns the
 type KeyMap struct {
 	Next     []string
 	Prev     []string
 	Activate []string
 }
 
-// DefaultKeyMap moves with tab and the arrows and fires on enter or space.
-//
-// The arrows are included because a row of buttons should respond to them
-// without any setup. A host that needs them takes them back through KeyMap, or
-// by not forwarding the message at all.
+// DefaultKeyMap moves with tab and the arrows and fires on enter or space. The arrows are included because a row of
 func DefaultKeyMap() KeyMap {
 	return KeyMap{
 		Next:     []string{"tab", "down", "right"},
@@ -82,11 +66,7 @@ func DefaultKeyMap() KeyMap {
 	}
 }
 
-// UI is a view's interaction state.
-//
-// The cycle is one frame long: laying out asks the UI how each control should
-// draw, then hands back where every control landed, so the next key press or
-// click resolves against the frame the user is actually looking at.
+// UI is a view's interaction state. The cycle is a single frame long: laying out asks the UI how each control should draw,
 type UI struct {
 	keys    KeyMap
 	focus   string
@@ -103,9 +83,7 @@ func (u *UI) SetKeyMap(keys KeyMap) { u.keys = keys }
 
 // States implements layout.Interaction.
 func (u *UI) States(targets []layout.Target) []widget.State {
-	// Nothing has been focused yet, so the keyboard starts on the frame's first
-	// control rather than nowhere: a view whose buttons are all unfocused on the
-	// first frame looks broken.
+	// Nothing has been focused yet, so the keyboard starts on the frame's leading control rather than nowhere: a view whose
 	focus := u.focus
 	if focus == "" {
 		focus = firstFocusable(targets)
@@ -126,9 +104,7 @@ func (u *UI) States(targets []layout.Target) []widget.State {
 // Frame implements layout.Interaction.
 func (u *UI) Frame(targets []layout.Target) {
 	u.targets = targets
-	// A control can disappear between frames -- a popup closes, an `if` flips.
-	// Falling back to the first focusable keeps the keyboard usable instead of
-	// stranding it on something no longer drawn.
+	// A control can disappear between frames -- a popup closes, an `if` flips. Falling back to the leading focusable keeps
 	if index := u.indexOf(u.focus); index < 0 || !targets[index].Focus {
 		u.focus = firstFocusable(targets)
 	}
@@ -143,9 +119,7 @@ func firstFocusable(targets []layout.Target) string {
 	return ""
 }
 
-// Update feeds a Bubble Tea message through the focus ring and reports what the
-// user did. Messages that mean nothing here are ignored, so forwarding
-// everything is safe.
+// Update feeds a Bubble Tea message through the focus ring and reports what the user did. Messages that mean nothing
 func (u *UI) Update(msg tea.Msg) []Event {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
@@ -169,8 +143,7 @@ func (u *UI) Update(msg tea.Msg) []Event {
 		u.press = ""
 		target := u.hit(msg.X, msg.Y)
 		u.hover = target
-		// Releasing somewhere else cancels, which is what every other button in
-		// every other toolkit does and what lets a misclick be taken back.
+		// Releasing somewhere else cancels, which is what every other button in every other toolkit does and what lets a
 		if pressed == "" || target != pressed {
 			return nil
 		}
@@ -205,9 +178,7 @@ func (u *UI) key(stroke string) []Event {
 	return nil
 }
 
-// move steps the ring, wrapping at both ends so tab never dead-ends. Elements
-// that only answer the pointer are stepped over: tab landing on a scrolling
-// region that does nothing with the keyboard is a dead stop.
+// move steps the ring, wrapping at both ends so tab never dead-ends. Elements that only answer the pointer are stepped
 func (u *UI) move(step int) []Event {
 	ring := u.ring()
 	if len(ring) == 0 {
@@ -235,8 +206,7 @@ func (u *UI) ring() []int {
 	return ring
 }
 
-// Focus moves the keyboard to the control with the given id. It reports whether
-// such a control took focus in the last frame.
+// Focus moves the keyboard to the control with the given id. It reports whether such a control took focus in the last
 func (u *UI) Focus(id string) bool {
 	for i, target := range u.targets {
 		if target.ID == id && id != "" && target.Focus {
@@ -256,13 +226,10 @@ func (u *UI) Focused() (id, action string) {
 	return u.targets[index].ID, u.targets[index].Action
 }
 
-// Targets is every interactive element in the last frame, in document order:
-// the focus ring plus anything the pointer alone can reach.
+// Targets is every interactive element in the last frame, in document order: the focus ring plus anything the pointer
 func (u *UI) Targets() []layout.Target { return u.targets }
 
-// Target is the element with the given id in the last frame. A host reads it to
-// find out where something landed -- how far a scrolling region actually
-// scrolled, say, which is a number only the frame knows.
+// Target is the element with the given id in the last frame. A host reads it to find out where something landed -- how
 func (u *UI) Target(id string) (layout.Target, bool) {
 	for _, target := range u.targets {
 		if target.ID == id && id != "" {
@@ -287,8 +254,7 @@ func (u *UI) activate(key string) []Event {
 	return u.event(key, Activated, 0, -1, -1)
 }
 
-// at is a pointer event, with the screen point turned into an offset inside the
-// control it landed on.
+// at is a pointer event, with the screen point turned into an offset inside the control it landed on.
 func (u *UI) at(key string, kind EventKind, delta, screenX, screenY int) []Event {
 	index := u.indexOf(key)
 	if index < 0 {
@@ -313,8 +279,7 @@ func (u *UI) event(key string, kind EventKind, delta, x, y int) []Event {
 	}}
 }
 
-// hit finds the control under a point. Later targets win, because that is the
-// order they are painted in and so the order they overlap in.
+// hit finds the control under a point. Later targets win, because that is the order they are painted in and so the
 func (u *UI) hit(x, y int) string {
 	found := ""
 	for i, target := range u.targets {
@@ -338,8 +303,7 @@ func (u *UI) indexOf(key string) int {
 	return -1
 }
 
-// targetKey identifies a control across frames. An id survives the control
-// moving; without one, position in the ring is all there is to go on.
+// targetKey identifies a control across frames. An id survives the control moving; without an id, position in the ring
 func targetKey(index int, id string) string {
 	if id != "" {
 		return "#" + id

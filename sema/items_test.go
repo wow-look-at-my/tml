@@ -8,10 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// transcript is the shape this whole mechanism exists for: a scrolling region
-// whose items are widgets, not lines somebody else already drew. One component
-// per file: MessageHeader lives in its own file and is imported; the Message
-// data template is nested, which a component's file may still hold.
+// transcript is the shape this whole mechanism exists for: a scrolling region whose items are widgets, not lines
 const transcript = `<Component xmlns="urn:tml:v1" name="App">
 	<Property name="messages" type="record[]" default=""/>
 	<Import src="./MessageHeader.tml"/>
@@ -59,8 +56,7 @@ func TestAnItemsControlDrawsOneTemplatePerItem(t *testing.T) {
 	got, err := expand(t, transcriptFiles(), map[string]Value{"messages": messages()})
 	require.NoError(t, err)
 
-	// Two messages, each a Stack of a header and its body lines -- a tree, not
-	// two pre-rendered strings.
+	// A pair of messages, each a Stack of a header and its body lines -- a tree, not a pair of pre-rendered strings.
 	assert.Equal(t, strings.TrimSpace(`
 App
   Stack
@@ -82,8 +78,7 @@ func TestTheItemsControlAttributesNeverReachTheWidget(t *testing.T) {
 	got, err := expand(t, transcriptFiles(), map[string]Value{"messages": messages()})
 	require.NoError(t, err)
 
-	// A widget handed `itemsSource` would be holding a list it has no idea what
-	// to do with: they say what the element CONTAINS, not what it is.
+	// A widget handed `itemsSource` would be holding a list it has no idea what to do with: they say what the element
 	assert.NotContains(t, got, "itemsSource")
 	assert.NotContains(t, got, "itemTemplate")
 }
@@ -95,9 +90,7 @@ func TestAnEmptyListDrawsNothingRatherThanFailing(t *testing.T) {
 	assert.Equal(t, strings.TrimSpace("App\n  Stack"), strings.TrimSpace(got))
 }
 
-// TestAFieldNobodyDeclaredIsAnError is the failure XAML answers with a blank
-// cell. A message whose cost is called `spend` on one side and `cost` on the
-// other must not render an empty column forever.
+// TestAFieldNobodyDeclaredIsAnError is the failure XAML answers with a blank cell. A message whose cost is called
 func TestAFieldNobodyDeclaredIsAnError(t *testing.T) {
 	_, err := expand(t, transcriptFiles(), map[string]Value{
 		"messages": RecordListValue([]map[string]Value{
@@ -119,9 +112,7 @@ func TestAnItemMissingARequiredPropertyIsAnError(t *testing.T) {
 }
 
 func TestAnItemTemplateMustBeADataTemplate(t *testing.T) {
-	// A component is one per file, so "Row" lives in its own file. Using a
-	// component's name as an itemTemplate is still the same error: an items
-	// control repeats a data template, and a component has no item fields.
+	// A component is a single per file, so "Row" lives in its own file. Using a component's name as an itemTemplate is still
 	_, err := expand(t, map[string]string{
 		"app.tml": `<Component xmlns="urn:tml:v1" name="App">
 	<Property name="rows" type="record[]" default=""/>
@@ -169,8 +160,7 @@ func TestAnItemsSourceMustBeAList(t *testing.T) {
 	assert.Contains(t, err.Error(), "needs a list")
 }
 
-// TestAListOfStringsStillWorks: the case that is genuinely just text should not
-// have to be wrapped in a record to be drawn.
+// TestAListOfStringsStillWorks: the case that is genuinely just text should not have to be wrapped in a record to be
 func TestAListOfStringsStillWorks(t *testing.T) {
 	got, err := expand(t, map[string]string{
 		"app.tml": `<Component xmlns="urn:tml:v1" name="App">
@@ -189,8 +179,7 @@ func TestAListOfStringsStillWorks(t *testing.T) {
 	assert.Contains(t, got, "Text\n      \"two\"")
 }
 
-// TestATemplateThatAsksForItsPositionGetsIt, and one that does not is not
-// handed a property it never declared.
+// TestATemplateThatAsksForItsPositionGetsIt, and a template that does not is not handed a property it never declared.
 func TestATemplateThatAsksForItsPositionGetsIt(t *testing.T) {
 	got, err := expand(t, map[string]string{
 		"app.tml": `<Component xmlns="urn:tml:v1" name="App">

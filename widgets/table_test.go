@@ -30,8 +30,7 @@ func TestTableCanDropItsBorder(t *testing.T) {
 	assert.NotContains(t, table.Render(0, 0), "┌")
 }
 
-// Dropping the border drops the rules, not the gap between the columns: two
-// cells that fill their columns would otherwise run together into one word.
+// Dropping the border drops the rules, not the gap between the columns: a pair of cells that fill their columns would
 func TestABorderlessTableStillSeparatesItsColumns(t *testing.T) {
 	table := build(t, "Table", map[string]string{
 		"columns": "tests,result",
@@ -42,8 +41,7 @@ func TestABorderlessTableStillSeparatesItsColumns(t *testing.T) {
 	assert.NotContains(t, table.Render(0, 0), "testsresult")
 }
 
-// The separator is the host's choice, because the host is what joined the cells
-// and its data may well contain a pipe.
+// The separator is the host's choice, because the host is what joined the cells and its data may well contain a pipe.
 func TestTableTakesACustomSeparator(t *testing.T) {
 	table := build(t, "Table", map[string]string{
 		"columns":   "A,B",

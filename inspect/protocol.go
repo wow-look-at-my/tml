@@ -6,46 +6,36 @@ import (
 	"github.com/wow-look-at-my/tml/layout"
 )
 
-// Frame is one painted frame, kept by the host so the inspector can answer
-// questions about what is on screen right now.
+// Frame is a single painted frame, kept by the host so the inspector can answer questions about what is on screen right now.
 type Frame struct {
 	Seq           uint64
 	At            time.Time
 	Width, Height int
 	Box           *layout.Box
-	// State is the interaction state by id: focus, and where a scrolling
-	// region ended up.
+	// State is the interaction state by id: focus, and where a scrolling region ended up.
 	State map[string]layout.Target
 	// ANSI is exactly what the program handed the terminal.
 	ANSI string
 }
 
-// Source is a live program that can report the frame currently on screen.
-//
-// A program that renders through tml.View gets this for free: the view records
-// each frame as it paints it. Anything else implements one method.
+// Source is a live program that can report the frame currently on screen. A program that renders through tml.View gets
 type Source interface {
 	Frame() (Frame, bool)
 }
 
-// Controller is the half of a program that the inspector can poke. It is
-// optional: a Source alone answers every read, and a program that does not
-// want to be driven simply does not implement this.
+// Controller is the half of a program that the inspector can poke. It is optional: a Source alone answers every read,
 type Controller interface {
-	// Key delivers a keystroke by name, in the spelling the host's key map
-	// uses ("enter", "ctrl+c", "a").
+	// Key delivers a keystroke by name, in the spelling the host's key map uses ("enter", "ctrl+c", "a").
 	Key(key string) error
 	// Click presses and releases at a viewport cell.
 	Click(x, y int) error
-	// Restyle overrides the style attributes of one element until Reset. It is
-	// what makes the browser inspector an editor rather than a viewer.
+	// Restyle overrides the style attributes of a single element until Reset. It is what makes the browser inspector an editor
 	Restyle(id string, attrs map[string]string) error
 	// Reset drops every override Restyle applied.
 	Reset() error
 }
 
-// Request is one operation. The socket carries one JSON object per line, and
-// the browser posts the same object to /rpc.
+// Request is a single operation. The socket carries a single JSON object per line, and the browser posts the same object to /rpc.
 type Request struct {
 	Op string `json:"op"`
 	ID string `json:"id,omitempty"`
@@ -58,8 +48,7 @@ type Request struct {
 	Attrs map[string]string `json:"attrs,omitempty"`
 	// ANSI asks for styled text as well as plain.
 	ANSI bool `json:"ansi,omitempty"`
-	// Since makes op=frame wait for a frame newer than this sequence number,
-	// which is how a watcher follows a program without polling.
+	// Since makes op=frame wait for a frame newer than this sequence number, which is how a watcher follows a program
 	Since uint64 `json:"since,omitempty"`
 }
 
@@ -73,8 +62,7 @@ type FrameInfo struct {
 	ANSI   string `json:"ansi,omitempty"`
 }
 
-// Response is one answer. Exactly one field is set, except that Error is set
-// alone.
+// Response is a single answer. Exactly a single field is set, except that Error is set alone.
 type Response struct {
 	Error    string     `json:"error,omitempty"`
 	OK       bool       `json:"ok,omitempty"`
@@ -83,12 +71,10 @@ type Response struct {
 	Tree     *Node      `json:"tree,omitempty"`
 	Frame    *FrameInfo `json:"frame,omitempty"`
 	IDs      []string   `json:"ids,omitempty"`
-	// Hit is the id under a cell for op=at. It is empty when nothing covers
-	// the cell, which Found tells apart from "an element with an empty id".
+	// Hit is the id under a cell for op=at. It is empty when nothing covers the cell, which Found tells apart from "an
 	Hit   string `json:"hit"`
 	Found bool   `json:"found,omitempty"`
 }
 
-// Ops are every operation the server answers, which is also what --help and
-// the browser's own error messages are built from.
+// Ops are every operation the server answers, which is also what --help and the browser's own error messages are built
 var Ops = []string{"query", "elements", "ids", "tree", "frame", "at", "key", "click", "restyle", "reset"}

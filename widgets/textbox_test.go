@@ -15,8 +15,7 @@ func TestTextboxDrawsItsValuePaddedToTheField(t *testing.T) {
 	assert.Equal(t, "hi        ", ansi.Strip(box.Render(10, 1)))
 }
 
-// The field is drawn whether or not there is anything in it, because an empty
-// box with no rule under it reads as a gap rather than as somewhere to type.
+// The field is drawn whether or not there is anything in it, because an empty box with no rule under it reads as a gap
 func TestTextboxUnderlinesTheWholeField(t *testing.T) {
 	box := build(t, "Textbox", nil)
 
@@ -38,8 +37,7 @@ func TestTextboxMasksAPassword(t *testing.T) {
 	assert.NotContains(t, out, "hunter2")
 }
 
-// A value longer than the field shows the end, and the cursor drags the window
-// with it, so what is being typed stays on screen.
+// A value longer than the field shows the end, and the cursor drags the window with it, so what is being typed stays
 func TestTextboxWindowsAroundTheCursor(t *testing.T) {
 	end := build(t, "Textbox", map[string]string{"value": "abcdefghij"})
 	assert.Equal(t, "fghij", ansi.Strip(end.Render(5, 1)))
@@ -48,9 +46,7 @@ func TestTextboxWindowsAroundTheCursor(t *testing.T) {
 	assert.Equal(t, "abcde", ansi.Strip(early.Render(5, 1)))
 }
 
-// The caret is the only thing that says where typing lands, and it has to point
-// into the window rather than into the whole value, or it drifts off the field
-// the moment the text is longer than the box.
+// The caret is the only thing that says where typing lands, and it has to point into the window rather than into the
 func TestFocusedTextboxShowsACaretInsideItsWindow(t *testing.T) {
 	box := build(t, "Textbox", map[string]string{"value": "abcdefghij", "cursor": "9"})
 	box.(widget.Stateful).SetState(widget.State{Focused: true})

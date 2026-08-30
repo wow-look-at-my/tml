@@ -11,12 +11,7 @@ import (
 
 var listAttrs = []string{"items", "selected", "cursor", "disabled"}
 
-// list is a column of items with one of them marked.
-//
-// Which item is selected is a property, not state: the host owns the selection
-// the same way it owns the items. Moving the selection is a key press the host
-// already handles, and a list that tracked it privately would disagree with
-// whatever the host does with the value afterwards.
+// list is a column of items with a single item marked. Which item is selected is a property, not state: the host owns
 type list struct {
 	items    []string
 	selected int
@@ -45,8 +40,7 @@ func (l *list) AcceptsFocus() bool { return !l.disabled && len(l.items) > 0 }
 
 func (l *list) SetState(state widget.State) { l.state = state }
 
-// gutter is the cursor column plus its trailing space, kept even on unselected
-// rows so the text does not shift sideways as the selection moves.
+// gutter is the cursor column plus its trailing space, kept even on unselected rows so the text does not shift
 const gutter = 2
 
 func (l *list) Measure(maxW, _ int) (int, int) {
@@ -72,9 +66,7 @@ func (l *list) Render(w, _ int) string {
 				style = style.Reverse(true)
 			}
 		}
-		// A row too wide for the space is cut, never wrapped: a wrapped row would
-		// take two lines, push every row below it down, and stop the list's own
-		// geometry from matching what is on the screen.
+		// A row too wide for the space is cut, never wrapped: a wrapped row would take a pair of lines, push every row below it
 		row := ansi.Truncate(mark+item, max(0, w), "…")
 		if gap := w - l.measure.Width(row); gap > 0 {
 			row += strings.Repeat(" ", gap)

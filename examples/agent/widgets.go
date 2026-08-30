@@ -8,11 +8,7 @@ import (
 	"github.com/wow-look-at-my/tml/widget"
 )
 
-// The two widgets this example binds are the point of it: neither belongs in
-// the language's own library, both are drawn entirely through the public seam,
-// and the template uses them exactly like a built-in.
-
-// roles are the speakers a transcript line can have, and how each is marked.
+// Both widgets this example binds are the point of it: neither belongs in the language's own library, both are
 var roles = map[string]struct {
 	label  string
 	colour string
@@ -25,13 +21,7 @@ var roles = map[string]struct {
 
 var roleOrder = []string{"you", "agent", "tool", "note"}
 
-// transcript draws a conversation: a role gutter, then the turn's text wrapped
-// to whatever width is left.
-//
-// TML cannot express this on its own, and that is worth saying rather than
-// working around: a template can repeat over a list of strings, but it has no
-// way to switch on what a list item IS. A heterogeneous transcript is either a
-// widget or a language feature, and a widget is the honest one today.
+// transcript draws a conversation: a role gutter, then the turn's text wrapped to whatever width is left. TML cannot
 type transcript struct {
 	entries []entry
 }
@@ -72,8 +62,7 @@ func (t *transcript) Render(w, h int) string {
 	return body
 }
 
-// body lays every turn out at the given width. A blank line between turns is
-// what makes a wall of text readable as a conversation.
+// body lays every turn out at the given width. A blank line between turns is what makes a wall of text readable as a
 func (t *transcript) body(w int) string {
 	var lines []string
 	for i, e := range t.entries {
@@ -103,8 +92,7 @@ func pad(label string) string {
 	return label
 }
 
-// diff draws a unified diff: a marker column, then the line, coloured by what
-// happened to it.
+// diff draws a unified diff: a marker column, then the line, coloured by what happened to it.
 type diff struct {
 	lines []string
 }
@@ -113,9 +101,7 @@ func newDiff(ctx widget.Context) (widget.Native, error) {
 	return &diff{lines: ctx.Attrs.List("lines")}, nil
 }
 
-// Measure reports the height the diff actually draws to, wrapping included. A
-// long line becomes two rows, and a card sized for the unwrapped count loses its
-// bottom border to the clip.
+// Measure reports the height the diff actually draws to, wrapping included. A long line becomes a pair of rows, and a card
 func (d *diff) Measure(maxW, _ int) (int, int) {
 	width := 0
 	for _, line := range d.lines {
@@ -143,8 +129,7 @@ func (d *diff) body(w int) string {
 	return strings.Join(out, "\n")
 }
 
-// style colours a line by its marker. A hunk header is dimmed rather than
-// coloured, because it is not a change -- it says where the changes are.
+// style colours a line by its marker. A hunk header is dimmed rather than coloured, because it is not a change -- it
 func (d *diff) style(line string) lipgloss.Style {
 	style := lipgloss.NewStyle()
 	switch {

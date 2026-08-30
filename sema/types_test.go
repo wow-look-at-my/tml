@@ -137,8 +137,7 @@ func TestParseValue(t *testing.T) {
 	}
 }
 
-// Truthiness is defined only where it is unambiguous. A number has no obvious
-// truth, so `if="{count}"` is a hard error rather than a silent "non-zero".
+// Truthiness is defined only where it is unambiguous. A number has no obvious truth, so `if="{count}"` is a hard error
 func TestTruthyIsDefinedOnlyWhereItIsUnambiguous(t *testing.T) {
 	listType, err := ParseType("string[]")
 	require.NoError(t, err)
@@ -182,9 +181,7 @@ func TestTruthyIsDefinedOnlyWhereItIsUnambiguous(t *testing.T) {
 	assert.Contains(t, err.Error(), "no truth value")
 }
 
-// A host's list has to survive its own contents. Joining the items into one
-// string leaves them to be split on commas again, which is how one sentence
-// becomes two entries.
+// A host's list has to survive its own contents. Joining the items into a single string leaves them to be split on commas
 func TestListValueKeepsItemsWithCommasInThem(t *testing.T) {
 	value := ListValue([]string{"one, with a comma", "two"})
 

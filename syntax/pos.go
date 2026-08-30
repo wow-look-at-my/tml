@@ -2,16 +2,10 @@ package syntax
 
 import "fmt"
 
-// Namespace is the TML default namespace. It is a name, not a URL: nothing
-// fetches it and it is deliberately not hosted.
+// Namespace is the TML default namespace. It is a name, not a URL: nothing fetches it and it is deliberately not
 const Namespace = "urn:tml:v1"
 
-// Pos locates a construct in a source file.
-//
-// Line and Col come from the underlying XML parser, which records positions for
-// elements and attributes alike. An attribute-scoped diagnostic points at the
-// attribute, not at the element that owns it -- on an element with several
-// attributes those are different places.
+// Pos locates a construct in a source file. Line and Col come from the underlying XML parser, which records positions
 type Pos struct {
 	File string
 	Line int
@@ -25,8 +19,7 @@ func (p Pos) String() string {
 	return fmt.Sprintf("%s:%d:%d", p.File, p.Line, p.Col)
 }
 
-// Error is a diagnostic tied to a source position. Every failure TML reports is
-// one of these: the language has no warnings and no recoverable states.
+// Error is a diagnostic tied to a source position. Every failure TML reports is among these: the language has no
 type Error struct {
 	Pos     Pos
 	Message string

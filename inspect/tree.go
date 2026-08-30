@@ -10,14 +10,9 @@ import (
 	"github.com/wow-look-at-my/tml/render"
 )
 
-// Node is one box of the frame's tree, id-bearing or not.
-//
-// Elements() answers "what can a test address"; this answers "what is actually
-// there". A layout that goes wrong usually goes wrong in a wrapper nobody gave
-// an id to, so the tree carries every box.
+// Node is a single box of the frame's tree, id-bearing or not. Elements() answers "what can a test address"; this answers
 type Node struct {
-	// Path is the node's position from the root, as child indexes joined by a
-	// dot: "0.2.1". It addresses a node that has no id.
+	// Path is the node's position from the root, as child indexes joined by dots. It addresses a node that has
 	Path    string `json:"path"`
 	ID      string `json:"id,omitempty"`
 	Element string `json:"element"`
@@ -25,13 +20,11 @@ type Node struct {
 	Rect    Rect   `json:"rect"`
 	Content Size   `json:"content"`
 	Clip    Rect   `json:"clip"`
-	// Text is what this node drew, escapes removed and truncated to one line,
-	// so a tree stays readable. The full text is on the element.
+	// Text is what this node drew, escapes removed and truncated to a single line, so a tree stays readable. The full text is
 	Text     string `json:"text,omitempty"`
 	Focus    bool   `json:"focus"`
 	Children []Node `json:"children,omitempty"`
-	// Source is where the element was written, so the inspector can point an
-	// editor at it.
+	// Source is where the element was written, so the inspector can point an editor at it.
 	Source string `json:"source,omitempty"`
 	Line   int    `json:"line,omitempty"`
 }
@@ -56,8 +49,7 @@ func node(box *layout.Box, state map[string]layout.Target, path string) Node {
 	if t, ok := state[box.ID]; ok && box.ID != "" {
 		n.Focus = t.Focus
 	}
-	// A leaf's own text is worth showing; a container's is every descendant's
-	// text concatenated, which says nothing and costs a lot.
+	// A leaf's own text is worth showing; a container's is every descendant's text concatenated, which says nothing and
 	if len(box.Children) == 0 {
 		n.Text = summary(box)
 	}
@@ -67,8 +59,7 @@ func node(box *layout.Box, state map[string]layout.Target, path string) Node {
 	return n
 }
 
-// summary is a node's own drawn text on one line, cut to something a tree can
-// show without wrapping.
+// summary is a node's own drawn text on a single line, cut to something a tree can show without wrapping.
 func summary(box *layout.Box) string {
 	text := ansi.Strip(render.Render(box))
 	text = strings.ReplaceAll(text, "\n", " ")

@@ -8,8 +8,7 @@ import (
 
 var ruleAttrs = []string{"orientation", "char", "title", "color"}
 
-// rule is a divider: a line across the space it is given, optionally broken by a
-// title.
+// rule is a divider: a line across the space it is given, optionally broken by a title.
 type rule struct {
 	vertical bool
 	char     rune
@@ -58,8 +57,7 @@ func (r *rule) Render(w, h int) string {
 	if r.title == "" {
 		return style.Render(repeat(r.char, w))
 	}
-	// The title sits one cell in from the left with a space either side, which
-	// is what keeps it from touching the line it interrupts.
+	// The title sits a single cell in from the left with a space either side, which is what keeps it from touching the line it
 	label := " " + r.title + " "
 	lead := min(1, max(0, w-r.measure.Width(label)))
 	trail := max(0, w-lead-r.measure.Width(label))

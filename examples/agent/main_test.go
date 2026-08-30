@@ -32,8 +32,7 @@ func run(t *testing.T, m *model, steps int) {
 	require.NotContains(t, m.render(), "tml: ", "the view failed to render")
 }
 
-// The three frames worth pinning: a session mid-flight, the permission prompt
-// that interrupts it, and what is left after the answer.
+// The several frames worth pinning: a session mid-flight, the permission prompt that interrupts it, and what is left
 func TestTheSessionRenders(t *testing.T) {
 	for _, state := range []struct {
 		name  string
@@ -56,8 +55,7 @@ func TestTheSessionRenders(t *testing.T) {
 	}
 }
 
-// The script is the model here, so the permission beat has to actually stop it:
-// a harness that ran the command and then asked would be lying about the ask.
+// The script is the model here, so the permission beat has to actually stop it: a harness that ran the command and
 func TestThePermissionBeatStopsTheScript(t *testing.T) {
 	m := agent(t)
 	run(t, m, 6)
@@ -73,8 +71,7 @@ func TestThePermissionBeatStopsTheScript(t *testing.T) {
 	assert.Contains(t, ansi.Strip(m.render()), "bash go test ./...")
 }
 
-// Denying stops the session rather than carrying on without the thing that was
-// refused, and says so where the user is looking.
+// Denying stops the session rather than carrying on without the thing that was refused, and says so where the user is
 func TestDenyingStopsTheSession(t *testing.T) {
 	m := agent(t)
 	run(t, m, 6)
@@ -87,8 +84,7 @@ func TestDenyingStopsTheSession(t *testing.T) {
 	assert.Equal(t, len(script), m.at, "there is nothing left to step")
 }
 
-// The permission popup is a modal, so escape has to dismiss it rather than
-// quitting the whole program out from under the question.
+// The permission popup is a modal, so escape has to dismiss it rather than quitting the whole program out from under
 func TestEscapeAnswersTheQuestionRatherThanQuitting(t *testing.T) {
 	m := agent(t)
 	run(t, m, 6)
@@ -99,8 +95,7 @@ func TestEscapeAnswersTheQuestionRatherThanQuitting(t *testing.T) {
 	assert.True(t, m.denied)
 }
 
-// Typing at the prompt reaches the prompt, and sending it puts the text in the
-// transcript -- with a note, because nothing here can actually answer.
+// Typing at the prompt reaches the prompt, and sending it puts the text in the transcript -- with a note, because
 func TestTypingReachesThePromptAndSending(t *testing.T) {
 	m := agent(t)
 	require.NotContains(t, m.render(), "tml: ")
@@ -116,8 +111,7 @@ func TestTypingReachesThePromptAndSending(t *testing.T) {
 	assert.Contains(t, ansi.Strip(m.render()), "hi")
 }
 
-// Space steps the script, which is the whole interaction when the keyboard is
-// not in the prompt.
+// Space steps the script, which is the whole interaction when the keyboard is not in the prompt.
 func TestSpaceStepsTheScript(t *testing.T) {
 	m := agent(t)
 	require.NotContains(t, m.render(), "tml: ")
@@ -128,9 +122,7 @@ func TestSpaceStepsTheScript(t *testing.T) {
 	assert.Contains(t, ansi.Strip(m.render()), "add a --json flag")
 }
 
-// The session follows the tail by asking to scroll further than there is, so
-// the wheel has to move from where the frame actually stopped rather than from
-// that number.
+// The session follows the tail by asking to scroll further than there is, so the wheel has to move from where the
 func TestScrollingUpLeavesTheTail(t *testing.T) {
 	m := agent(t)
 	run(t, m, 5)
@@ -148,8 +140,7 @@ func TestScrollingUpLeavesTheTail(t *testing.T) {
 	assert.NotEqual(t, tailed, m.render())
 }
 
-// Clicking a context file selects it, which is the pointer coordinate inside a
-// multi-row widget doing its job.
+// Clicking a context file selects it, which is the pointer coordinate inside a multi-row widget doing its job.
 func TestClickingAContextFileSelectsIt(t *testing.T) {
 	m := agent(t)
 	require.NotContains(t, m.render(), "tml: ")
@@ -167,8 +158,7 @@ func TestClickingAContextFileSelectsIt(t *testing.T) {
 	assert.Contains(t, ansi.Strip(m.render()), "> report/json")
 }
 
-// Every role the script uses has to be one the transcript knows, or the whole
-// view is an error string instead of a session.
+// Every role the script uses has to be a role the transcript knows, or the whole view is an error string instead of a
 func TestEveryScriptedRoleIsDrawable(t *testing.T) {
 	m := agent(t)
 	for range len(script) {
@@ -199,9 +189,7 @@ func golden(t *testing.T, name, got string) {
 	assert.Equal(t, readGolden(t, path, got), got)
 }
 
-// readGolden returns the recorded frame. An empty golden is seeded from this run
-// and then fails: seeding silently would bless whatever a broken frame happened
-// to contain and turn the first run green for the wrong reason.
+// readGolden returns the recorded frame. An empty golden is seeded from this run and then fails: seeding silently
 func readGolden(t *testing.T, path, got string) string {
 	t.Helper()
 	info, err := os.Stat(path)

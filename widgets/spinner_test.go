@@ -12,8 +12,7 @@ func TestSpinnerShowsTheRequestedFrame(t *testing.T) {
 	assert.Equal(t, "-", build(t, "Spinner", map[string]string{"kind": "line", "frame": "2"}).Render(1, 1))
 }
 
-// A frame counter is a tick count that only goes up, so it has to wrap here
-// rather than making every caller remember the modulo.
+// A frame counter is a tick count that only goes up, so it has to wrap here rather than making every caller remember
 func TestSpinnerWrapsTheFrameCounter(t *testing.T) {
 	assert.Equal(t, "/", build(t, "Spinner", map[string]string{"kind": "line", "frame": "5"}).Render(1, 1))
 	assert.Equal(t, "\\", build(t, "Spinner", map[string]string{"kind": "line", "frame": "-1"}).Render(1, 1))

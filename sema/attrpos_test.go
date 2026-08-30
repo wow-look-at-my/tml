@@ -11,9 +11,7 @@ import (
 	"github.com/wow-look-at-my/tml/syntax"
 )
 
-// The faulty attribute is never the first one on its element, so a diagnostic
-// that still pointed at the element would land in a visibly different column and
-// fail these tests. Asserting only the message would not.
+// The faulty attribute is never the leading on its element, so a diagnostic that still pointed at the element would
 const attrPosApp = `<Component xmlns="urn:tml:v1" name="App">
 	<Property name="count" type="int" default="1"/>
 	<Template>
@@ -57,8 +55,7 @@ func TestUnknownReferenceIsReportedAtTheAttribute(t *testing.T) {
 	requireAttrPos(t, err, xmlHeader+body, attrPosTextLine, `width=`, `<Text`)
 }
 
-// `not` on an int survives analysis -- the name is in scope and the type is only
-// known once a value arrives -- so this is the evaluation-time path.
+// `not` on an int survives analysis -- the name is in scope and the type is only known as soon as a value arrives -- so this
 func TestEvalFailureOnNativeIsReportedAtTheAttribute(t *testing.T) {
 	body := fmt.Sprintf(attrPosApp, "{not count}")
 	_, err := expand(t, map[string]string{"app.tml": body}, nil)
@@ -89,8 +86,7 @@ func TestEvalFailureOnComponentInstanceIsReportedAtTheAttribute(t *testing.T) {
 	requireAttrPos(t, err, xmlHeader+app, 6, `label=`, `<Card`)
 }
 
-// An element-scoped diagnostic must not drift onto an attribute: an unknown
-// element is a problem with the element itself.
+// An element-scoped diagnostic must not drift onto an attribute: an unknown element is a problem with the element
 func TestUnknownElementStaysOnTheElement(t *testing.T) {
 	body := `<Component xmlns="urn:tml:v1" name="App">
 	<Template>

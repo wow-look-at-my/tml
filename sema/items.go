@@ -7,8 +7,7 @@ import (
 	"github.com/wow-look-at-my/tml/syntax"
 )
 
-// The two attributes that make an element an items control. They are
-// DIRECTIVES, not widget properties: they never reach the rendered node.
+// Both attributes that make an element an items control. They are DIRECTIVES, not widget properties: they never
 const (
 	attrItemsSource  = "itemsSource"
 	attrItemTemplate = "itemTemplate"
@@ -24,23 +23,7 @@ func isItemsControl(node *tnode) bool {
 	return false
 }
 
-// expandItems builds one instance of a data template per item.
-//
-// This is the seam that lets a repeated thing be a WIDGET. Before it, a list
-// could only hold strings, so anything drawn per item had to be composed into
-// one line by the host and handed over as text: the document could style
-// nothing, because nothing was left to style. Here the host hands over the
-// PARTS, and the template says what they look like.
-//
-// Each item supplies the template's declared property values, which is the one
-// difference between a data template and an ordinary component: a component is
-// written as an element and handed its values by whoever writes it.
-//
-// A field the template did not declare, or a declared property no item supplied
-// and that has no default, is an ERROR naming both sides. A binding that
-// silently renders nothing is the failure this exists to replace -- a cost
-// column that is blank forever because a field was called `spend` on one side
-// and `cost` on the other.
+// expandItems builds a single instance of a data template per item. This is the seam that lets a repeated thing be a
 func (p *Program) expandItems(node *tnode, scope *evalScope, file string, stack []string) ([]*Node, error) {
 	var source *Expr
 	var template string
@@ -91,9 +74,7 @@ func (p *Program) expandItems(node *tnode, scope *evalScope, file string, stack 
 			return nil, &syntax.Error{Pos: node.pos, Message: fmt.Sprintf(
 				"%s item %d: %v", attrItemsSource, i, err)}
 		}
-		// The position is offered only to a template that asked for it. Handing
-		// it to every template would make an ordinary one fail for holding a
-		// property it never declared.
+		// The position is offered only to a template that asked for it. Handing it to every template would make an ordinary
 		if _, declared := compiledTemplate.props["index"]; declared {
 			position, err := ParseValue(Type{Kind: KindInt}, strconv.Itoa(i))
 			if err != nil {
@@ -115,12 +96,7 @@ func (p *Program) expandItems(node *tnode, scope *evalScope, file string, stack 
 	return out, nil
 }
 
-// itemArgs is one item's fields, as the values its template's properties take.
-//
-// A record supplies them by name. A plain string item supplies exactly one,
-// `value`, so a template can draw a list of strings without the host having to
-// wrap each one -- the case that is genuinely just text stays as short to write
-// as it was.
+// itemArgs is a single item's fields, as the values its template's properties take. A record supplies them by name. A plain
 func itemArgs(item Value) (map[string]Value, error) {
 	if item.Type().Kind != KindRecord {
 		return map[string]Value{"value": item}, nil

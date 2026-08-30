@@ -33,7 +33,7 @@ type scroll struct {
 	MaxY int `json:"maxY"`
 }
 
-// element is one id-bearing element of a laid-out frame.
+// element is a single id-bearing element of a laid-out frame.
 type element struct {
 	ID      string   `json:"id"`
 	Element string   `json:"element"`
@@ -48,8 +48,7 @@ type element struct {
 
 func toRect(r layout.Rect) rect { return rect{X: r.X, Y: r.Y, W: r.W, H: r.H} }
 
-// find returns the box carrying id, searching depth first so the outermost
-// match wins when a component reuses an id inside itself.
+// find returns the box carrying id, searching depth leading so the outermost match wins when a component reuses an id
 func find(box *layout.Box, id string) *layout.Box {
 	if box == nil {
 		return nil
@@ -77,7 +76,7 @@ func ids(box *layout.Box, out *[]string) {
 	}
 }
 
-// describe renders one box on its own and reports where it landed.
+// describe renders a single box on its own and reports where it landed.
 func describe(box *layout.Box, sc scroll, keepANSI bool) element {
 	text := render.Render(box)
 	if !keepANSI {
@@ -101,8 +100,7 @@ func describe(box *layout.Box, sc scroll, keepANSI bool) element {
 
 func init() { root.AddCommand(newInspectCmd()) }
 
-// newInspectCmd builds the command fresh, so a caller -- a test especially --
-// gets its own flag values rather than whatever the last run left behind.
+// newInspectCmd builds the command fresh, so a caller -- a test especially -- gets its own flag values rather than
 func newInspectCmd() *cobra.Command {
 	var (
 		dark          bool

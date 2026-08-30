@@ -9,10 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// run executes a fresh inspect command and returns its stdout and error, so a
-// test asserts on what a caller would see rather than on internals. Fresh
-// matters: cobra flags live in the command, and a shared one would carry the
-// previous test's --prop and --id into this one.
+// run executes a fresh inspect command and returns its stdout and error, so a test asserts on what a caller would see
 func run(t *testing.T, args ...string) (string, error) {
 	t.Helper()
 	var out bytes.Buffer

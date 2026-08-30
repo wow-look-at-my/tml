@@ -11,35 +11,17 @@ import (
 	"github.com/wow-look-at-my/tml/syntax"
 )
 
-// Grid places children on a track grid. Tracks are declared on the Grid and
-// placement is declared on each child through attached properties, as in XAML:
-//
-//	<Grid columns="auto,1*,2*" rows="1,*" gap="1">
-//	    <Text Grid.row="0" Grid.column="1" Grid.columnSpan="2"/>
-//	</Grid>
-//
-// Track solving runs fixed, then auto, then star, so a star track only ever
-// divides what the other two left behind.
-//
-// Everything that can fail -- an unknown attached property, a bad track list, a
-// non-numeric span -- is validated while the box tree is built, so measure and
-// arrange cannot fail and need no error path.
-
-// attachedGrid are the placement properties a Grid reads off its children.
+// Grid places children on a track grid. Tracks are declared on the Grid and placement is declared on each child
 var attachedGrid = set.Of("Grid.row", "Grid.column", "Grid.rowSpan", "Grid.columnSpan")
 
-// placement is where a child sits on the grid. It defaults to the first cell,
-// spanning one track each way.
+// placement is where a child sits on the grid. It defaults to the leading cell, spanning a single track each way.
 type placement struct {
 	row, column int
 	rowSpan     int
 	columnSpan  int
 }
 
-// readPlacement validates and reads a child's attached properties.
-//
-// parent is the element the attached properties must belong to: writing
-// Grid.row on a child of a Stack is a mistake, not something to ignore.
+// readPlacement validates and reads a child's attached properties. parent is the element the attached properties must
 func readPlacement(box *Box, parent string) (placement, error) {
 	p := placement{rowSpan: 1, columnSpan: 1}
 	for name, raw := range box.attrs {
@@ -74,8 +56,7 @@ func readPlacement(box *Box, parent string) (placement, error) {
 	return p, nil
 }
 
-// parseTracks reads a track list such as "auto,1*,2*". An empty list is a single
-// auto track, so a Grid with no columns declared still holds one column.
+// parseTracks reads a track list of auto, fixed and star entries. An empty list is a single auto track, so a Grid with no columns
 func parseTracks(spec string) ([]sema.Length, error) {
 	if strings.TrimSpace(spec) == "" {
 		return []sema.Length{{Kind: sema.LengthAuto}}, nil
@@ -91,9 +72,7 @@ func parseTracks(spec string) ([]sema.Length, error) {
 	return tracks, nil
 }
 
-// initGrid parses the track lists and reads every child's placement. Tracks are
-// widened to cover a child placed past the last declared one: the extra tracks
-// are auto, so they cost nothing when unused and nothing falls off the grid.
+// initGrid parses the track lists and reads every child's placement. Tracks are widened to cover a child placed past
 func initGrid(box *Box) error {
 	cols, err := parseTracks(box.attrs["columns"])
 	if err != nil {
@@ -126,9 +105,7 @@ func (e *Engine) measureGrid(box *Box, inner Constraints) Size {
 		e.measure(child, inner)
 	}
 
-	// An auto track is as wide as the widest child confined to it. A child that
-	// spans several tracks is left out of this: it cannot say which of the tracks
-	// it covers ought to grow.
+	// An auto track is as wide as the widest child confined to it. A child that spans several tracks is left out of this:
 	box.autoWidths = fixedSizes(box.cols)
 	box.autoHeights = fixedSizes(box.rows)
 	for _, child := range box.Children {
@@ -144,8 +121,7 @@ func (e *Engine) measureGrid(box *Box, inner Constraints) Size {
 		W: sum(box.autoWidths) + gap*(len(box.cols)-1),
 		H: sum(box.autoHeights) + gap*(len(box.rows)-1),
 	}
-	// A star track divides whatever the grid is given, so the grid asks for all
-	// the space available on that axis.
+	// A star track divides whatever the grid is given, so the grid asks for all the space available on that axis.
 	if hasStar(box.cols) {
 		content.W = max(content.W, inner.MaxW)
 	}
@@ -173,10 +149,7 @@ func (e *Engine) arrangeGrid(box *Box) {
 	}
 }
 
-// solveTracks turns track definitions into cell counts: a fixed track takes what
-// it asked for, an auto track what it measured, and star tracks divide the
-// remainder by weight, with the last one absorbing the rounding so the grid
-// always fills exactly.
+// solveTracks turns track definitions into cell counts: a fixed track takes what it asked for, an auto track what it
 func solveTracks(tracks []sema.Length, measured []int, available, gap int) []int {
 	sizes := make([]int, len(tracks))
 	used, weight := 0, 0
@@ -233,8 +206,7 @@ func span(sizes []int, start, count, gap int) int {
 	return total
 }
 
-// fixedSizes seeds the track sizes with the ones already known from the
-// declaration; auto tracks start at zero and grow to their content.
+// fixedSizes seeds the track sizes with the ones already known from the declaration; auto tracks start at nothing and
 func fixedSizes(tracks []sema.Length) []int {
 	sizes := make([]int, len(tracks))
 	for i, track := range tracks {

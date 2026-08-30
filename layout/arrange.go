@@ -30,8 +30,7 @@ func (e *Engine) arrange(box *Box, rect Rect) {
 	case "Canvas":
 		e.arrangeCanvas(box)
 	default:
-		// A decorator gives each child the whole content box, clamped to what
-		// the child asked for unless it is star-sized and wants to fill.
+		// A decorator gives each child the whole content box, clamped to what the child asked for unless it is star-sized
 		for _, child := range box.Children {
 			w, h := child.desired.W, child.desired.H
 			if child.width.Kind == sema.LengthStar {
@@ -58,8 +57,7 @@ func (e *Engine) arrangeStack(box *Box) {
 	}
 	available = max(0, available-gap*(len(box.Children)-1))
 
-	// Fixed and auto children keep what they asked for; the remainder is shared
-	// out by star weight.
+	// Fixed and auto children keep what they asked for; the remainder is shared out by star weight.
 	used, weight := 0, 0
 	for _, child := range box.Children {
 		length, size := child.width, child.desired.W
@@ -91,8 +89,7 @@ func (e *Engine) arrangeStack(box *Box) {
 		}
 
 		if mainLength.Kind == sema.LengthStar {
-			// The last star child takes the rounding remainder so the row or
-			// column always fills exactly.
+			// The last star child takes the rounding remainder so the row or column always fills exactly.
 			if remainingWeight == mainLength.Weight {
 				main = remaining
 			} else {
@@ -106,9 +103,7 @@ func (e *Engine) arrangeStack(box *Box) {
 		}
 		cross = min(cross, crossAvailable)
 
-		// The renderer joins these parts with the same alignment, so the rects
-		// have to carry the same offset or the geometry and the output disagree
-		// -- and a pointer would land on nothing.
+		// The renderer joins these parts with the same alignment, so the rects have to carry the same offset or the geometry
 		align := box.Style.Align
 		if !vertical {
 			align = box.Style.VAlign
@@ -128,9 +123,7 @@ func (e *Engine) arrangeStack(box *Box) {
 	}
 }
 
-// alignOffset is where a child of the given size starts along the cross axis.
-// lipgloss positions are a 0-to-1 fraction, so the arithmetic is the same for
-// both axes.
+// alignOffset is where a child of the given size starts along the cross axis. lipgloss positions are a fraction of the free space
 func alignOffset(pos lipgloss.Position, size, available int) int {
 	slack := max(0, available-size)
 	return min(slack, max(0, int(float64(slack)*float64(pos)+0.5)))

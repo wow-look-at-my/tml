@@ -13,19 +13,13 @@ import (
 	"github.com/wow-look-at-my/tml"
 )
 
-// program is one live program found in the socket directory.
+// program is a single live program found in the socket directory.
 type program struct {
 	Path string
 	PID  string
 }
 
-// resolveSocket answers which program to talk to.
-//
-// A path given by hand wins, then TML_INSPECT_SOCKET, and everything else is
-// discovery: a program built on this library serves whether or not anybody
-// asked it to, so the common case is that the caller knows a program is
-// running and not where its socket is. Making them find out would put the
-// switch back, one layer along.
+// resolveSocket answers which program to talk to. A path given by hand wins, then TML_INSPECT_SOCKET, and everything
 func resolveSocket(flag string) (string, error) {
 	if flag != "" {
 		return flag, nil
@@ -48,11 +42,7 @@ func resolveSocket(flag string) (string, error) {
 	}
 }
 
-// livePrograms is every socket in dir that a program is still behind.
-//
-// Each one is dialled rather than trusted: a program killed outright leaves its
-// socket file, and a stale file that reads as a running program is how a caller
-// ends up waiting on an answer nothing will send.
+// livePrograms is every socket in dir that a program is still behind. Each is dialled rather than trusted: a
 func livePrograms(dir string) ([]program, error) {
 	entries, err := os.ReadDir(dir)
 	if os.IsNotExist(err) {

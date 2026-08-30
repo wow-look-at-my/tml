@@ -18,11 +18,7 @@ import (
 
 var update = flag.Bool("update", false, "rewrite the golden files")
 
-// golden compares against testdata/<name>.golden, rewriting it under -update.
-//
-// The dashboard fixture deliberately uses no colour, so the goldens stay plain
-// readable text. Style.Render emits ANSI for any colour that is set regardless
-// of TTY, which would otherwise make these files unreviewable.
+// golden compares against testdata/<name>.golden, rewriting it under -update. The dashboard fixture deliberately uses
 func golden(t *testing.T, name, got string) {
 	t.Helper()
 	path := filepath.Join("testdata", name+".golden")
@@ -33,9 +29,7 @@ func golden(t *testing.T, name, got string) {
 	assert.Equal(t, readGolden(t, path, got), got)
 }
 
-// readGolden returns the recorded output. An empty golden is seeded from this
-// run and then fails: seeding silently would bless whatever a broken renderer
-// happened to emit and turn the first run green for the wrong reason.
+// readGolden returns the recorded output. An empty golden is seeded from this run and then fails: seeding silently
 func readGolden(t *testing.T, path, got string) string {
 	t.Helper()
 	info, err := os.Stat(path)
@@ -67,24 +61,21 @@ func props(t *testing.T) tml.Props {
 	return tml.Props{"title": sema.StringValue("Deployments"), "tags": value}
 }
 
-// The expanded tree proves the language features composed: an imported
-// component, a filled slot, a slot falling back, and a loop.
+// The expanded tree proves the language features composed: an imported component, a filled slot, a slot falling back,
 func TestDashboardExpansion(t *testing.T) {
 	node, err := load(t).Expand(props(t))
 	require.NoError(t, err)
 	golden(t, "dashboard-tree", node.Dump())
 }
 
-// The rendered frame proves layout and styling: borders, padding, gaps, and a
-// star-sized card filling the viewport width.
+// The rendered frame proves layout and styling: borders, padding, gaps, and a star-sized card filling the viewport
 func TestDashboardRender(t *testing.T) {
 	out, err := load(t).Render(props(t), 40, 20)
 	require.NoError(t, err)
 	golden(t, "dashboard-render", out)
 }
 
-// A star-sized child fills the width it is given, and an auto-sized sibling does
-// not. This is the property the whole sizing model rests on.
+// A star-sized child fills the width it is given, and an auto-sized sibling does not. This is the property the whole
 func TestStarSizingFillsTheViewport(t *testing.T) {
 	view := load(t)
 
@@ -101,20 +92,17 @@ func TestStarSizingFillsTheViewport(t *testing.T) {
 	}
 }
 
-// The grid fixture proves the whole pipeline handles attached properties:
-// parse, analyse, expand, solve tracks, and composite children at coordinates.
+// The grid fixture proves the whole pipeline handles attached properties: parse, analyse, expand, solve tracks, and
 func TestGridRendersThroughTheWholePipeline(t *testing.T) {
 	view, err := tml.Load(os.DirFS("testdata/grid"), "app.tml", tml.Options{})
 	require.NoError(t, err)
 
-	// gap applies to both axes, so four content rows occupy seven lines.
 	out, err := view.Render(nil, 40, 7)
 	require.NoError(t, err)
 	golden(t, "grid-render", out)
 }
 
-// fakeInput stands in for a bubbles component: it draws itself and accepts a
-// width, exactly the two things TML asks of one.
+// fakeInput stands in for a bubbles component: it draws itself and accepts a width, exactly both things TML asks of
 type fakeInput struct{ width int }
 
 func (f *fakeInput) View() string {
@@ -140,8 +128,7 @@ func widgetFS() fstest.MapFS {
 	}
 }
 
-// A bound widget is laid out like any other element: it is told the width the
-// star share gave it and renders into exactly that.
+// A bound widget is laid out like any other element: it is told the width the star share gave it and renders into
 func TestBoundWidgetIsSizedByLayout(t *testing.T) {
 	input := &fakeInput{}
 	widgets := widget.NewRegistry().Bind("Search", widget.Bubble(input))
@@ -152,13 +139,11 @@ func TestBoundWidgetIsSizedByLayout(t *testing.T) {
 	out, err := view.Render(nil, 20, 3)
 	require.NoError(t, err)
 
-	// "find" is 4 cells, the gap is 1, so the star widget gets the other 15.
 	assert.Equal(t, 15, input.width, "the widget was told the width layout computed")
 	assert.Contains(t, out, "find [_____________]")
 }
 
-// A template naming a widget the host never bound must fail when the view
-// loads, not render a silent blank.
+// A template naming a widget the host never bound must fail when the view loads, not render a silent blank.
 func TestUnboundWidgetIsRejectedAtLoad(t *testing.T) {
 	_, err := tml.Load(widgetFS(), "app.tml", tml.Options{})
 	require.Error(t, err)
@@ -171,8 +156,7 @@ func TestLoadReportsDiagnosticsWithPositions(t *testing.T) {
 	assert.Contains(t, err.Error(), "cannot read")
 }
 
-// measuredFS is one Text and one Badge, so the assertion covers both the
-// language's own measurement and a widget's.
+// measuredFS is a single Text and a single Badge, so the assertion covers both the language's own measurement and a widget's.
 func measuredFS() fstest.MapFS {
 	const header = "<?xml version=\"1.1\" encoding=\"UTF-8\"?>\n"
 	return fstest.MapFS{
@@ -187,9 +171,7 @@ func measuredFS() fstest.MapFS {
 	}
 }
 
-// Which width method is right depends on what the terminal agreed to, and only
-// the host had that conversation. A view measured the host's way puts its boxes
-// where the host would put them -- which is what decides where a click lands.
+// Which width method is right depends on what the terminal agreed to, and only the host had that conversation. A view
 func TestOptionsMeasureGovernsGeometry(t *testing.T) {
 	layoutWith := func(m widget.Measurer) (text, badge int) {
 		view, err := tml.Load(measuredFS(), "app.tml", tml.Options{Measure: m})

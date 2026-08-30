@@ -11,11 +11,7 @@ func (e *Engine) measure(box *Box, c Constraints) Size {
 	outerW, outerH := box.outer()
 	inner := Constraints{MaxW: max(0, c.MaxW-outerW), MaxH: max(0, c.MaxH-outerH)}
 
-	// An explicit size is a constraint on the children too, not just on the box
-	// itself. Measuring them against the parent's available space and only then
-	// clamping the parent would let a child ask for room the parent has already
-	// said it does not have -- which is how a scrolling region ends up rendering
-	// past the frame around it.
+	// An explicit size is a constraint on the children too, not just on the box itself. Measuring them against the
 	if box.width.Kind == sema.LengthCells {
 		inner.MaxW = min(inner.MaxW, max(0, box.width.Cells-outerW))
 	}
@@ -28,17 +24,14 @@ func (e *Engine) measure(box *Box, c Constraints) Size {
 	case len(box.Children) > 0 && box.composer() != nil:
 		content = e.measureComposer(box, inner)
 	case box.Native != nil:
-		// A widget measures itself. TML supplies the space and takes the answer,
-		// so a bubbles component keeps deciding its own shape.
+		// A widget measures itself. TML supplies the space and takes the answer, so a bubbles component keeps deciding its
 		w, h := box.Native.Measure(inner.MaxW, inner.MaxH)
 		content = Size{W: w, H: h}
 	default:
 		content = e.measureContent(box, inner)
 	}
 
-	// An explicit size overrides what the content asked for. A star size cannot
-	// be known until the parent shares out its leftover space, so it measures as
-	// zero here and is filled in during arrange.
+	// An explicit size overrides what the content asked for. A star size cannot be known until the parent shares out its
 	switch box.width.Kind {
 	case sema.LengthCells:
 		content.W = max(0, box.width.Cells-outerW)
@@ -77,8 +70,7 @@ func (e *Engine) measureContent(box *Box, inner Constraints) Size {
 	return content
 }
 
-// measureText reports the height the text needs once wrapped, because lipgloss
-// wraps rather than truncates and the parent has to budget for the extra lines.
+// measureText reports the height the text needs after wrapping, because lipgloss wraps rather than truncates and the
 func (e *Engine) measureText(box *Box, inner Constraints) Size {
 	if box.Text == "" {
 		return Size{}
@@ -87,10 +79,7 @@ func (e *Engine) measureText(box *Box, inner Constraints) Size {
 	if inner.MaxW <= 0 || natural <= inner.MaxW {
 		return Size{W: natural, H: lipgloss.Height(box.Text)}
 	}
-	// lipgloss.Wrap is the call Style.Render makes to wrap, so this counts the
-	// lines the paint will produce. Rendering a whole styled block to throw it
-	// away costs padding, alignment and border work that measuring never needs,
-	// and every wrapping leaf pays it on every frame.
+	// lipgloss.Wrap is the call Style.Render makes to wrap, so this counts the lines the paint will produce. Rendering a
 	wrapped := lipgloss.Wrap(box.Text, inner.MaxW, "")
 	return Size{W: inner.MaxW, H: lipgloss.Height(wrapped)}
 }
@@ -105,13 +94,7 @@ func (e *Engine) measureChildren(box *Box, inner Constraints) Size {
 	return fillForStars(box, content, inner)
 }
 
-// fillForStars propagates a star size up the tree.
-//
-// A star child fills the space its parent gives it, so a parent that only ever
-// shrank to its content would leave that child nothing to fill and the star
-// would collapse. A container holding a star child therefore asks for all the
-// space available on that axis. Without this, `width="*"` inside an auto-sized
-// ancestor silently does nothing.
+// fillForStars propagates a star size up the tree. A star child fills the space its parent gives it, so a parent that
 func fillForStars(box *Box, content Size, inner Constraints) Size {
 	for _, child := range box.Children {
 		if child.width.Kind == sema.LengthStar {

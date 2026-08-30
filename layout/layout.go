@@ -1,13 +1,4 @@
-// Package layout turns an expanded TML tree into sized, positioned boxes.
-//
-// Two passes, as in XAML: measure asks every node how big it wants to be within
-// the space on offer, then arrange hands each node the space it actually gets.
-// Sizes are terminal cells throughout.
-//
-// A child's rect is relative to its parent's CONTENT origin -- the first cell
-// inside the parent's margin, border and padding. That is the same origin
-// lipgloss composes into when it renders a styled block, so the rects and the
-// rendered output cannot drift apart.
+// Package layout turns an expanded TML tree into sized, positioned boxes. A pair of passes, as in XAML: measure asks every
 package layout
 
 import (
@@ -37,36 +28,28 @@ type Constraints struct{ MaxW, MaxH int }
 // Box is a laid-out node.
 type Box struct {
 	Name string
-	// Rect is the box's outer rect, margin included, relative to the parent's
-	// content origin.
+	// Rect is the box's outer rect, margin included, relative to the parent's content origin.
 	Rect Rect
-	// Screen is the same box in viewport coordinates, with margin excluded so it
-	// covers the cells the box actually paints. This is what a pointer is tested
-	// against.
+	// Screen is the same box in viewport coordinates, with margin excluded so it covers the cells the box actually
 	Screen Rect
-	// Clip is the region an ancestor still shows. It is the viewport for
-	// anything outside a Scrollbox, and the visible part of one inside.
+	// Clip is the region an ancestor still shows. It is the viewport for anything outside a Scrollbox, and the visible
 	Clip Rect
-	// Content is the size available inside margin, border and padding. It is
-	// what a bound widget is told to render into.
+	// Content is the size available inside margin, border and padding. It is what a bound widget is told to render into.
 	Content Size
 	Style   style.Resolved
 	Text    string
-	// Native is the widget behind this element, if any. Layout measures it and
-	// the renderer asks it to draw; TML never touches its state.
+	// Native is the widget behind this element, if any. Layout measures it and the renderer asks it to draw; TML never
 	Native   widget.Native
 	Children []*Box
 	Pos      syntax.Pos
 
-	// ID and Action identify an interactive element to the host: ID names it,
-	// Action is what it reports when activated.
+	// ID and Action identify an interactive element to the host: ID names it, Action is what it reports when activated.
 	ID     string
 	Action string
 	// State is how this element renders in this frame -- focused, hovered, held.
 	State widget.State
 
-	// focus reports whether the keyboard can land here. An element with an id
-	// but no focus still answers the pointer.
+	// focus reports whether the keyboard can land here. An element with an id but no focus still answers the pointer.
 	focus   bool
 	attrs   map[string]string
 	slot    string
@@ -74,15 +57,12 @@ type Box struct {
 	width   sema.Length
 	height  sema.Length
 
-	// Grid state: the track definitions, the sizes auto tracks measured, and
-	// this box's own placement within its parent grid.
+	// Grid state: the track definitions, the sizes auto tracks measured, and this box's own placement within its parent
 	cols, rows              []sema.Length
 	autoWidths, autoHeights []int
 	place                   placement
 
-	// canvas is this box's placement within a parent Canvas; scroll is where a
-	// scrolling region's content ended up, which is what the frame reports back
-	// to the host.
+	// canvas is this box's placement within a parent Canvas; scroll is where a scrolling region's content ended up, which
 	canvas canvasPlacement
 	scroll Scroll
 }
@@ -91,20 +71,15 @@ type Box struct {
 type Options struct {
 	// Widgets resolves element names to widgets.
 	Widgets *widget.Registry
-	// FS is the filesystem the view was loaded from, handed to any widget that
-	// reads a file.
+	// FS is the filesystem the view was loaded from, handed to any widget that reads a file.
 	FS fs.FS
 	// Dark reports whether the view renders against a dark theme.
 	Dark bool
-	// Interaction carries focus and pointer state across frames. A nil one means
-	// nothing is focusable, which is what a static render wants.
+	// Interaction carries focus and pointer state across frames. A nil value means nothing is focusable, which is what a
 	Interaction Interaction
-	// Measure is how wide a string is, in cells; nil means lipgloss.Width. See
-	// widget.Measurer.
+	// Measure is how wide a string is, in cells; nil means lipgloss.Width. See widget.Measurer.
 	Measure widget.Measurer
-	// Override supplies attributes that replace what the document wrote, for
-	// the element carrying the given id. It is what an inspector edits
-	// through, and a nil one means the document is the whole truth.
+	// Override supplies attributes that replace what the document wrote, for the element carrying the given id. It is
 	Override func(id string) map[string]string
 }
 
@@ -114,19 +89,15 @@ type Engine struct {
 	opts  Options
 }
 
-// New returns an engine that resolves named styles through sheet and widgets
-// through opts.
+// New returns an engine that resolves named styles through sheet and widgets through opts.
 func New(sheet *style.Sheet, opts Options) *Engine {
 	return &Engine{sheet: sheet, opts: opts}
 }
 
-// SetOverride installs the per-element attribute override. An inspector calls
-// it once when it attaches; passing nil restores the document.
+// SetOverride installs the per-element attribute override. An inspector calls it as soon as when it attaches; passing nil
 func (e *Engine) SetOverride(fn func(id string) map[string]string) { e.opts.Override = fn }
 
-// layoutAttrs are consumed by the engine; every other attribute is styling,
-// unless a widget claims it. Attached properties are recognised by their dot and
-// handled separately.
+// layoutAttrs are consumed by the engine; every other attribute is styling, unless a widget claims it. Attached
 var layoutAttrs = set.Of(
 	"width", "height", "orientation", "gap", "style",
 	"columns", "rows", "id", "action",
@@ -149,9 +120,7 @@ func (e *Engine) Layout(node *sema.Node, width, height int) (*Box, error) {
 
 	e.measure(box, Constraints{MaxW: width, MaxH: height})
 
-	// The root fills the viewport unless it asked for a specific size. Filling
-	// is what a view wants by default, and it is also what gives a star-sized
-	// descendant something to fill.
+	// The root fills the viewport unless it asked for a specific size. Filling is what a view wants by default, and it is
 	rect := Rect{W: width, H: height}
 	if box.width.Kind == sema.LengthCells {
 		rect.W = min(box.desired.W, width)
@@ -171,8 +140,7 @@ func (p *pass) build(node *sema.Node) (*Box, error) {
 		return &Box{Name: "#text", Text: node.Text, Pos: node.Pos, attrs: map[string]string{}}, nil
 	}
 
-	// A node carrying a component's name is never a widget, however the component
-	// happens to be called.
+	// A node carrying a component's name is never a widget, however the component happens to be called.
 	factory, hasFactory := e.opts.Widgets.Factory(node.Name)
 	hasFactory = hasFactory && !node.Component
 	claimed := set.New[string]()
@@ -184,10 +152,7 @@ func (p *pass) build(node *sema.Node) (*Box, error) {
 	for name, value := range node.Attrs {
 		attrs[name] = value.String()
 	}
-	// An override replaces what the document said, for one element, until the
-	// host drops it. It lands before anything reads an attribute, so a width,
-	// a margin and a colour all move the same way: the inspector edits the
-	// element rather than one special case per attribute.
+	// An override replaces what the document said, for a single element, until the host drops it. It lands before anything
 	if e.opts.Override != nil {
 		for name, value := range e.opts.Override(attrs["id"]) {
 			attrs[name] = value
@@ -220,8 +185,7 @@ func (p *pass) build(node *sema.Node) (*Box, error) {
 		return nil, err
 	}
 
-	// Text collapses its character data into one string; every other element
-	// keeps its children as boxes.
+	// Text collapses its character data into a single string; every other element keeps its children as boxes.
 	if node.Name == "Text" {
 		box.Text = textOf(node)
 		return box, nil
@@ -245,9 +209,7 @@ func (p *pass) build(node *sema.Node) (*Box, error) {
 		if err := p.track(box); err != nil {
 			return nil, err
 		}
-		// A composer keeps its children: they are laid out inside whatever space
-		// it insets for itself, and handed back to it already drawn. Anything else
-		// draws itself, so whatever was written inside it is not layout's to place.
+		// A composer keeps its children: they are laid out inside whatever space it insets for itself, and handed back to it
 		if _, wraps := box.Native.(widget.Composer); !wraps {
 			return box, nil
 		}
@@ -277,9 +239,7 @@ func (p *pass) build(node *sema.Node) (*Box, error) {
 	return box, nil
 }
 
-// rejectAttachedProperties catches Grid.row and friends written on a child of
-// something that is not a Grid. Ignoring them would leave the author staring at
-// a layout that quietly disregards what they wrote.
+// rejectAttachedProperties catches Grid.row and friends written on a child of something that is not a Grid. Ignoring
 func rejectAttachedProperties(box *Box) error {
 	for _, child := range box.Children {
 		for name := range child.attrs {
@@ -304,9 +264,7 @@ func textOf(node *sema.Node) string {
 	return b.String()
 }
 
-// lengthAttr reads a size off the node, or off the merged attributes when an
-// override supplied one. The override wins, which is what makes a drag in the
-// inspector move a real box rather than a picture of one.
+// lengthAttr reads a size off the node, or off the merged attributes when an override supplied a size. The override wins,
 func lengthAttr(node *sema.Node, attrs map[string]string, name string) (sema.Length, error) {
 	raw, overridden := attrs[name]
 	value, ok := node.Attr(name)
@@ -326,15 +284,13 @@ func lengthAttr(node *sema.Node, attrs map[string]string, name string) (sema.Len
 	return length, nil
 }
 
-// outer is the space a box consumes beyond its content: margin plus the frame
-// lipgloss draws (padding and border).
+// outer is the space a box consumes beyond its content: margin plus the frame lipgloss draws (padding and border).
 func (b *Box) outer() (w, h int) {
 	frameW, frameH := b.Style.Frame()
 	return frameW + b.Style.Margin.Horizontal(), frameH + b.Style.Margin.Vertical()
 }
 
-// Vertical reports the stack direction. Vertical is the default because a
-// column is the common case in a terminal.
+// Vertical reports the stack direction. Vertical is the default because a column is the common case in a terminal.
 func (b *Box) Vertical() bool {
 	if value, ok := b.attrs["orientation"]; ok {
 		return value != "horizontal"

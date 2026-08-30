@@ -15,22 +15,16 @@ import (
 //go:embed ui
 var uiFS embed.FS
 
-// Handler answers inspection requests. A Server answers them from a program in
-// this process; `tml serve` answers them by forwarding over a socket. The
-// browser inspector talks to either without knowing which, because this is the
-// only thing it needs.
+// Handler answers inspection requests. A Server answers them from a program in this process; `tml serve` answers them
 type Handler interface {
 	Handle(Request) Response
 }
 
-// HTTPHandler serves the browser inspector against any Handler: the page, its
-// assets, the same RPC the socket speaks, and a stream that pushes each new
-// frame.
+// HTTPHandler serves the browser inspector against any Handler: the page, its assets, the same RPC the socket speaks,
 func HTTPHandler(h Handler) http.Handler {
 	assets, err := fs.Sub(uiFS, "ui")
 	if err != nil {
-		// The assets are embedded at build time, so a failure here is a build
-		// that shipped without them rather than anything a user can fix.
+		// The assets are embedded at build time, so a failure here is a build that shipped without them rather than anything
 		panic("inspect: embedded ui assets are unreadable: " + err.Error())
 	}
 	mux := http.NewServeMux()
@@ -55,13 +49,7 @@ func serveRPC(h Handler, w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, h.Handle(req))
 }
 
-// serveEvents pushes one message per painted frame, so the preview follows the
-// program without the page polling it.
-//
-// It asks for a frame newer than the last one it sent, which blocks until the
-// program paints. A timeout comes back as an ordinary answer and the loop asks
-// again, so a program sitting still keeps the connection warm rather than
-// looking dead.
+// serveEvents pushes a single message per painted frame, so the preview follows the program without the page polling it. It
 func serveEvents(h Handler, w http.ResponseWriter, r *http.Request) {
 	flusher, ok := w.(http.Flusher)
 	if !ok {

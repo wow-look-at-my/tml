@@ -21,8 +21,7 @@ func TestRuleBreaksForItsTitle(t *testing.T) {
 	assert.Equal(t, "= Logs =====", rule.Render(12, 1))
 }
 
-// A title wider than the space must not produce a negative run of characters,
-// which is what a naive subtraction does at the moment the box gets small.
+// A title wider than the space must not produce a negative run of characters, which is what a naive subtraction does
 func TestRuleSurvivesTooLittleSpace(t *testing.T) {
 	rule := build(t, "Rule", map[string]string{"title": "Logs"})
 

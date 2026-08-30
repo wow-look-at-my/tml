@@ -31,8 +31,7 @@ func (m driveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m driveModel) View() tea.View { return tea.NewView("") }
 
-// A program built through NewProgram can be typed into; one built any other way
-// refuses by name. That difference is the whole reason NewProgram exists.
+// A program built through NewProgram can be typed into; a program built any other way refuses by name. That difference is
 func TestNewProgramIsWhatMakesAProgramDrivable(t *testing.T) {
 	tml.ResetInspection()
 	loadInspectorView(t)
@@ -70,8 +69,7 @@ func TestNewProgramIsWhatMakesAProgramDrivable(t *testing.T) {
 	assert.Equal(t, 4, click.Y)
 }
 
-// waitFor reads messages until one is of the wanted type, so an unrelated
-// startup message does not decide what a test saw.
+// waitFor reads messages until a message is of the wanted type, so an unrelated startup message does not decide what a test
 func waitFor[T tea.Msg](t *testing.T, got <-chan tea.Msg) T {
 	t.Helper()
 	deadline := time.After(5 * time.Second)

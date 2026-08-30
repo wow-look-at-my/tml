@@ -17,8 +17,7 @@ import (
 	"github.com/wow-look-at-my/tml/widget"
 )
 
-// checkerboard is a picture with known colours in known places, so a test can
-// say where a colour ended up rather than only that the output is non-empty.
+// checkerboard is a picture with known colours in known places, so a test can say where a colour ended up rather than
 func checkerboard(t *testing.T, w, h int) []byte {
 	t.Helper()
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
@@ -36,7 +35,7 @@ func checkerboard(t *testing.T, w, h int) []byte {
 	return buf.Bytes()
 }
 
-// picture builds an Image widget over a filesystem holding one file.
+// picture builds an Image widget over a filesystem holding a single file.
 func picture(t *testing.T, name string, data []byte, attrs map[string]string, dark bool) widget.Native {
 	t.Helper()
 	native, err := pictureOrError(t, name, data, attrs, dark)
@@ -70,8 +69,7 @@ func TestImageDrawsAMosaicOfHalfBlocks(t *testing.T) {
 	assert.Contains(t, out, "\x1b[", "the pixels are colour, so there is styling")
 }
 
-// The shape survives: a wide image is not stretched into a square, allowing for
-// a terminal cell being about twice as tall as it is wide.
+// The shape survives: a wide image is not stretched into a square, allowing for a terminal cell being about a pair of times as
 func TestImageKeepsItsShape(t *testing.T) {
 	wide := picture(t, "wide.png", checkerboard(t, 40, 10), nil, true)
 
@@ -88,10 +86,7 @@ func TestImageFitsAHeightLimit(t *testing.T) {
 	assert.LessOrEqual(t, w, 2, "and the width comes down with it rather than stretching")
 }
 
-// The Kitty and iTerm2 escapes are instructions to the terminal, not text, so
-// they measure zero. The blanks after them are what reserve the cells the image
-// will cover -- without which everything downstream would compose around a
-// footprint of nothing.
+// The Kitty and iTerm2 escapes are instructions to the terminal, not text, so they measure nothing. The blanks after them
 func TestGraphicsProtocolsReserveTheirCells(t *testing.T) {
 	data := checkerboard(t, 8, 8)
 
@@ -124,8 +119,7 @@ func TestKittyAndITermEmitTheirOwnProtocols(t *testing.T) {
 	assert.Contains(t, iterm, "height=2")
 }
 
-// The last resort needs no pixels at all, which is what makes it always
-// available: it does not even read the file.
+// The last resort needs no pixels at all, which is what makes it always available: it does not even read the file.
 func TestLinkFallbackWritesAHyperlink(t *testing.T) {
 	factory, ok := Library().Factory("Image")
 	require.True(t, ok)
@@ -176,8 +170,7 @@ func TestProtocolDetection(t *testing.T) {
 	}
 }
 
-// A transparent pixel is blended onto the theme's background, so a logo with a
-// clear surround does not come out ringed in black on a light terminal.
+// A transparent pixel is blended onto the theme's background, so a logo with a clear surround does not come out ringed
 func TestTransparencyBlendsOntoTheTheme(t *testing.T) {
 	img := image.NewRGBA(image.Rect(0, 0, 2, 2))
 	var buf bytes.Buffer
@@ -190,9 +183,7 @@ func TestTransparencyBlendsOntoTheTheme(t *testing.T) {
 	assert.Contains(t, light, "255;255;255")
 }
 
-// A picture that cannot be read or cannot be decoded is a mistake in the
-// template. Drawing a blank rectangle instead would leave the author hunting for
-// why nothing appeared.
+// A picture that cannot be read or cannot be decoded is a mistake in the template. Drawing a blank rectangle instead
 func TestImageFailuresAreReported(t *testing.T) {
 	_, err := pictureOrError(t, "logo.png", checkerboard(t, 2, 2), map[string]string{"src": "missing.png"}, true)
 	require.Error(t, err)

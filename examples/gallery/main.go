@@ -1,9 +1,4 @@
-// Command gallery is an interactive tour of the widget library.
-//
-// Every control on screen is declared in ui/app.tml and nothing here knows
-// where any of them ended up: the model matches on the action strings the
-// template wrote, which is the whole point of routing interaction through the
-// view rather than through the layout.
+// Command gallery is an interactive tour of the widget library. Every control on screen is declared in ui/app.tml and
 package main
 
 import (
@@ -56,8 +51,7 @@ type model struct {
 	quitting      bool
 }
 
-// tick drives the spinner, the progress bar and the sparkline. A declarative
-// widget draws the frame it is handed, so animation is the host's clock.
+// tick drives the spinner, the progress bar and the sparkline. A declarative widget draws the frame it is handed, so
 type tick time.Time
 
 func ticker() tea.Cmd {
@@ -108,21 +102,17 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// Everything else goes to the view, which owns the focus ring and the
-	// geometry a click resolves against.
+	// Everything else goes to the view, which owns the focus ring and the geometry a click resolves against.
 	for _, event := range m.view.UI().Update(msg) {
 		switch event.Kind {
 		case tml.Activated:
-			// A list is one control to the ring, so which row was clicked is in
-			// the event's own coordinates rather than in an action of its own.
+			// A list is a single control to the ring, so which row was clicked is in the event's own coordinates rather than in an
 			if event.ID == "services" && event.Y >= 0 {
 				m.selected = clamp(event.Y, 0, len(services)-1)
 				continue
 			}
 			if event.Action != "" && !m.act(event.Action) {
-				// A control the model has no answer for is a bug in this file,
-				// and a button that does nothing when pressed looks exactly like
-				// one that is broken. Say so on screen rather than swallowing it.
+				// A control the model has no answer for is a bug in this file, and a button that does nothing when pressed looks
 				m.status = "unhandled: " + event.Action
 			}
 		case tml.Scrolled:
@@ -135,8 +125,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// hotkey handles the keys the host keeps for itself. Typing goes to the search
-// box while it has focus, so the ring's own keys have to give way there.
+// hotkey handles the keys the host keeps for itself. Typing goes to the search box while it has focus, so the ring's
 func (m *model) hotkey(msg tea.KeyPressMsg) (tea.Cmd, bool) {
 	focused, _ := m.view.UI().Focused()
 	switch msg.String() {
@@ -171,7 +160,7 @@ func (m *model) hotkey(msg tea.KeyPressMsg) (tea.Cmd, bool) {
 	return nil, false
 }
 
-// act runs one control's action and reports whether it was one this model knows.
+// act runs a single control's action and reports whether it was a single this model knows.
 func (m *model) act(action string) bool {
 	kind, arg, _ := strings.Cut(action, ":")
 	switch kind {
@@ -211,14 +200,12 @@ func clamp(n, low, high int) int { return max(low, min(n, high)) }
 
 func (m *model) View() tea.View {
 	view := tea.NewView(m.frameOf())
-	// All motion, not cell motion: cell motion only reports movement while a
-	// button is held, so a button would never light up under an idle pointer.
+	// All motion, not cell motion: cell motion only reports movement while a button is held, so a button would never
 	view.MouseMode = tea.MouseModeAllMotion
 	return view
 }
 
-// frameOf renders one frame. Keeping it out of View is what lets -frame and any
-// golden test reach the whole UI without a terminal.
+// frameOf renders a single frame. Keeping it out of View is what lets -frame and any golden test reach the whole UI without
 func (m *model) frameOf() string {
 	out, err := m.view.Render(tml.Props{
 		"status":      sema.StringValue(m.status),
@@ -246,15 +233,13 @@ func (m *model) frameOf() string {
 		"confirming":      sema.BoolValue(m.confirming),
 	}, m.width, m.height)
 	if err != nil {
-		// A render failure is shown rather than swallowed: a blank frame looks
-		// like an empty gallery instead of a broken one.
+		// A render failure is shown rather than swallowed: a blank frame looks like an empty gallery instead of a broken gallery.
 		return "tml: " + err.Error()
 	}
 	return out
 }
 
-// variant is how a tab button is drawn. The language has no conditional
-// expression on purpose, so a choice like this is made here and passed in.
+// variant is how a tab button is drawn. The language has no conditional expression on purpose, so a choice like this
 func variant(active bool) string {
 	if active {
 		return "primary"
@@ -285,19 +270,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	// The flags set the starting state either way round: a still frame and a
-	// terminal session are the same program, and a screenshot of one section is
-	// only reproducible if it can be asked for.
+	// The flags set the starting state either way round: a still frame and a terminal session are the same program, and a
 	m.tab, m.confirming = *tab, *popup
-	// An animation shown at its start reads as an animation that does not work,
-	// so both begin partway through.
+	// An animation shown at its start reads as an animation that does not work, so both begin partway through.
 	m.query, m.progress, m.frame = "sched", 62, 3
 	if *frame {
 		m.width, m.height = *width, *height
 	}
 	if *focus != "" {
-		// Focus resolves against a frame's controls, so there has to be one
-		// before there is anything to name.
+		// Focus resolves against a frame's controls, so there has to be a frame before there is anything to name.
 		m.frameOf()
 		if !m.view.UI().Focus(*focus) {
 			fmt.Fprintf(os.Stderr, "error: no control with id %q on this frame\n", *focus)

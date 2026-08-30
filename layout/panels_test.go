@@ -11,16 +11,14 @@ import (
 	"github.com/wow-look-at-my/tml/widget"
 )
 
-// stub is a widget that reports a fixed size, so a placement test is about the
-// placement rather than about measuring.
+// stub is a widget that reports a fixed size, so a placement test is about the placement rather than about measuring.
 type stub struct{ w, h int }
 
 func (s stub) Measure(_, _ int) (int, int) { return s.w, s.h }
 
 func (s stub) Render(_, _ int) string { return "" }
 
-// wrapper is a composer that keeps a fixed inset, for testing that children are
-// laid out inside what a widget leaves them.
+// wrapper is a composer that keeps a fixed inset, for testing that children are laid out inside what a widget leaves
 type wrapper struct {
 	stub
 	insetW, insetH   int
@@ -69,8 +67,7 @@ func TestCanvasPlacesChildrenAtCoordinates(t *testing.T) {
 	assert.Equal(t, Rect{X: 3, Y: 1, W: 4, H: 2}, child(root, 0).Rect)
 }
 
-// An anchor picks which edges the coordinates are measured from, so a child
-// pinned to a corner stays there when the terminal is a different size.
+// An anchor picks which edges the coordinates are measured from, so a child pinned to a corner stays there when the
 func TestCanvasAnchorsToEveryCorner(t *testing.T) {
 	tests := []struct {
 		anchor string
@@ -95,8 +92,7 @@ func TestCanvasAnchorsToEveryCorner(t *testing.T) {
 	}
 }
 
-// A canvas takes everything on offer. One that shrank to its content would
-// leave a child pinned to the bottom-right corner nowhere to sit.
+// A canvas takes everything on offer. A single that shrank to its content would leave a child pinned to the bottom-right
 func TestCanvasFillsItsSpace(t *testing.T) {
 	root := layoutTree(t, el("Canvas", nil, el("Box", map[string]string{"width": "2", "height": "1"})), 20, 10)
 
@@ -109,8 +105,7 @@ func TestCanvasChildDefaultsToTheOrigin(t *testing.T) {
 	assert.Equal(t, Rect{X: 0, Y: 0, W: 4, H: 2}, child(root, 0).Rect)
 }
 
-// A dialog says where it belongs, so it lands in the middle without the author
-// positioning it. Saying so explicitly still wins.
+// A dialog says where it belongs, so it lands in the middle without the author positioning it. Saying so explicitly
 func TestCanvasAsksTheWidgetWhereItBelongs(t *testing.T) {
 	bindings := map[string]widget.Native{"Dialog": dialog{wrapper{stub: stub{w: 4, h: 2}}}}
 
@@ -147,8 +142,7 @@ func TestCanvasRejectsNonsensePlacement(t *testing.T) {
 func TestComposerChildrenGoInsideItsInset(t *testing.T) {
 	bindings := map[string]widget.Native{"Frame": wrapper{insetW: 4, insetH: 2}}
 
-	// Inside a stack rather than at the root, which fills the viewport by design
-	// and would say nothing about what the composer asked for.
+	// Inside a stack rather than at the root, which fills the viewport by design and would say nothing about what the
 	root := layoutWith(t, bindings, el("Stack", nil, el("Frame", nil, text("hello"))), 20, 10)
 	frame := child(root, 0)
 
@@ -156,9 +150,7 @@ func TestComposerChildrenGoInsideItsInset(t *testing.T) {
 	assert.Equal(t, Rect{X: 0, Y: 0, W: 5, H: 1}, child(frame, 0).Rect)
 }
 
-// A scrolling region measures its children against unlimited height -- that is
-// what lets the content be taller than the hole it is seen through -- while
-// itself taking only the space on offer.
+// A scrolling region measures its children against unlimited height -- that is what lets the content be taller than
 func TestUnboundedComposerLetsChildrenOverflow(t *testing.T) {
 	bindings := map[string]widget.Native{"Scroller": wrapper{insetW: 1, free: true}}
 	tall := el("Stack", nil, text("a"), text("b"), text("c"), text("d"), text("e"))
@@ -169,8 +161,7 @@ func TestUnboundedComposerLetsChildrenOverflow(t *testing.T) {
 	assert.Equal(t, 5, child(root, 0).Rect.H, "the content keeps its full height")
 }
 
-// A control scrolled halfway off the top is clicked where it is drawn, so the
-// offset has to reach the geometry rather than only the drawing.
+// A control scrolled halfway off the top is clicked where it is drawn, so the offset has to reach the geometry rather
 func TestScrolledComposerShiftsItsChildren(t *testing.T) {
 	bindings := map[string]widget.Native{"Scroller": wrapper{free: true, offsetY: 2}}
 	tall := el("Stack", nil, text("a"), text("b"), text("c"), text("d"))
@@ -180,9 +171,7 @@ func TestScrolledComposerShiftsItsChildren(t *testing.T) {
 	assert.Equal(t, -2, child(root, 0).Rect.Y)
 }
 
-// Scrolling stops at the content on both axes. The widget draws the last
-// screenful rather than blank space, so the geometry has to stop in the same
-// place or a click would land somewhere the content is not.
+// Scrolling stops at the content on both axes. The widget draws the last screenful rather than blank space, so the
 func TestAScrolledComposerStopsAtItsContent(t *testing.T) {
 	bindings := map[string]widget.Native{
 		"Scroller": wrapper{free: true, freeW: true, offsetX: 99, offsetY: 99},

@@ -26,8 +26,7 @@ func TestButtonLabelIsSugarForItsContent(t *testing.T) {
 	assert.Equal(t, "╭──────╮\n│ Save │\n╰──────╯", button.Compose(nil, 8, 3))
 }
 
-// The label and the slot are the same thing seen twice, so anything written
-// inside wins: that is what makes rich content possible at all.
+// The label and the slot are the same thing seen a pair of times, so anything written inside wins: that is what makes rich
 func TestButtonContentSlotBeatsTheLabel(t *testing.T) {
 	button := composer(t, "Button", map[string]string{"label": "Save"})
 
@@ -50,8 +49,7 @@ func TestButtonDeclaresItsSlot(t *testing.T) {
 	assert.Equal(t, []string{"Content"}, slotted.Slots())
 }
 
-// The focused control has to be obvious without relying on colour alone, so the
-// border thickens rather than only changing hue.
+// The focused control has to be obvious without relying on colour alone, so the border thickens rather than only
 func TestFocusedButtonChangesItsBorder(t *testing.T) {
 	resting := composer(t, "Button", map[string]string{"label": "Go"}).Compose(nil, 6, 3)
 	focused := stateful(t, build(t, "Button", map[string]string{"label": "Go"}),
@@ -83,8 +81,7 @@ func TestDisabledButtonRefusesFocus(t *testing.T) {
 	assert.False(t, disabled.(widget.Focusable).AcceptsFocus())
 }
 
-// A disabled control still looks disabled when focus happens to be reported on
-// it, which is what a stale frame would do.
+// A disabled control still looks disabled when focus happens to be reported on it, which is what a stale frame would
 func TestDisabledButtonIgnoresFocusStyling(t *testing.T) {
 	disabled := stateful(t, build(t, "Button", map[string]string{"label": "Go", "disabled": "true"}),
 		widget.State{Focused: true}).Compose(nil, 6, 3)

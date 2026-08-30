@@ -19,27 +19,22 @@ import (
 
 	"github.com/wow-look-at-my/tml/widget"
 
-	// Decoding is by format sniffing, so the formats a terminal is likely to be
-	// shown have to be registered.
+	// Decoding is by format sniffing, so the formats a terminal is likely to be shown have to be registered.
 	_ "image/gif"
 	_ "image/jpeg"
 )
 
 var imageAttrs = []string{"src", "alt", "protocol"}
 
-// protocols are the ways an image can reach the screen, best first.
+// protocols are the ways an image can reach the screen, best leading.
 const (
-	// protoKitty is the Kitty graphics protocol: real pixels, understood by
-	// Kitty, Ghostty and WezTerm.
+	// protoKitty is the Kitty graphics protocol: real pixels, understood by Kitty, Ghostty and WezTerm.
 	protoKitty = "kitty"
-	// protoITerm is the iTerm2 inline image protocol: real pixels, understood by
-	// iTerm2 and WezTerm.
+	// protoITerm is the iTerm2 inline image protocol: real pixels, understood by iTerm2 and WezTerm.
 	protoITerm = "iterm"
-	// protoMosaic draws the image out of half-block characters, two pixels to a
-	// cell. It works in every terminal that can do colour.
+	// protoMosaic draws the image out of half-block characters, a pair of pixels to a cell. It works in every terminal that can
 	protoMosaic = "mosaic"
-	// protoLink writes the alt text as a hyperlink to the file, for a terminal
-	// that cannot even do colour.
+	// protoLink writes the alt text as a hyperlink to the file, for a terminal that cannot even do colour.
 	protoLink = "link"
 	// protoAuto picks from the environment.
 	protoAuto = "auto"
@@ -47,9 +42,7 @@ const (
 
 var protocolNames = []string{protoAuto, protoITerm, protoKitty, protoLink, protoMosaic}
 
-// cellAspect is how much taller a terminal cell is than it is wide. Nothing
-// reports the real figure portably, and 2 is close enough that a square image
-// comes out square rather than stretched to a letterbox.
+// cellAspect is how much taller a terminal cell is than it is wide. Nothing reports the real figure portably, and the default is
 const cellAspect = 2
 
 // imageWidget draws a picture as well as the terminal it is in allows.
@@ -82,8 +75,7 @@ func newImage(ctx widget.Context) (widget.Native, error) {
 		measure:  ctx.Measure,
 		dark:     ctx.Dark,
 	}
-	// A link needs no pixels, which is what makes it the fallback that always
-	// works: the file may not even be readable from here.
+	// A link needs no pixels, which is what makes it the fallback that always works: the file may not even be readable
 	if protocol == protoLink {
 		return w, nil
 	}
@@ -100,8 +92,7 @@ func newImage(ctx widget.Context) (widget.Native, error) {
 	return w, nil
 }
 
-// readImage resolves src against the directory of the file the element was
-// written in, so a path in a template means what it looks like it means.
+// readImage resolves src against the directory of the file the element was written in, so a path in a template means
 func readImage(fsys fs.FS, dir, src string) ([]byte, error) {
 	if fsys == nil {
 		return os.ReadFile(src)
@@ -113,12 +104,7 @@ func readImage(fsys fs.FS, dir, src string) ([]byte, error) {
 	return fs.ReadFile(fsys, name)
 }
 
-// detectProtocol reads the environment for a terminal that can draw pixels.
-//
-// There is no portable query that works from inside a render: asking the
-// terminal means writing to it and waiting for a reply, and a renderer that did
-// that would block on a pipe. So this is what the environment says, and
-// protocol="..." is how an author overrides it.
+// detectProtocol reads the environment for a terminal that can draw pixels. There is no portable query that works from
 func detectProtocol(env func(string) string) string {
 	switch {
 	case env("TERM") == "xterm-kitty", env("KITTY_WINDOW_ID") != "":
@@ -130,8 +116,7 @@ func detectProtocol(env func(string) string) string {
 	case env("TERM_PROGRAM") == "iTerm.app", env("LC_TERMINAL") == "iTerm2":
 		return protoITerm
 	default:
-		// Half blocks need nothing but colour, so they are what is left when
-		// nothing claims to do better.
+		// Half blocks need nothing but colour, so they are what is left when nothing claims to do better.
 		return protoMosaic
 	}
 }
@@ -158,8 +143,7 @@ func (i *imageWidget) Measure(maxW, maxH int) (int, int) {
 	return max(1, w), max(1, h)
 }
 
-// cellsHigh is the height in cells that keeps the image's shape at the given
-// width, allowing for a cell being taller than it is wide.
+// cellsHigh is the height in cells that keeps the image's shape at the given width, allowing for a cell being taller
 func cellsHigh(bounds image.Rectangle, w int) int {
 	return max(1, bounds.Dy()*w/(bounds.Dx()*cellAspect))
 }
@@ -180,8 +164,7 @@ func (i *imageWidget) Render(w, h int) string {
 	}
 }
 
-// link writes the alt text as a hyperlink to the file. Every terminal shows the
-// text; one that understands OSC 8 makes it clickable.
+// link writes the alt text as a hyperlink to the file. Every terminal shows the text; a terminal that understands the hyperlink escape makes
 func (i *imageWidget) link() string {
 	return ansi.SetHyperlink(i.uri()) + i.alt + ansi.ResetHyperlink()
 }
@@ -193,13 +176,7 @@ func (i *imageWidget) uri() string {
 	return "file://" + i.src
 }
 
-// reserve pairs a graphics escape with the cells it will cover.
-//
-// The escape itself measures zero, because that is what it is: an instruction to
-// the terminal rather than text. Everything downstream -- joining, compositing,
-// clipping -- counts cells, so the blanks are what keep the image's footprint
-// honest. Both protocols are asked not to move the cursor, so the blanks land
-// where they were meant to.
+// reserve pairs a graphics escape with the cells it will cover. The escape itself measures nothing, because that is what
 func (i *imageWidget) reserve(escape string, w, h int) string {
 	row := strings.Repeat(" ", w)
 	lines := make([]string, h)
@@ -241,9 +218,7 @@ func (i *imageWidget) iterm(w, h int) string {
 	})
 }
 
-// mosaic draws the image out of half-block characters: the upper half is the
-// foreground colour and the lower half the background, so one cell carries two
-// pixels and a terminal that can only do colour still shows a picture.
+// mosaic draws the image out of half-block characters: the upper half is the foreground colour and the lower half the
 func (i *imageWidget) mosaic(w, h int) string {
 	pixels := sample(i.img, w, h*2, i.backdrop())
 
@@ -268,8 +243,7 @@ func rgb(c color.RGBA) color.Color {
 	return lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", c.R, c.G, c.B))
 }
 
-// sample reduces the image to a w by h grid by averaging each source region,
-// which keeps detail that picking one pixel per cell would drop.
+// sample reduces the image to a w by h grid by averaging each source region, which keeps detail that picking a single pixel
 func sample(img image.Image, w, h int, back backdrop) [][]color.RGBA {
 	bounds := img.Bounds()
 	grid := make([][]color.RGBA, h)
@@ -287,10 +261,7 @@ func sample(img image.Image, w, h int, back backdrop) [][]color.RGBA {
 	return grid
 }
 
-// backdrop is the theme's own background. Nothing reports the terminal's real
-// one portably, so which half of the theme is in use is the closest thing to an
-// answer -- and it is the right answer whenever the terminal and the theme
-// agree, which is the point of having the theme.
+// backdrop is the theme's own background. Nothing reports the terminal's real portably, so which half of the theme
 func (i *imageWidget) backdrop() backdrop {
 	if i.dark {
 		return backdrop{}
@@ -303,8 +274,7 @@ func average(img image.Image, x0, y0, x1, y1 int, back backdrop) color.RGBA {
 	for y := y0; y < y1; y++ {
 		for x := x0; x < x1; x++ {
 			r, g, b, a := img.At(x, y).RGBA()
-			// Straight alpha onto the backdrop: Go hands back premultiplied
-			// values, so the backdrop's share is what the alpha did not cover.
+			// Straight alpha onto the backdrop: Go hands back premultiplied values, so the backdrop's share is what the alpha
 			gap := 0xffff - a
 			sr += (r + back.r*gap/0xffff) >> 8
 			sg += (g + back.g*gap/0xffff) >> 8

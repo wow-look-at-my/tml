@@ -15,16 +15,10 @@ import (
 	"github.com/wow-look-at-my/tml/layout"
 )
 
-// Server answers inspection requests about a live program.
-//
-// One handler serves two transports. A unix socket carries one JSON request
-// per line, which is what `tml query` and the other live commands speak. HTTP
-// serves the browser inspector and posts the identical objects to /rpc, so
-// there is one protocol to reason about and one place a bug can be.
+// Server answers inspection requests about a live program. A single handler serves a pair of transports. A unix socket carries
 type Server struct {
 	source Source
-	// control is the source when it can also be driven. A nil one answers
-	// every write operation with a reason rather than pretending.
+	// control is the source when it can also be driven. A nil a single answers every write operation with a reason rather than
 	control Controller
 
 	mu       sync.Mutex
@@ -32,19 +26,15 @@ type Server struct {
 	conns    []net.Listener
 	sockPath string
 
-	// waiters are the connections parked on op=frame with a since. Publish
-	// wakes them.
+	// waiters are the connections parked on op=frame with a since. Publish wakes them.
 	waitMu  sync.Mutex
 	waiters []chan struct{}
 }
 
-// frameWait is how long op=frame parks before answering that nothing new was
-// painted. It is short on purpose: the caller asks again, so a stream stays
-// warm and a shutdown is never held up by a parked request.
+// frameWait is how long op=frame parks before answering that nothing new was painted. It is short on purpose: the
 const frameWait = 2 * time.Second
 
-// NewServer returns a server reading from source. When source also implements
-// Controller, the driving operations are enabled.
+// NewServer returns a server reading from source. When source also implements Controller, the driving operations are
 func NewServer(source Source) *Server {
 	s := &Server{source: source}
 	if c, ok := source.(Controller); ok {
@@ -53,9 +43,7 @@ func NewServer(source Source) *Server {
 	return s
 }
 
-// Publish wakes anything waiting for a newer frame. A host calls it after each
-// paint; forgetting to call it costs latency, never correctness, because a
-// waiter also wakes on its own deadline.
+// Publish wakes anything waiting for a newer frame. A host calls it after each paint; forgetting to call it costs
 func (s *Server) Publish() {
 	s.waitMu.Lock()
 	for _, ch := range s.waiters {
@@ -74,11 +62,7 @@ func (s *Server) wait() chan struct{} {
 	return ch
 }
 
-// ListenSocket serves the line protocol on a unix socket at path.
-//
-// A stale socket left by a killed program is removed first: refusing to start
-// because a dead process once listened here would make every crash need a
-// manual cleanup.
+// ListenSocket serves the line protocol on a unix socket at path. A stale socket left by a killed program is removed
 func (s *Server) ListenSocket(path string) error {
 	if path == "" {
 		return errors.New("inspect: socket path is empty")
@@ -107,8 +91,7 @@ func (s *Server) ListenSocket(path string) error {
 	return nil
 }
 
-// ListenHTTP serves the browser inspector on addr and returns the URL it
-// landed on. An empty addr takes an ephemeral port on the loopback interface.
+// ListenHTTP serves the browser inspector on addr and returns the URL it landed on. An empty addr takes an ephemeral
 func (s *Server) ListenHTTP(addr string) (string, error) {
 	if addr == "" {
 		addr = "127.0.0.1:0"
@@ -159,8 +142,7 @@ func (s *Server) acceptLoop(ln net.Listener) {
 	}
 }
 
-// serveConn answers one request per line for as long as the client keeps the
-// connection open.
+// serveConn answers a single request per line for as long as the client keeps the connection open.
 func (s *Server) serveConn(conn net.Conn) {
 	defer conn.Close()
 	scanner := bufio.NewScanner(conn)
@@ -182,8 +164,7 @@ func (s *Server) serveConn(conn net.Conn) {
 	}
 }
 
-// Handle answers one request. It is the whole protocol: both transports call
-// this and nothing else.
+// Handle answers a single request. It is the whole protocol: both transports call this and nothing else.
 func (s *Server) Handle(req Request) Response {
 	switch req.Op {
 	case "query":
@@ -213,9 +194,7 @@ func (s *Server) Handle(req Request) Response {
 	}
 }
 
-// current returns the frame on screen, or the reason there is not one. A
-// program that has not painted yet is a real state, and saying so beats
-// answering with an empty frame that reads like an empty screen.
+// current returns the frame on screen, or the reason there is none. A program that has not painted yet is a real
 func (s *Server) current() (Frame, error) {
 	f, ok := s.source.Frame()
 	if !ok {
@@ -276,8 +255,7 @@ func (s *Server) tree() Response {
 	return Response{Tree: &t}
 }
 
-// frame reports the painted frame. With Since it waits for a newer one, so a
-// watcher follows the program instead of polling it.
+// frame reports the painted frame. With Since it waits for a newer frame, so a watcher follows the program instead of
 func (s *Server) frame(req Request) Response {
 	deadline := time.After(frameWait)
 	for {
@@ -363,8 +341,7 @@ func (s *Server) reset() Response {
 	return Response{OK: true}
 }
 
-// stateOf is a convenience for a host building a Frame: it turns the targets
-// the last layout published into the map the inspector reads.
+// stateOf is a convenience for a host building a Frame: it turns the targets the last layout published into the map
 func StateOf(targets []layout.Target) map[string]layout.Target {
 	out := make(map[string]layout.Target, len(targets))
 	for _, t := range targets {

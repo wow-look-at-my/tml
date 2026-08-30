@@ -22,8 +22,7 @@ func TestSparklineScalesAgainstADeclaredMaximum(t *testing.T) {
 	assert.Equal(t, "▁▄", line.Render(2, 1))
 }
 
-// A series longer than the space keeps its most recent points, because that is
-// the end of a series anybody is reading.
+// A series longer than the space keeps its most recent points, because that is the end of a series anybody is reading.
 func TestSparklineKeepsTheMostRecentPoints(t *testing.T) {
 	line := build(t, "Sparkline", map[string]string{"values": "8,8,0,8"})
 

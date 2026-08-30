@@ -21,8 +21,7 @@ func namedStyle(name, extends string, attrs map[string]string) *syntax.Style {
 	return style
 }
 
-// extends is resolved in TML's own model precisely because lipgloss Inherit
-// drops padding. A style that extends one carrying padding must keep it.
+// extends is resolved in TML's own model precisely because lipgloss Inherit drops padding. A style that extends another
 func TestExtendsCarriesTheBoxModel(t *testing.T) {
 	sheet, err := NewSheet(theme(
 		namedStyle("card", "", map[string]string{"padding": "1 2", "border": "rounded"}),
@@ -72,9 +71,7 @@ func TestStyleAttributesResolveThemeTokens(t *testing.T) {
 	assert.Equal(t, 6, resolved.Style.GetHorizontalPadding(), "3 cells each side")
 }
 
-// Margin is deliberately kept off the lipgloss style: lipgloss treats the width
-// set on a style as the border box and adds margin outside it, so layout owns
-// margin and only the renderer puts it back.
+// Margin is deliberately kept off the lipgloss style: lipgloss treats the width set on a style as the border box and
 func TestMarginIsKeptOutOfTheLipglossStyle(t *testing.T) {
 	sheet, err := NewSheet(nil, nil)
 	require.NoError(t, err)

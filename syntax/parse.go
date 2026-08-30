@@ -8,16 +8,7 @@ import (
 	"github.com/wow-look-at-my/xml-validator/validator"
 )
 
-// Parse reads one .tml source file into a [File].
-//
-// The source is validated before it is interpreted, so a malformed file fails
-// with a precise XML diagnostic rather than a confusing TML one.
-//
-// Both validator entry points are needed. ParseTree is the version-agnostic tree
-// parser: it accepts XML 1.0 and a missing declaration. Validate is what enforces
-// the XML 1.1 rules TML relies on -- required declaration, UTF-8 without a BOM,
-// no DOCTYPE, no entities beyond the predefined five. Parsing twice is the cost
-// of getting both the tree and the strictness.
+// Parse reads a single .tml source file into a [File]. The source is validated before it is interpreted, so a malformed
 func Parse(path string, src []byte) (*File, error) {
 	if err := validator.Validate(bytes.NewReader(src)); err != nil {
 		return nil, xmlError(path, err)
@@ -56,8 +47,7 @@ func Parse(path string, src []byte) (*File, error) {
 	return file, nil
 }
 
-// xmlError re-points a validator diagnostic at the file it came from. The
-// validator reports line and column but knows nothing about paths.
+// xmlError re-points a validator diagnostic at the file it came from. The validator reports line and column but knows
 func xmlError(path string, err error) *Error {
 	if verr, ok := err.(*validator.Error); ok {
 		return &Error{Pos: Pos{File: path, Line: verr.Line, Col: verr.Col}, Message: verr.Message}
@@ -69,9 +59,7 @@ func posOf(path string, el *validator.Element) Pos {
 	return Pos{File: path, Line: el.Line, Col: el.Col}
 }
 
-// attrPos locates an attribute rather than the element that owns it. Most
-// diagnostics are about an attribute's value, and on an element with several
-// attributes the element's position points at the wrong one.
+// attrPos locates an attribute rather than the element that owns it. Most diagnostics are about an attribute's value,
 func attrPos(path string, a validator.Attr) Pos {
 	return Pos{File: path, Line: a.Line, Col: a.Col}
 }
@@ -114,21 +102,12 @@ func parseComponent(path string, el *validator.Element) (*Component, error) {
 			}
 			component.Template = parseTemplateBody(path, child)
 		case "Component":
-			// A file defines exactly one component. Nested definitions used to
-			// be file-private helpers, and the sharing gap that produced is
-			// why there are imports: a helper only one file could see had to
-			// be copied to be reused. The rule is one file, one component;
-			// the fix for a second one is its own file and an <Import>.
+			// A file defines exactly a single component. Nested definitions used to be file-private helpers, and the sharing gap
 			return nil, errorf(childPos,
 				"one component per file: %s defines \"%s\" and a nested \"%s\"; put \"%s\" in its own file and <Import> it",
 				path, name, componentName(child), componentName(child))
 		case "DataTemplate":
-			// Same shape as a component -- properties and a template -- and a
-			// different way in. A component is written as an element and handed
-			// its values by whoever writes it; a data template is instantiated
-			// once per item by an items control, and the ITEM supplies them.
-			// That is the whole distinction, and it is why one message can be a
-			// widget rather than a line of text somebody rendered elsewhere.
+			// Same shape as a component -- properties and a template -- and a different way in. A component is written as an
 			data, err := parseComponent(path, child)
 			if err != nil {
 				return nil, err
@@ -146,9 +125,7 @@ func parseComponent(path string, el *validator.Element) (*Component, error) {
 	return component, nil
 }
 
-// componentName reads the name attribute of an element that is supposed to be
-// a component definition, for the diagnostic that refuses a second one. An
-// absent or empty name is reported as "" rather than panicking.
+// componentName reads the name attribute of an element that is supposed to be a component definition, for the
 func componentName(el *validator.Element) string {
 	name, _ := attr(el, "name")
 	return name
@@ -269,8 +246,7 @@ func parseStyle(path string, el *validator.Element) (*Style, error) {
 
 	style := &Style{Name: name, Pos: pos}
 	style.Extends, _ = attr(el, "extends")
-	// Every remaining attribute is a style property. They are validated by the
-	// style package against the lipgloss mapping, not here.
+	// Every remaining attribute is a style property. They are validated by the style package against the lipgloss
 	for _, a := range el.Attrs {
 		if isNamespaceDecl(a) || a.Name == "name" || a.Name == "extends" {
 			continue
@@ -280,8 +256,7 @@ func parseStyle(path string, el *validator.Element) (*Style, error) {
 	return style, nil
 }
 
-// parseTemplateBody converts the children of <Template> into template nodes.
-// The <Template> element itself is not represented: its children are the body.
+// parseTemplateBody converts the children of <Template> into template nodes. The <Template> element itself is not
 func parseTemplateBody(path string, el *validator.Element) *Node {
 	body := &Node{Kind: ElementNode, Name: "Template", Pos: posOf(path, el)}
 	body.Children = parseNodes(path, el)
@@ -311,12 +286,7 @@ func parseNodes(path string, el *validator.Element) []*Node {
 	return out
 }
 
-// normalizeText decides what character data survives into the template.
-//
-// Source layout must not become content: whitespace that spans a line break is
-// indentation, so it collapses to a single space between words and disappears
-// entirely at the edges of a node. Whitespace on a single line is deliberate and
-// is kept verbatim, which is what makes `<Text>a <B/> b</Text>` render correctly.
+// normalizeText decides what character data survives into the template. Source layout must not become content:
 func normalizeText(raw string) (string, bool) {
 	if strings.TrimSpace(raw) == "" {
 		if strings.ContainsAny(raw, "\n\r") {
@@ -365,8 +335,7 @@ func attr(el *validator.Element, name string) (string, bool) {
 	return a.Value, ok
 }
 
-// lookupAttr returns the whole attribute, for callers that need its position as
-// well as its value.
+// lookupAttr returns the whole attribute, for callers that need its position as well as its value.
 func lookupAttr(el *validator.Element, name string) (validator.Attr, bool) {
 	for _, a := range el.Attrs {
 		if a.Name == name {
@@ -376,8 +345,7 @@ func lookupAttr(el *validator.Element, name string) (validator.Attr, bool) {
 	return validator.Attr{}, false
 }
 
-// checkAttrs rejects any attribute the element does not define. An unknown
-// attribute is almost always a typo, and silently ignoring it would hide it.
+// checkAttrs rejects any attribute the element does not define. An unknown attribute is almost always a typo, and
 func checkAttrs(path string, el *validator.Element, allowed ...string) error {
 	for _, a := range el.Attrs {
 		if isNamespaceDecl(a) {

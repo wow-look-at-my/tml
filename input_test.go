@@ -29,8 +29,7 @@ func TestKeyMsgSpellsTheProtocolsVocabulary(t *testing.T) {
 	}
 }
 
-// A bare modifier is a key press with no code rather than a panic on the first
-// rune of an empty string.
+// A bare modifier is a key press with no code rather than a panic on the leading rune of an empty string.
 func TestKeyMsgTakesABareModifier(t *testing.T) {
 	assert.Equal(t, tea.KeyPressMsg{Mod: tea.ModCtrl}, tml.KeyMsg("ctrl+"))
 }

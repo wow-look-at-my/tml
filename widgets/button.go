@@ -10,13 +10,10 @@ import (
 
 var buttonAttrs = []string{"label", "disabled", "variant"}
 
-// buttonSlots is the region a button's content goes in. A button is a frame
-// around something, and that something is usually but not always a word.
+// buttonSlots is the region a button's content goes in. A button is a frame around something, and that something is
 var buttonSlots = []string{"Content"}
 
-// variants are the looks a button comes in, as a foreground colour for its
-// border and label. Anything more specific is what the style attributes and
-// theme tokens are for.
+// variants are the looks a button comes in, as a foreground colour for its border and label. Anything more specific is
 var variants = map[string]string{
 	"default": "",
 	"primary": "12",
@@ -25,11 +22,7 @@ var variants = map[string]string{
 
 var variantNames = []string{"danger", "default", "primary"}
 
-// button is a control the keyboard and the pointer can reach.
-//
-// It is a composer so its content can be anything: `<Button>Save</Button>` and
-// `<Button><Button.Content><Badge label="3"/></Button.Content></Button>` are the
-// same shape, and `label` is sugar for the first.
+// button is a control the keyboard and the pointer can reach. It is a composer so its content can be anything:
 type button struct {
 	label    string
 	disabled bool
@@ -55,8 +48,7 @@ func newButton(ctx widget.Context) (widget.Native, error) {
 	}, nil
 }
 
-// AcceptsFocus is false while disabled, which is what keeps tab from stopping on
-// a control that would do nothing.
+// AcceptsFocus is false while disabled, which is what keeps tab from stopping on a control that would do nothing.
 func (b *button) AcceptsFocus() bool { return !b.disabled }
 
 func (b *button) SetState(state widget.State) { b.state = state }
@@ -82,15 +74,13 @@ func (b *button) Compose(slots widget.Slots, w, h int) string {
 	if len(content) == 0 {
 		content = slots.Default()
 	}
-	// The label is the content when nothing was written inside, which is what
-	// makes the common case one attribute rather than a nested element.
+	// The label is the content when nothing was written inside, which is what makes the common case a single attribute rather
 	body := strings.Join(content, "\n")
 	if len(content) == 0 {
 		body = b.label
 	}
 
-	// Width and Height are the whole block, border included: the inset was
-	// already spent when layout sized the content.
+	// Width and Height are the whole block, border included: the inset was already spent when layout sized the content.
 	style := lipgloss.NewStyle().
 		Border(b.border()).
 		Padding(0, 1).
@@ -113,8 +103,7 @@ func (b *button) Compose(slots widget.Slots, w, h int) string {
 	return style.Render(body)
 }
 
-// border is doubled while focused, so the focused control is obvious without
-// relying on colour alone.
+// border is doubled while focused, so the focused control is obvious without relying on colour alone.
 func (b *button) border() lipgloss.Border {
 	if b.state.Focused && !b.disabled {
 		return lipgloss.DoubleBorder()

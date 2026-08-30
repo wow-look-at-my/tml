@@ -13,15 +13,14 @@ import (
 	"github.com/wow-look-at-my/tml"
 )
 
-// buttons is a row of three controls, the middle one disabled.
+// buttons is a row of several controls, the middle control disabled.
 const buttons = `<Stack orientation="horizontal" gap="1">
 	<Button id="save" action="save" label="Save"/>
 	<Button id="locked" label="Locked" disabled="true"/>
 	<Button id="quit" action="quit" label="Quit"/>
 </Stack>`
 
-// interactive loads a view and renders one frame, which is what publishes the
-// geometry the UI resolves clicks against.
+// interactive loads a view and renders a single frame, which is what publishes the geometry the UI resolves clicks against.
 func interactive(t *testing.T, template string, w, h int) *tml.View {
 	t.Helper()
 	loaded, err := view(t, app(template), tml.Options{})
@@ -57,8 +56,7 @@ func strokeMod(stroke string) tea.KeyMod {
 	return 0
 }
 
-// Focus starts on the first control and tab walks the row, skipping the
-// disabled one: tab must never stop somewhere that would do nothing.
+// Focus starts on the earliest control and tab walks the row, skipping the disabled control: tab must never stop somewhere
 func TestTabWalksTheRealFocusRing(t *testing.T) {
 	loaded := interactive(t, buttons, 40, 3)
 
@@ -76,8 +74,7 @@ func TestTabWalksTheRealFocusRing(t *testing.T) {
 	assert.Equal(t, "save", id, "the ring wraps")
 }
 
-// The focused control looks focused in the frame, not merely in the UI's own
-// bookkeeping.
+// The focused control looks focused in the frame, not merely in the UI's own bookkeeping.
 func TestFocusIsVisibleInTheRenderedFrame(t *testing.T) {
 	loaded := interactive(t, buttons, 40, 3)
 
@@ -101,8 +98,7 @@ func TestEnterActivatesTheFocusedControl(t *testing.T) {
 	assert.Equal(t, "save", events[0].Action)
 }
 
-// A click resolves against the geometry of the frame the user is looking at,
-// which is the whole reason layout publishes it.
+// A click resolves against the geometry of the frame the user is looking at, which is the whole reason layout
 func TestClickingLandsOnTheControlUnderThePointer(t *testing.T) {
 	loaded := interactive(t, buttons, 40, 3)
 
@@ -117,12 +113,11 @@ func TestClickingLandsOnTheControlUnderThePointer(t *testing.T) {
 	assert.Equal(t, "quit", events[0].ID)
 }
 
-// Clicking where a disabled control is drawn does nothing: it never entered the
-// ring, so there is nothing under the pointer to hit.
+// Clicking where a disabled control is drawn does nothing: it never entered the ring, so there is nothing under the
 func TestClickingADisabledControlDoesNothing(t *testing.T) {
 	loaded := interactive(t, buttons, 40, 3)
 
-	// The locked button sits between the two live ones.
+	// The locked button sits between both live ones.
 	save := targetOf(t, loaded, "save")
 	quit := targetOf(t, loaded, "quit")
 	between := (save.Rect.X + save.Rect.W + quit.Rect.X) / 2
@@ -131,13 +126,11 @@ func TestClickingADisabledControlDoesNothing(t *testing.T) {
 	assert.Empty(t, loaded.UI().Update(tea.MouseReleaseMsg{X: between, Y: 1, Button: tea.MouseLeft}))
 }
 
-// Hovering shows through to the frame, so a pointer over a control is visible
-// rather than only recorded.
+// Hovering shows through to the frame, so a pointer over a control is visible rather than only recorded.
 func TestHoverReachesTheFrame(t *testing.T) {
 	loaded := interactive(t, buttons, 40, 3)
 
-	// Hover the second control, so the first one's focus styling is not what
-	// changes the output.
+	// Hover the next control, so the leading's focus styling is not what changes the output.
 	quit := targetOf(t, loaded, "quit")
 	before, err := loaded.Render(nil, 40, 3)
 	require.NoError(t, err)
@@ -149,8 +142,7 @@ func TestHoverReachesTheFrame(t *testing.T) {
 	assert.NotEqual(t, before, after)
 }
 
-// A control scrolled out of its viewport is not on the screen, so clicking
-// where it would have been must not reach it.
+// A control scrolled out of its viewport is not on the screen, so clicking where it would have been must not reach it.
 func TestScrolledOutControlsCannotBeClicked(t *testing.T) {
 	loaded := interactive(t, `<Scrollbox offset="4" height="2" width="20">
 		<Stack>
@@ -164,9 +156,7 @@ func TestScrolledOutControlsCannotBeClicked(t *testing.T) {
 	}
 }
 
-// Where a scrolling region actually stopped is a number only the frame knows:
-// how far the content runs depends on the width it wrapped at. So a host that
-// wants the bottom asks to go too far, and reads back where that landed.
+// Where a scrolling region actually stopped is a number only the frame knows: how far the content runs depends on the
 func TestTheFrameReportsWhereAScrollingRegionLanded(t *testing.T) {
 	loaded := interactive(t, `<Scrollbox id="log" offset="9999" height="2" width="20">
 		<Stack>
@@ -183,8 +173,7 @@ func TestTheFrameReportsWhereAScrollingRegionLanded(t *testing.T) {
 	assert.Equal(t, 2, target.Scroll.Y, "asking for further than there is stops at the end")
 }
 
-// Anything that does not scroll reports no scrolling, rather than a position a
-// host would then try to move.
+// Anything that does not scroll reports no scrolling, rather than a position a host would then try to move.
 func TestANonScrollingControlReportsNoScroll(t *testing.T) {
 	loaded := interactive(t, `<Button id="go" action="go" label="Go"/>`, 20, 3)
 
@@ -206,8 +195,7 @@ func TestAViewWithNoControlsHasNoRing(t *testing.T) {
 	assert.Empty(t, key(t, loaded, "tab", 20, 1))
 }
 
-// Two controls answering to the same id would make focus ambiguous from one
-// frame to the next, so it is rejected where it is written.
+// A pair of controls answering to the same id would make focus ambiguous from a single frame to the next, so it is rejected where
 func TestDuplicateIDsAreRejected(t *testing.T) {
 	loaded, err := view(t, app(`<Stack>
 		<Button id="go" label="One"/>
@@ -220,9 +208,7 @@ func TestDuplicateIDsAreRejected(t *testing.T) {
 	assert.Contains(t, err.Error(), `id "go" is already used`)
 }
 
-// Geometry and output have to agree, or a click lands on nothing. These walk the
-// panels that place children at coordinates and check each control's rect
-// against where its label actually got painted.
+// Geometry and output have to agree, or a click lands on nothing. These walk the panels that place children at
 func TestPublishedRectsMatchWhereControlsArePainted(t *testing.T) {
 	for _, panel := range []struct {
 		name     string
@@ -252,8 +238,7 @@ func TestPublishedRectsMatchWhereControlsArePainted(t *testing.T) {
 				assert.Contains(t, "╭╔", cellAt(t, frame, rect.X, rect.Y),
 					"%s: no button corner where its rect starts", target.ID)
 
-				// A stretched button centres its label, so where the text lands is
-				// only pinned to the rect it has to sit inside.
+				// A stretched button centres its label, so where the text lands is only pinned to the rect it has to sit inside.
 				label := strings.ToUpper(target.ID) + strings.Repeat(strings.ToLower(target.ID), 2)
 				x, y := find(t, frame, label)
 				assert.Equal(t, rect.Y+1, y, "%s is drawn on a different row from its rect", target.ID)
@@ -264,7 +249,7 @@ func TestPublishedRectsMatchWhereControlsArePainted(t *testing.T) {
 	}
 }
 
-// cellAt is the character painted at one cell of a frame.
+// cellAt is the character painted at a single cell of a frame.
 func cellAt(t *testing.T, frame string, x, y int) string {
 	t.Helper()
 	lines := strings.Split(ansi.Strip(frame), "\n")

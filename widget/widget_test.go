@@ -8,8 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// fakeInput stands in for a bubbles component: it draws itself and can be told
-// how wide it is.
+// fakeInput stands in for a bubbles component: it draws itself and can be told how wide it is.
 type fakeInput struct {
 	value string
 	width int
@@ -40,8 +39,7 @@ func TestBubbleMeasuresWhatTheComponentDraws(t *testing.T) {
 	assert.Equal(t, 2, h)
 }
 
-// A component that accepts a width is told the space layout gave it, which is
-// how a widget fills a star-sized cell.
+// A component that accepts a width is told the space layout gave it, which is how a widget fills a star-sized cell.
 func TestBubblePassesTheWidthThrough(t *testing.T) {
 	input := &fakeInput{value: "hi"}
 	native := Bubble(input)
@@ -71,7 +69,7 @@ func TestRegistryBindingAndNames(t *testing.T) {
 	assert.False(t, ok)
 }
 
-// A view with no widgets passes a nil registry, so lookups must be safe on one.
+// A view with no widgets passes a nil registry, so lookups must be safe on nil.
 func TestNilRegistryIsUsable(t *testing.T) {
 	var registry *Registry
 
@@ -108,8 +106,7 @@ func TestRegistryHoldsBothKindsOfBinding(t *testing.T) {
 	assert.False(t, ok, "a factory is not a bound instance")
 }
 
-// Rebinding a name has to drop the other kind of binding, or the stale one wins
-// every lookup and the new binding silently does nothing.
+// Rebinding a name has to drop the other kind of binding, or the stale binding wins every lookup and the new binding
 func TestRebindingReplacesTheOtherKind(t *testing.T) {
 	registry := NewRegistry().BindFactory("Button", stub{}).Bind("Button", Bubble(viewOnly{text: "host"}))
 	_, ok := registry.Factory("Button")
@@ -120,8 +117,7 @@ func TestRebindingReplacesTheOtherKind(t *testing.T) {
 	assert.False(t, ok)
 }
 
-// A host binding its own <Button> keeps the rest of the library rather than
-// having to shadow every name to get one of its own.
+// A host binding its own <Button> keeps the rest of the library rather than having to shadow every name to get its own
 func TestMergeLetsTheHostWin(t *testing.T) {
 	library := NewRegistry().BindFactory("Button", stub{attrs: []string{"label"}}).BindFactory("Rule", stub{})
 	host := NewRegistry().Bind("Button", Bubble(viewOnly{text: "host"}))

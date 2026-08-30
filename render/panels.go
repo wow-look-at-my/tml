@@ -8,15 +8,10 @@ import (
 	"github.com/wow-look-at-my/tml/layout"
 )
 
-// canvas paints children at the coordinates arrange gave them.
-//
-// Later children cover earlier ones, which is what makes a popup a popup: it is
-// written last, so it lands on top of the view it interrupts.
+// canvas paints children at the coordinates arrange gave them. Later children cover earlier ones, which is what makes
 func canvas(box *layout.Box, parts []string) string {
 	layers := make([]*lipgloss.Layer, 0, len(parts)+1)
-	// A backdrop of the full size keeps the compositor's canvas at the size
-	// layout settled on, so a child pinned to a corner is not cropped away by a
-	// canvas that shrank to its other children.
+	// A backdrop of the full size keeps the compositor's canvas at the size layout settled on, so a child pinned to a
 	layers = append(layers, lipgloss.NewLayer(blank(box.Content.W, box.Content.H)).X(0).Y(0).Z(0))
 	for i, child := range box.Children {
 		layers = append(layers, lipgloss.NewLayer(parts[i]).

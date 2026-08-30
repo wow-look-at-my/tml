@@ -11,20 +11,12 @@ import (
 	"github.com/wow-look-at-my/tml/layout"
 )
 
-// Inspector exposes a running program's frames.
-//
-// A program that renders through a View gets one with two lines: make it, then
-// let it serve. The View records every frame it paints, so nothing has to be
-// re-rendered to answer a question and the answer is about the frame that is
-// actually on screen.
+// Inspector exposes a running program's frames. A program that renders through a View gets an inspector with a pair of lines: make
 type Inspector struct {
 	view *View
 	srv  *inspect.Server
 
-	// keys and clicks are how the inspector drives the program. A host wires
-	// them to whatever delivers input -- for Bubble Tea that is Program.Send.
-	// Leaving them nil makes the program read-only, and the protocol says so
-	// rather than silently doing nothing.
+	// keys and clicks are how the inspector drives the program. A host wires them to whatever delivers input -- for
 	mu     sync.Mutex
 	onKey  func(string) error
 	onClk  func(x, y int) error
@@ -32,9 +24,7 @@ type Inspector struct {
 	styles map[string]map[string]string
 }
 
-// newInspector returns an inspector reading v's frames. The process has one,
-// built by the first Load; a second would fight it for the engine override and
-// the frame hook, which is why nothing outside this package can make one.
+// newInspector returns an inspector reading v's frames. The process holds a single inspector, built by the earliest Load; another would
 func newInspector(v *View) *Inspector {
 	i := &Inspector{styles: map[string]map[string]string{}}
 	i.srv = inspect.NewServer(i)
@@ -42,19 +32,7 @@ func newInspector(v *View) *Inspector {
 	return i
 }
 
-// Attach points the inspector at another View, and is how a host survives
-// recompiling its own document.
-//
-// Load bakes in which half of every theme token resolves and how a width is
-// measured, so a host that learns either late -- a terminal answering OSC 11,
-// or mode 2027 -- loads again and renders through a NEW View. The old one stops
-// painting. An inspector still reading it answers about a frame nothing is
-// drawing, which reads as a program that froze rather than one that changed
-// theme.
-//
-// The new View continues the old one's frame numbers. A caller waiting for a
-// frame newer than the one it read must not be answered by a fresh View's
-// first frame, which would otherwise number 1.
+// Attach points the inspector at another View, and is how a host survives recompiling its own document. Load bakes in
 func (i *Inspector) Attach(v *View) {
 	i.mu.Lock()
 	old := i.view
@@ -74,16 +52,14 @@ func (i *Inspector) Attach(v *View) {
 	i.srv.Publish()
 }
 
-// currentView reads the attached View. Every path that touches it goes through
-// here, because Attach can replace it while a request is being answered.
+// currentView reads the attached View. Every path that touches it goes through here, because Attach can replace it
 func (i *Inspector) currentView() *View {
 	i.mu.Lock()
 	defer i.mu.Unlock()
 	return i.view
 }
 
-// OnKey and OnClick wire the driving half. A host calls them once, before
-// serving.
+// OnKey and OnClick wire the driving half. A host calls them as soon as, before serving.
 func (i *Inspector) OnKey(fn func(key string) error) {
 	i.mu.Lock()
 	i.onKey = fn
@@ -96,24 +72,14 @@ func (i *Inspector) OnClick(fn func(x, y int) error) {
 	i.mu.Unlock()
 }
 
-// OnRepaint wires the way this host is asked to draw again.
-//
-// An override only reaches the screen on the next paint, and an idle program
-// does not paint. Without this the terminal keeps the old geometry until some
-// other event arrives, so a restyle looks like it did nothing. A host wires it
-// to whatever wakes its loop: for Bubble Tea that is Program.Send.
+// OnRepaint wires the way this host is asked to draw again. An override only reaches the screen on the next paint, and
 func (i *Inspector) OnRepaint(fn func() error) {
 	i.mu.Lock()
 	i.onPnt = fn
 	i.mu.Unlock()
 }
 
-// repaint asks the host to draw again and waits for the frame that answers.
-//
-// It waits so a caller that restyles and then reads gets the new geometry
-// rather than the geometry it was trying to change. A host that wired no
-// repaint says so: a silent return would report a restyle that never reached
-// the terminal.
+// repaint asks the host to draw again and waits for the frame that answers. It waits so a caller that restyles and
 func (i *Inspector) repaint() error {
 	i.mu.Lock()
 	fn := i.onPnt
@@ -172,9 +138,7 @@ func (i *Inspector) Click(x, y int) error {
 	return fn(x, y)
 }
 
-// Restyle implements inspect.Controller. It returns once the program has
-// painted with the override, so what the caller reads next is what the
-// terminal shows.
+// Restyle implements inspect.Controller. It returns as soon as the program has painted with the override, so what the caller
 func (i *Inspector) Restyle(id string, attrs map[string]string) error {
 	i.mu.Lock()
 	current := i.styles[id]
@@ -205,13 +169,10 @@ func (i *Inspector) override(id string) map[string]string {
 	return i.styles[id]
 }
 
-// Publish wakes anything waiting for a newer frame. The View calls it after
-// each paint.
+// Publish wakes anything waiting for a newer frame. The View calls it after each paint.
 func (i *Inspector) Publish() { i.srv.Publish() }
 
-// --- the View's side of the recording ---
-
-// frameRecord is the last frame a View painted.
+// --- the View's side of the recording --- frameRecord is the last frame a View painted.
 type frameRecord struct {
 	mu    sync.Mutex
 	on    atomic.Bool
@@ -227,8 +188,7 @@ func (v *View) recordFrames(on bool) {
 	v.frames.on.Store(on)
 }
 
-// record stores the frame just painted. It is called from Render, so the cost
-// on a program with no inspector attached is one atomic load.
+// record stores the frame just painted. It is called from Render, so the cost on a program with no inspector attached
 func (v *View) record(box *layout.Box, ansi string, width, height int) {
 	if v.frames == nil || !v.frames.on.Load() {
 		return
@@ -258,8 +218,7 @@ func (v *View) lastFrame() (inspect.Frame, bool) {
 	return v.frames.frame, true
 }
 
-// OnFrame registers a function called after each recorded frame. The inspector
-// uses it to wake watchers the moment the program paints.
+// OnFrame registers a function called after each recorded frame. The inspector uses it to wake watchers the moment the
 func (v *View) OnFrame(fn func()) {
 	if v.frames == nil {
 		v.frames = &frameRecord{}

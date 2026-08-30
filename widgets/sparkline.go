@@ -10,10 +10,10 @@ import (
 
 var sparklineAttrs = []string{"values", "max", "color"}
 
-// sparkBars are the eighth-height blocks, low to high.
+// sparkBars are the partial-height blocks, low to high.
 var sparkBars = []rune{'▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'}
 
-// sparkline plots a series in one row of cells.
+// sparkline plots a series in a single row of cells.
 type sparkline struct {
 	values []float64
 	limit  float64
@@ -38,8 +38,7 @@ func newSparkline(ctx widget.Context) (widget.Native, error) {
 	return line, nil
 }
 
-// scale is the value the tallest bar stands for: the declared maximum, or the
-// largest value when none was declared.
+// scale is the value the tallest bar stands for: the declared maximum, or the largest value when none was declared.
 func (s *sparkline) scale() float64 {
 	if s.limit > 0 {
 		return s.limit
@@ -64,8 +63,7 @@ func (s *sparkline) Measure(maxW, _ int) (int, int) {
 
 func (s *sparkline) Render(w, _ int) string {
 	values := s.values
-	// Too many points for the space: keep the most recent, because a series
-	// scrolls off the left in every chart anybody reads.
+	// Too many points for the space: keep the most recent, because a series scrolls off the left in every chart anybody
 	if w > 0 && len(values) > w {
 		values = values[len(values)-w:]
 	}

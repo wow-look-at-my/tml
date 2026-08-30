@@ -11,8 +11,7 @@ import (
 	"github.com/wow-look-at-my/tml/syntax"
 )
 
-// Node is an element after expansion. Components, slots and control flow are
-// gone; only native elements, panels and text remain.
+// Node is an element after expansion. Components, slots and control flow are gone; only native elements, panels and
 type Node struct {
 	Kind     syntax.NodeKind
 	Name     string
@@ -21,13 +20,9 @@ type Node struct {
 	Children []*Node
 	Text     string
 	Pos      syntax.Pos
-	// Slot is which of the parent's slots this child was written into, empty
-	// for the default one. A component's slots are resolved during expansion; a
-	// widget's are not, because only the widget knows what to do with them.
+	// Slot is which of the parent's slots this child was written into, empty for the default slot. A component's slots are
 	Slot string
-	// Component marks a node that carries a component's name rather than an
-	// element's. Nothing downstream may resolve it as a widget: a component is
-	// free to be called Table without becoming one.
+	// Component marks a node that carries a component's name rather than an element's. Nothing downstream may resolve it
 	Component bool
 }
 
@@ -43,9 +38,7 @@ type ExpandOptions struct {
 	Dark bool
 }
 
-// evalScope is the set of names visible inside one component instance.
-// Components do not nest lexically: an instance sees its own properties and the
-// theme, never the caller's names.
+// evalScope is the set of names visible inside a single component instance. Components do not nest lexically: an instance
 type evalScope struct {
 	props  map[string]Value
 	tokens map[string]Value
@@ -63,10 +56,7 @@ func (s *evalScope) with(name string, value Value) *evalScope {
 	return &evalScope{props: props, tokens: s.tokens}
 }
 
-// slotArgs is the content a call site passed into a component, together with
-// everything needed to expand it. Slot content is evaluated in the CALLER's
-// scope and file, not the callee's, so it behaves like a closure rather than
-// like a macro argument.
+// slotArgs is the content a call site passed into a component, together with everything needed to expand it. Slot
 type slotArgs struct {
 	content map[string][]*tnode
 	scope   *evalScope
@@ -104,16 +94,12 @@ func (p *Program) Expand(args map[string]Value, opts ExpandOptions) (*Node, erro
 		Attrs:    map[string]Value{},
 		Children: children,
 		Pos:      entry.def.Pos,
-		// The root wears the component's name, which is what makes a dumped tree
-		// readable. Marking it keeps that name from being mistaken for a widget's
-		// later on: a component may legitimately be called Table.
+		// The root wears the component's name, which is what makes a dumped tree readable. Marking it keeps that name from
 		Component: true,
 	}, nil
 }
 
-// Tokens returns the theme tokens as plain text for the given mode. The style
-// package needs them before any component is instantiated, since a named style
-// may reference a token.
+// Tokens returns the theme tokens as plain text for the given mode. The style package needs them before any component
 func (p *Program) Tokens(opts ExpandOptions) map[string]string {
 	resolved, _ := p.resolveTokens(opts)
 	out := make(map[string]string, len(resolved))
@@ -141,8 +127,7 @@ func (p *Program) resolveTokens(opts ExpandOptions) (map[string]Value, error) {
 	return tokens, nil
 }
 
-// bindProps turns call-site arguments into an instance scope, applying defaults
-// and enforcing required properties.
+// bindProps turns call-site arguments into an instance scope, applying defaults and enforcing required properties.
 func (p *Program) bindProps(c *compiled, args map[string]Value, tokens map[string]Value, at syntax.Pos) (*evalScope, error) {
 	scope := &evalScope{props: make(map[string]Value, len(c.props)), tokens: tokens}
 
@@ -170,8 +155,7 @@ func (p *Program) bindProps(c *compiled, args map[string]Value, tokens map[strin
 			return nil, &syntax.Error{Pos: at, Message: fmt.Sprintf(
 				"property %q has no value and no default", name)}
 		}
-		// A default sees the theme but not the instance's other properties, so
-		// defaults never depend on the order they are declared in.
+		// A default sees the theme but not the instance's other properties, so defaults never depend on the order they are
 		raw, err := declared.deflt.Eval(&evalScope{tokens: tokens})
 		if err != nil {
 			return nil, &syntax.Error{Pos: declared.pos, Message: fmt.Sprintf("property %q default: %v", name, err)}
@@ -185,9 +169,7 @@ func (p *Program) bindProps(c *compiled, args map[string]Value, tokens map[strin
 	return scope, nil
 }
 
-// coerce fits a value to a declared type. A string is re-read as the target
-// type, which is what makes a literal attribute and a theme token usable
-// wherever a typed property is expected.
+// coerce fits a value to a declared type. A string is re-read as the target type, which is what makes a literal
 func coerce(target Type, value Value) (Value, error) {
 	if value.typ.Kind == target.Kind && value.typ.IsList == target.IsList &&
 		slices.Equal(value.typ.Enum, target.Enum) {
@@ -211,8 +193,7 @@ func (p *Program) expandNodes(nodes []*tnode, scope *evalScope, file string, slo
 	return out, nil
 }
 
-// expandNode returns zero or more nodes: a conditional can drop out, and a For
-// or a Slot can produce several.
+// expandNode returns nothing or more nodes: a conditional can drop out, and a For or a Slot can produce several.
 func (p *Program) expandNode(node *tnode, scope *evalScope, file string, slots *slotArgs, stack []string) ([]*Node, error) {
 	if node.kind == syntax.TextNode {
 		value, err := node.text.Eval(scope)
@@ -242,8 +223,7 @@ func (p *Program) expandNode(node *tnode, scope *evalScope, file string, slots *
 	case node.name == "Slot":
 		return p.expandSlot(node, scope, file, slots, stack)
 	case strings.Contains(node.name, "."):
-		// A property element is consumed by its parent as slot content and is
-		// never expanded in place.
+		// A property element is consumed by its parent as slot content and is never expanded in place.
 		return nil, &syntax.Error{Pos: node.pos, Message: fmt.Sprintf(
 			"<%s> is slot content and must be a direct child of a <%s> element",
 			node.name, strings.SplitN(node.name, ".", 2)[0])}
@@ -258,9 +238,7 @@ func (p *Program) expandNode(node *tnode, scope *evalScope, file string, slots *
 func (p *Program) expandNative(node *tnode, scope *evalScope, file string, slots *slotArgs, stack []string) ([]*Node, error) {
 	out := &Node{Kind: syntax.ElementNode, Name: node.name, Attrs: map[string]Value{}, Pos: node.pos}
 	for _, attr := range node.attrs {
-		// The items-control attributes are directives: they say what this
-		// element CONTAINS, and a widget that received them as properties would
-		// be handed a list it has no idea what to do with.
+		// The items-control attributes are directives: they say what this element CONTAINS, and a widget that received them
 		if attr.name == attrItemsSource || attr.name == attrItemTemplate {
 			continue
 		}
@@ -279,9 +257,7 @@ func (p *Program) expandNative(node *tnode, scope *evalScope, file string, slots
 		}
 		out.Children = append(out.Children, items...)
 	}
-	// A native element's slots stay slots: unlike a component, whose template
-	// decides where the content goes, a widget is the only thing that knows what
-	// its own regions mean.
+	// A native element's slots stay slots: unlike a component, whose template decides where the content goes, a widget is
 	content, err := collectSlotContent(node)
 	if err != nil {
 		return nil, err
@@ -299,8 +275,7 @@ func (p *Program) expandNative(node *tnode, scope *evalScope, file string, slots
 	return []*Node{out}, nil
 }
 
-// slotOrder lists a native element's filled slots in document order, so the
-// children come out in the sequence they were written.
+// slotOrder lists a native element's filled slots in document order, so the children come out in the sequence they
 func slotOrder(node *tnode, content map[string][]*tnode) []string {
 	order := make([]string, 0, len(content))
 	seen := set.New[string]()
@@ -344,9 +319,7 @@ func (p *Program) expandInstance(c *compiled, node *tnode, scope *evalScope, fil
 	return p.expandNodes(c.body, inner, c.file, passed, append(stack, c.def.Name))
 }
 
-// collectSlotContent splits a call site's children into named slots and the
-// default slot. `<Card.actions>` fills the "actions" slot; anything else is
-// default-slot content.
+// collectSlotContent splits a call site's children into named slots and the default slot. `<Card.actions>` fills the
 func collectSlotContent(node *tnode) (map[string][]*tnode, error) {
 	content := map[string][]*tnode{}
 	for _, child := range node.children {
@@ -370,8 +343,7 @@ func collectSlotContent(node *tnode) (map[string][]*tnode, error) {
 	return content, nil
 }
 
-// expandSlot inserts the caller's content, or the slot's own fallback children
-// when the caller supplied none.
+// expandSlot inserts the caller's content, or the slot's own fallback children when the caller supplied none.
 func (p *Program) expandSlot(node *tnode, scope *evalScope, file string, slots *slotArgs, stack []string) ([]*Node, error) {
 	name := defaultSlot
 	if declared, ok := attrOf(node, "name"); ok {
@@ -380,8 +352,7 @@ func (p *Program) expandSlot(node *tnode, scope *evalScope, file string, slots *
 
 	if slots != nil {
 		if content, ok := slots.content[name]; ok && len(content) > 0 {
-			// Content belongs to the call site: it sees the caller's names, the
-			// caller's file for resolving components, and the caller's own slots.
+			// Content belongs to the call site: it sees the caller's names, the caller's file for resolving components, and the
 			return p.expandNodes(content, slots.scope, slots.file, slots.outer, stack)
 		}
 	}
