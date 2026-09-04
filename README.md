@@ -94,6 +94,8 @@ tml ids
 tml query --id composer
 tml tree                                 # the live frame, including boxes with no id
 tml serve --addr :7777                   # the browser inspector
+tml capture -o frame.html                # the same page over one frame, as a file
+tml capture app.tml --width 80 --height 24 -o frame.html
 ```
 
 `inspect` is the testable half of `render`. It lays the view out and prints JSON for the elements that carry an `id`:
@@ -105,6 +107,11 @@ The live commands talk to any program that called `tml.Load`: `query`, `elements
 `input`, `restyle`, and `serve`. A program serves on `$XDG_RUNTIME_DIR/tml/<pid>.sock` with nothing set; `tml list`
 names them. `tree` with a file is the expanded document; `tree` with no file is the frame on screen. See
 `docs/inspector.md`.
+
+`capture` writes that browser inspector over a single frame, as a self-contained HTML file: the terminal as it was
+painted, the element tree, and every element's geometry, clip, scroll and drawn text. It fetches nothing when it opens,
+so a frame travels through a bug report or a comment box. With a file it captures a layout at the given size, and with
+no file it captures the frame a running program has on screen.
 
 ## What it does
 

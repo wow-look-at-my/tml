@@ -12,8 +12,8 @@ import (
 	"github.com/charmbracelet/x/ansi"
 )
 
-//go:embed ui
-var uiFS embed.FS
+//go:embed ui/index.html ui/inspector.css ui/inspector.js
+var uiFS embed.FS // Named, not globbed: ui/src holds the TypeScript this compiled from.
 
 // Handler answers inspection requests. A Server answers them from a program in this process; `tml serve` answers them
 type Handler interface {

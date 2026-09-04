@@ -121,13 +121,17 @@ header {
 
 /* The preview takes the wide column because a terminal is wider than it is
    tall, and a clipped preview is the one thing this page cannot afford: the
-   element you are hunting is usually the one off the right edge. */
+   element you are hunting is usually the one off the right edge.
+
+   The detail column sits on the LEFT, against the preview's own left edge. On a
+   wide screen a right-hand column lands past the end of the terminal, which is
+   a long way from what you are reading. */
 main {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+	grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
 	grid-template-areas:
-		"preview detail"
-		"tree    detail";
+		"detail preview"
+		"detail tree";
 	gap: 12px;
 	padding: 12px;
 	align-items: start;
@@ -201,6 +205,27 @@ pre {
 	border: 1px solid var(--highlight);
 	background: color-mix(in srgb, var(--highlight) 18%, transparent);
 	border-radius: 2px;
+}
+
+/* The outline says where. The label says what, on the picture, so the answer is
+   where the eye already is rather than in another column. */
+#highlight::after {
+	content: attr(data-label);
+	position: absolute;
+	left: -1px;
+	top: 100%;
+	padding: 0 4px;
+	background: var(--highlight);
+	color: #000;
+	border-radius: 0 0 2px 2px;
+	font: 11px/1.5 var(--mono);
+	white-space: pre;
+}
+
+#highlight[data-place="inside"]::after {
+	top: auto;
+	bottom: 100%;
+	border-radius: 2px 2px 0 0;
 }
 
 #keys {
@@ -311,4 +336,10 @@ pre {
 
 .error {
 	color: var(--highlight);
+}
+
+/* A capture holds a frame nothing is going to repaint. The controls that drive
+   a program go away, rather than sit there and fail when they are used. */
+body[data-capture] :is(#keys, #restyle, .toggle, #detail-pane h3:first-of-type) {
+	display: none;
 }
