@@ -2,6 +2,7 @@ name: CI
 
 on:
   push:
+    branches: ['**']
 
 permissions:
   id-token: write
@@ -16,11 +17,10 @@ jobs:
     runs-on: ${{ vars.CI_RUNNER_DIND || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v4
-      # Native per-platform binaries: bubbletea and clipboard ship no GOOS=cosmo files, so the APE build cannot compile this tree.
+      # cosmo-platforms names the hosts the one fat APE covers. The action dropped the os= and arch= inputs it used to take.
       - uses: wow-look-at-my/go-toolchain@master
         with:
-          os: linux,darwin,windows
-          arch: amd64,arm64
+          cosmo-platforms: linux/amd64,linux/arm64,darwin/arm64,windows/amd64
 
       # The screenshots are taken from the binaries this job just built, in a real terminal -- see docs/screenshots.md
       - name: Install ttyd
