@@ -28,6 +28,7 @@
 	<Property name="offset" type="int" default="0"/>
 	<Property name="log" type="string[]" default=""/>
 	<Property name="steps" type="string[]" default=""/>
+	<Property name="step" type="int" default="0"/>
 
 	<Property name="confirming" type="bool" default="false"/>
 
@@ -78,7 +79,8 @@
 					<Grid columns="14,auto,1*" rows="1*" gap="2">
 						<List id="services" items="{services}" selected="{selected}"
 							Grid.row="0" Grid.column="0"/>
-						<Table columns="step,when,state" rows="{steps}" Grid.row="0" Grid.column="1"/>
+						<Table id="steps" columns="step,when,state" rows="{steps}" selected="{step}"
+							border="false" Grid.row="0" Grid.column="1"/>
 						<Scrollbox id="log" offset="{offset}" Grid.row="0" Grid.column="2">
 							<Stack>
 								<For each="{log}" as="line">

@@ -135,7 +135,21 @@ A button's label is sugar for its `Content` slot, so anything can go inside one:
 | Element | Attributes | Notes |
 | --- | --- | --- |
 | `List` | `items`, `selected`, `cursor`, `disabled` | A cursor beside the selected row. |
-| `Table` | `columns`, `rows`, `separator`, `border` | Rows are `separator`-joined cells; columns size to their widest. |
+| `Table` | `columns`, `rows`, `separator`, `border`, `selected`, `disabled` | Rows are `separator`-joined cells; columns size to their widest. |
+
+Both take focus, and both leave the selection to the host: `selected` is a row index the model owns, so nothing in the
+widget can disagree with what the program thinks is picked. A `Table` marks its row in place -- bold, and reversed while
+the table has focus -- rather than in a cursor gutter, since a row of columns has no single place to put one. The header
+is not a row anyone can select, and `selected="-1"` marks nothing.
+
+Which row a click landed on arrives the same way a `List`'s does, in the event's own coordinates. A table draws its
+header first, so its rows begin a line below:
+
+```go
+if event.ID == "steps" && event.Y >= 0 {
+    m.step = clamp(event.Y-1, 0, len(steps)-1)
+}
+```
 
 ### Display
 

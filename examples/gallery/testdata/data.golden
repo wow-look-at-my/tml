@@ -7,16 +7,16 @@
  ╚══════════╝ ╰──────╯ ╰───────╯                                                            
                                                                                             
  ┌ Data ──────────────────────────────────────────────────────────────────────────────────┐ 
- │ > api           ┌──────┬─────┬───────┐  09:05 deploy step 1 finished                 █ │ 
- │   web           │step  │when │state  │  09:10 deploy step 2 finished                 █ │ 
- │   worker        ├──────┼─────┼───────┤  09:15 deploy step 3 finished                 █ │ 
- │   scheduler     │build │09:05│done   │  09:20 deploy step 4 finished                 █ │ 
- │   database      │test  │09:12│done   │  09:25 deploy step 5 finished                 │ │ 
- │   cache         │deploy│09:20│running│  09:30 deploy step 6 finished                 │ │ 
- │                 └──────┴─────┴───────┘  09:35 deploy step 7 finished                 │ │ 
- │                                         09:40 deploy step 8 finished                 │ │ 
- │                                         09:45 deploy step 9 finished                 │ │ 
- │                                         09:50 deploy step 10 finished                │ │ 
+ │ > api           step   when  state    09:05 deploy step 1 finished                   █ │ 
+ │   web                                 09:10 deploy step 2 finished                   █ │ 
+ │   worker        build  09:05 done     09:15 deploy step 3 finished                   █ │ 
+ │   scheduler     test   09:12 done     09:20 deploy step 4 finished                   █ │ 
+ │   database      deploy 09:20 running  09:25 deploy step 5 finished                   │ │ 
+ │   cache                               09:30 deploy step 6 finished                   │ │ 
+ │                                       09:35 deploy step 7 finished                   │ │ 
+ │                                       09:40 deploy step 8 finished                   │ │ 
+ │                                       09:45 deploy step 9 finished                   │ │ 
+ │                                       09:50 deploy step 10 finished                  │ │ 
  └────────────────────────────────────────────────────────────────────────────────────────┘ 
                                                                                             
                                                                                             

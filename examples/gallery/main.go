@@ -43,6 +43,7 @@ type model struct {
 	load     []int
 
 	selected   int
+	step       int
 	offset     int
 	log        []string
 	confirming bool
@@ -109,6 +110,11 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// A list is a single control to the ring, so which row was clicked is in the event's own coordinates rather than in an
 			if event.ID == "services" && event.Y >= 0 {
 				m.selected = clamp(event.Y, 0, len(services)-1)
+				continue
+			}
+			// A table's header takes the leading line, so its rows start below the y a click reports.
+			if event.ID == "steps" && event.Y >= 0 {
+				m.step = clamp(event.Y-1, 0, len(steps)-1)
 				continue
 			}
 			if event.Action != "" && !m.act(event.Action) {
@@ -193,6 +199,8 @@ func (m *model) scroll(id string, delta int) {
 		m.offset = clamp(m.offset+delta, 0, len(m.log)-1)
 	case "services":
 		m.selected = clamp(m.selected+delta, 0, len(services)-1)
+	case "steps":
+		m.step = clamp(m.step+delta, 0, len(steps)-1)
 	}
 }
 
@@ -230,6 +238,7 @@ func (m *model) frameOf() string {
 		"offset":          sema.StringValue(strconv.Itoa(m.offset)),
 		"log":             sema.StringValue(strings.Join(m.log, ",")),
 		"steps":           sema.StringValue(strings.Join(steps, ",")),
+		"step":            sema.StringValue(strconv.Itoa(m.step)),
 		"confirming":      sema.BoolValue(m.confirming),
 	}, m.width, m.height)
 	if err != nil {

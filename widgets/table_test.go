@@ -3,8 +3,11 @@ package widgets
 import (
 	"testing"
 
+	"github.com/charmbracelet/x/ansi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/wow-look-at-my/tml/widget"
 )
 
 func TestTableDrawsHeadersAndRows(t *testing.T) {
@@ -69,4 +72,46 @@ func TestTableRejectsANonBooleanBorder(t *testing.T) {
 	_, err := tryBuild("Table", map[string]string{"border": "yes"})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "expected true or false")
+}
+
+// The marked row is drawn differently from the rest, which is what makes a table something to pick a row out of rather
+// than only something to read.
+func TestTableMarksTheSelectedRow(t *testing.T) {
+	rows := map[string]string{"columns": "Name", "rows": "a,b,c", "border": "false"}
+	plainTable := build(t, "Table", rows)
+
+	rows["selected"] = "1"
+	marked := build(t, "Table", rows)
+
+	assert.NotEqual(t, plainTable.Render(10, 0), marked.Render(10, 0))
+	assert.Equal(t, plain(plainTable.Render(10, 0)), plain(marked.Render(10, 0)),
+		"marking a row decorates it rather than changing what it says")
+}
+
+// A table nobody has selected a row of draws undecorated, headers included. A lipgloss table gives its header row the
+// same negative index an unselected table carries, so the header is what a careless mark lands on.
+func TestAnUnselectedTableMarksNothing(t *testing.T) {
+	unselected := build(t, "Table", map[string]string{"columns": "Name", "rows": "a,b", "border": "false"})
+
+	assert.Equal(t, ansi.Strip(unselected.Render(10, 0)), unselected.Render(10, 0))
+}
+
+// A table with no rows has nothing to land on, so tab passes over it rather than stopping on an empty control.
+func TestEmptyTableRefusesFocus(t *testing.T) {
+	empty := map[string]string{"columns": "Name"}
+	assert.False(t, build(t, "Table", empty).(widget.Focusable).AcceptsFocus())
+
+	filled := map[string]string{"columns": "Name", "rows": "a"}
+	assert.True(t, build(t, "Table", filled).(widget.Focusable).AcceptsFocus())
+
+	filled["disabled"] = "true"
+	assert.False(t, build(t, "Table", filled).(widget.Focusable).AcceptsFocus())
+}
+
+func TestFocusedTableHighlightsItsSelection(t *testing.T) {
+	table := build(t, "Table", map[string]string{"columns": "Name", "rows": "a,b", "selected": "0", "border": "false"})
+	resting := table.Render(10, 0)
+
+	table.(widget.Stateful).SetState(widget.State{Focused: true})
+	assert.NotEqual(t, resting, table.Render(10, 0))
 }
