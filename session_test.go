@@ -34,7 +34,7 @@ func (m driveModel) View() tea.View { return tea.NewView("") }
 // A program built through NewProgram can be typed into; a program built any other way refuses by name. That difference is
 func TestNewProgramIsWhatMakesAProgramDrivable(t *testing.T) {
 	t.Serial()
-	tml.ResetInspection()
+	exclusive(t)
 	loadInspectorView(t)
 	insp := tml.Inspect()
 

@@ -3,8 +3,11 @@ package widgets
 import (
 	"testing"
 
+	"github.com/charmbracelet/x/ansi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/wow-look-at-my/tml/widget"
 )
 
 func TestTableDrawsHeadersAndRows(t *testing.T) {
@@ -65,8 +68,86 @@ func TestTableMeasuresWhatItDraws(t *testing.T) {
 	assert.Equal(t, 8, narrow, "a table never asks for more than it was offered")
 }
 
+// A cell too wide for its column wraps, so the height a table reports has to be the height at the width it was
+// offered. Measured at its natural width instead, the wrapped lines are clipped off by whatever placed it, and rows
+// disappear off the bottom of a table that had room for them.
+func TestTableMeasuresTheHeightItWrapsTo(t *testing.T) {
+	table := build(t, "Table", map[string]string{
+		"columns": "path",
+		"rows":    "/a/long/path/that/will/not/fit,/another/long/path/that/will/not/fit",
+		"border":  "false",
+	})
+
+	const narrow = 14
+	_, measured := table.Measure(narrow, 0)
+	assert.Equal(t, len(split(table.Render(narrow, 0))), measured,
+		"the measured height is the height it draws")
+	assert.Contains(t, table.Render(narrow, 0), "another", "both rows are drawn")
+}
+
+// wrap="false" keeps a row to a single line, which is what makes a row index a line index: a host that maps a click
+// or a scroll offset onto a row cannot do that arithmetic when a long cell silently takes another line as well.
+func TestATableCanKeepEveryRowToOneLine(t *testing.T) {
+	rows := map[string]string{
+		"columns": "path",
+		"rows":    "/a/long/path/that/will/not/fit,/another/long/path/that/will/not/fit",
+		"border":  "false",
+	}
+	wrapped := build(t, "Table", rows)
+
+	rows["wrap"] = "false"
+	cut := build(t, "Table", rows)
+
+	const narrow = 14
+	assert.Greater(t, len(split(wrapped.Render(narrow, 0))), len(split(cut.Render(narrow, 0))))
+	assert.Len(t, split(cut.Render(narrow, 0)), 4, "a header, the rule under it, and a line for each row")
+	assert.Contains(t, cut.Render(narrow, 0), "…", "a cut cell says it was cut")
+}
+
 func TestTableRejectsANonBooleanBorder(t *testing.T) {
 	_, err := tryBuild("Table", map[string]string{"border": "yes"})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "expected true or false")
+}
+
+// The marked row is drawn differently from the rest, which is what makes a table something to pick a row out of rather
+// than only something to read.
+func TestTableMarksTheSelectedRow(t *testing.T) {
+	rows := map[string]string{"columns": "Name", "rows": "a,b,c", "border": "false"}
+	plainTable := build(t, "Table", rows)
+
+	rows["selected"] = "1"
+	marked := build(t, "Table", rows)
+
+	assert.NotEqual(t, plainTable.Render(10, 0), marked.Render(10, 0))
+	assert.Equal(t, plain(plainTable.Render(10, 0)), plain(marked.Render(10, 0)),
+		"marking a row decorates it rather than changing what it says")
+}
+
+// A table nobody has selected a row of draws undecorated, headers included. A lipgloss table gives its header row the
+// same negative index an unselected table carries, so the header is what a careless mark lands on.
+func TestAnUnselectedTableMarksNothing(t *testing.T) {
+	unselected := build(t, "Table", map[string]string{"columns": "Name", "rows": "a,b", "border": "false"})
+
+	assert.Equal(t, ansi.Strip(unselected.Render(10, 0)), unselected.Render(10, 0))
+}
+
+// A table with no rows has nothing to land on, so tab passes over it rather than stopping on an empty control.
+func TestEmptyTableRefusesFocus(t *testing.T) {
+	empty := map[string]string{"columns": "Name"}
+	assert.False(t, build(t, "Table", empty).(widget.Focusable).AcceptsFocus())
+
+	filled := map[string]string{"columns": "Name", "rows": "a"}
+	assert.True(t, build(t, "Table", filled).(widget.Focusable).AcceptsFocus())
+
+	filled["disabled"] = "true"
+	assert.False(t, build(t, "Table", filled).(widget.Focusable).AcceptsFocus())
+}
+
+func TestFocusedTableHighlightsItsSelection(t *testing.T) {
+	table := build(t, "Table", map[string]string{"columns": "Name", "rows": "a,b", "selected": "0", "border": "false"})
+	resting := table.Render(10, 0)
+
+	table.(widget.Stateful).SetState(widget.State{Focused: true})
+	assert.NotEqual(t, resting, table.Render(10, 0))
 }

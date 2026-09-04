@@ -16,7 +16,7 @@ import (
 // The failure names the fix. A guard that takes a program down and leaves the reader to guess why has traded a real fix for a puzzle
 func TestTheRefusalNamesTheFix(t *testing.T) {
 	t.Serial()
-	tml.ResetDrivable()
+	exclusive(t)
 	assert.PanicsWithValue(t,
 		"tml: no way to drive this program; build it with tml.NewProgram",
 		func() { tml.CheckDrivable() })
@@ -25,8 +25,7 @@ func TestTheRefusalNamesTheFix(t *testing.T) {
 // A program tml built is driven from the frame it starts on, so the guard has nothing to say about it however long it
 func TestADrivenProgramIsNeverTouched(t *testing.T) {
 	t.Serial()
-	tml.ResetInspection()
-	tml.ResetDrivable()
+	exclusive(t)
 
 	view := loadInspectorView(t)
 	_, err := tml.NewProgram(driveModel{}, tea.WithInput(strings.NewReader("")), tea.WithOutput(io.Discard))

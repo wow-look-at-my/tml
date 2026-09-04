@@ -84,6 +84,8 @@ wheel find a `Scrollbox`. A widget that implements `Focusable` and refuses is di
 
 A pointer event carries `X`/`Y` inside the control it hit, `-1` from the keyboard. That is how a host tells one row of a
 `List` from another: a multi-part widget is still one element to the ring, and sub-targets are deliberately not a thing.
+Turning that `Y` into a row index assumes a row is a line, which a `Table` only guarantees under `wrap="false"` — a cell
+too wide for its column otherwise takes the next line and puts every row below it out of step.
 
 `UI().Target(id)` reads an element back out of the last frame. A scrolling region also reports its `Scroll` position and
 maximum there, because how far the content runs depends on how it wrapped — so following a growing transcript is asking
