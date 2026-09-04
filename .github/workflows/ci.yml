@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # Native per-platform binaries: bubbletea and clipboard ship no GOOS=cosmo files, so the APE build cannot compile this tree.
-      - uses: wow-look-at-my/go-toolchain@v1
+      - uses: wow-look-at-my/go-toolchain@master
         with:
           os: linux,darwin,windows
           arch: amd64,arm64
