@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"flag"
 	"net"
 	"os"
 	"path/filepath"
@@ -13,12 +14,20 @@ import (
 	"github.com/wow-look-at-my/tml"
 )
 
+// TestMain gives this run its own socket directory, and runs the package's tests serially. An await asks the
+// process-wide inspector what is on screen, so a concurrent test that loads its own view answers the waiting test's
+// question about a frame it never painted.
 func TestMain(m *testing.M) {
 	dir, err := os.MkdirTemp("", "tml-cli-sockets")
 	if err != nil {
 		panic(err)
 	}
 	if err := os.Setenv(tml.DirEnv, dir); err != nil {
+		panic(err)
+	}
+	// Parsing here rather than leaving it to m.Run is what makes the value stick: m.Run parses only if nobody has.
+	flag.Parse()
+	if err := flag.Set("test.parallel", "1"); err != nil {
 		panic(err)
 	}
 	code := m.Run()
