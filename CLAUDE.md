@@ -158,6 +158,10 @@ the caller's job, and hiding it defeats the point.
 
 ## Testing
 
+Tests run in parallel by default. The inspector, the drivable guard and the socket environment belong to the PROCESS, so a
+test that resets or reads any of them calls `t.Serial()` first — see `inspector_test.go` and `cli/await_test.go`. Without it
+the frame a test waits on is whatever another test painted, which fails as "the program has not painted a frame yet".
+
 Golden files live in `testdata/`. An empty golden seeds itself from the run and then FAILS, so a broken renderer can never
 bless its own output. Read the diff before trusting a reseeded golden.
 

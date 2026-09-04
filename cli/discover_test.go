@@ -43,6 +43,7 @@ func TestResolveSocketPrefersTheFlag(t *testing.T) {
 }
 
 func TestResolveSocketPrefersTheEnv(t *testing.T) {
+	t.Serial()
 	path := filepath.Join(t.TempDir(), "env.sock")
 	t.Setenv(tml.SocketEnv, path)
 	got, err := resolveSocket("")
@@ -51,6 +52,7 @@ func TestResolveSocketPrefersTheEnv(t *testing.T) {
 }
 
 func TestResolveSocketWithNoProgram(t *testing.T) {
+	t.Serial()
 	t.Setenv(tml.SocketEnv, "")
 	t.Setenv(tml.DirEnv, t.TempDir())
 	_, err := resolveSocket("")
@@ -61,6 +63,7 @@ func TestResolveSocketWithNoProgram(t *testing.T) {
 }
 
 func TestResolveSocketFindsTheOneLiveProgram(t *testing.T) {
+	t.Serial()
 	dir := t.TempDir()
 	t.Setenv(tml.SocketEnv, "")
 	t.Setenv(tml.DirEnv, dir)
@@ -72,6 +75,7 @@ func TestResolveSocketFindsTheOneLiveProgram(t *testing.T) {
 }
 
 func TestResolveSocketRefusesWhenSeveralProgramsAreRunning(t *testing.T) {
+	t.Serial()
 	dir := t.TempDir()
 	t.Setenv(tml.SocketEnv, "")
 	t.Setenv(tml.DirEnv, dir)
@@ -111,6 +115,7 @@ func TestLiveProgramsNamesADirectoryItCannotRead(t *testing.T) {
 }
 
 func TestListReportsLivePrograms(t *testing.T) {
+	t.Serial()
 	dir := t.TempDir()
 	t.Setenv(tml.DirEnv, dir)
 	listenSock(t, dir, "7.sock")
@@ -126,6 +131,7 @@ func TestListReportsLivePrograms(t *testing.T) {
 }
 
 func TestListFailsWhenNothingIsRunning(t *testing.T) {
+	t.Serial()
 	t.Setenv(tml.DirEnv, t.TempDir())
 
 	var out bytes.Buffer

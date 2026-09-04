@@ -23,8 +23,7 @@ func Render(box *layout.Box) string {
 	content := box.Text
 	switch {
 	case box.Name == "Text" && box.Overflow != "" && box.Overflow != layout.OverflowWrap:
-		// Cut each line to the width layout settled on, so lipgloss never wraps. MaxWidth would cut it too, and it has no
-		// way to mark the cut.
+		// Cut each line here, not with MaxWidth: MaxWidth cuts without marking the cut.
 		content = clip(box.Text, box.Content.W, box.Overflow)
 	case box.Native != nil && len(box.Children) == 0:
 		// The widget draws itself into the space layout settled on. A widget with children is a composer and goes the other
