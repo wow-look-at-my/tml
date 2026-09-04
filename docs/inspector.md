@@ -190,6 +190,27 @@ than offering a button that cannot work.
 `inspect.Snapshot` and `inspect.WriteCapture` are the same thing from Go, over
 any `Handler`. `inspect.SnapshotFrame` takes a frame the caller already holds.
 
+## The page works nothing out
+
+Every number the page shows comes off the protocol, and that includes which
+element a cell belongs to. `op=at` answers one cell; `op=hits` answers every
+cell of the frame in one response, as an index into the elements in document
+order. A capture carries that map, so a click there is a lookup.
+
+The alternative was a hit test written again in the page — the same rule about
+screen rects and clips, in a second language, free to drift from the engine.
+Compiling the Go to wasm would have kept one implementation and cost 9.1 MB
+(2.8 MB gzipped) for the reads alone, which a capture cannot carry.
+
+The page's scripts are TypeScript in `inspect/ui/src`, compiled by
+[ts0](https://github.com/wow-look-at-my/ts0) into `inspect/ui/inspector.js`:
+
+    pnpm install && pnpm build
+
+That output is committed, because `go:embed` reads the module's own tree and
+`go get` has to find it there. CI recompiles it and fails on any diff, so the
+committed file cannot drift from its source.
+
 ## Overrides
 
 `layout.Options.Override` is a function from id to attributes. The engine merges

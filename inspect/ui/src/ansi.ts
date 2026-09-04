@@ -10,32 +10,44 @@ const BASE = [
 	"#3b8eea", "#d670d6", "#29b8db", "#e5e5e5",
 ];
 
+// Style is the running SGR state: the colours are null until a sequence sets
+// them, which is what "the terminal's default" means here.
+interface Style {
+	fg: string | null;
+	bg: string | null;
+	bold: boolean;
+	dim: boolean;
+	italic: boolean;
+	underline: boolean;
+	reverse: boolean;
+}
+
 // xterm256 is the 256-colour cube plus the grey ramp, computed rather than
 // tabulated: the formula is the definition, and a table would be 240 lines
 // that can drift from it.
-function xterm256(n) {
+function xterm256(n: number): string {
 	if (n < 16) return BASE[n];
 	if (n < 232) {
 		const c = n - 16;
-		const level = (v) => (v === 0 ? 0 : 55 + v * 40);
+		const level = (v: number) => (v === 0 ? 0 : 55 + v * 40);
 		return rgb(level(Math.floor(c / 36) % 6), level(Math.floor(c / 6) % 6), level(c % 6));
 	}
 	const grey = 8 + (n - 232) * 10;
 	return rgb(grey, grey, grey);
 }
 
-function rgb(r, g, b) {
-	const hex = (v) => Math.max(0, Math.min(255, v)).toString(16).padStart(2, "0");
+function rgb(r: number, g: number, b: number): string {
+	const hex = (v: number) => Math.max(0, Math.min(255, v)).toString(16).padStart(2, "0");
 	return `#${hex(r)}${hex(g)}${hex(b)}`;
 }
 
-function blank() {
+function blank(): Style {
 	return { fg: null, bg: null, bold: false, dim: false, italic: false, underline: false, reverse: false };
 }
 
 // apply reads one SGR sequence into the running style. Unknown parameters are
 // skipped rather than guessed at.
-function apply(style, params) {
+function apply(style: Style, params: number[]): void {
 	for (let i = 0; i < params.length; i++) {
 		const p = params[i];
 		if (p === 0) Object.assign(style, blank());
@@ -55,14 +67,14 @@ function apply(style, params) {
 		else if (p === 39) style.fg = null;
 		else if (p === 49) style.bg = null;
 		else if (p === 38 || p === 48) {
-			const target = p === 38 ? "fg" : "bg";
+			const target: "fg" | "bg" = p === 38 ? "fg" : "bg";
 			if (params[i + 1] === 5) { style[target] = xterm256(params[i + 2] ?? 0); i += 2; }
 			else if (params[i + 1] === 2) { style[target] = rgb(params[i + 2], params[i + 3], params[i + 4]); i += 4; }
 		}
 	}
 }
 
-function css(style) {
+function css(style: Style): string {
 	const parts = [];
 	const fg = style.reverse ? style.bg ?? "#000000" : style.fg;
 	const bg = style.reverse ? style.fg ?? "#cccccc" : style.bg;
@@ -79,7 +91,7 @@ const ESCAPE = /\x1b\[([0-9;:]*)m/g;
 
 // toHTML converts one frame. Non-SGR escapes are dropped: they move a cursor
 // the preview does not have, and leaving them in would print as mojibake.
-export function toHTML(text) {
+export function toHTML(text: string): string {
 	const style = blank();
 	let html = "";
 	let at = 0;
@@ -95,7 +107,7 @@ export function toHTML(text) {
 	return html.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, "");
 }
 
-function span(chunk, style) {
+function span(chunk: string, style: Style): string {
 	if (chunk === "") return "";
 	const escaped = chunk
 		.replaceAll("&", "&amp;")

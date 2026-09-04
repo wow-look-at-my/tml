@@ -71,10 +71,12 @@ type Response struct {
 	Tree     *Node      `json:"tree,omitempty"`
 	Frame    *FrameInfo `json:"frame,omitempty"`
 	IDs      []string   `json:"ids,omitempty"`
+	// Hits is At's answer per cell, row by row, indexing the elements in document order. An empty cell is negative.
+	Hits [][]int `json:"hits,omitempty"`
 	// Hit is the id under a cell for op=at. It is empty when nothing covers the cell, which Found tells apart from "an
 	Hit   string `json:"hit"`
 	Found bool   `json:"found,omitempty"`
 }
 
 // Ops are every operation the server answers, which is also what --help and the browser's own error messages are built
-var Ops = []string{"query", "elements", "ids", "tree", "frame", "at", "key", "click", "restyle", "reset"}
+var Ops = []string{"query", "elements", "ids", "tree", "frame", "at", "hits", "key", "click", "restyle", "reset"}

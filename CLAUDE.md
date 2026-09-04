@@ -148,6 +148,11 @@ a frozen frame as one self-contained HTML file, from a running program or from a
 `inspect.Snapshot` asks the questions the page asks on load, so a capture cannot report what the inspector does not. The
 driving controls are absent there, because a keystroke and a restyle both need the program. See docs/inspector.md.
 
+The page decides NOTHING about layout. Which element covers a cell is `op=hits`, `inspect.At`'s answer for every cell in
+one response, so a capture resolves a click by lookup rather than by a second hit test of its own. Its scripts are
+TypeScript under `inspect/ui/src`, compiled by [ts0](https://github.com/wow-look-at-my/ts0) (`pnpm build`) into the
+committed `inspect/ui/inspector.js` that `go:embed` reads; CI recompiles and fails on a diff.
+
 A test waits on the screen rather than sleeping: `query --await REGEX` and `--await-gone` block until the field matches,
 failing with what the element last drew, and `frame --since` blocks until the next paint. `frame --max-width` measures
 the widest line in display cells, which is the number that catches a region painting past its own edge.

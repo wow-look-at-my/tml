@@ -12,6 +12,8 @@ type Capture struct {
 	Frame    FrameInfo `json:"frame"`
 	Elements []Element `json:"elements"`
 	Tree     *Node     `json:"tree"`
+	// Hits is At's answer per cell, indexing Elements, so a written page resolves a click by lookup.
+	Hits [][]int `json:"hits"`
 }
 
 // Snapshot asks h the questions the browser asks when it loads. A capture therefore answers through the same path the
@@ -35,7 +37,13 @@ func Snapshot(h Handler) (Capture, error) {
 	if tree.Tree == nil {
 		return Capture{}, fmt.Errorf("the answer to op=tree carried no tree")
 	}
-	return Capture{Frame: *frame.Frame, Elements: elements.Elements, Tree: tree.Tree}, nil
+	hits := h.Handle(Request{Op: "hits"})
+	if hits.Error != "" {
+		return Capture{}, fmt.Errorf("cannot read the hit map: %s", hits.Error)
+	}
+	return Capture{
+		Frame: *frame.Frame, Elements: elements.Elements, Tree: tree.Tree, Hits: hits.Hits,
+	}, nil
 }
 
 // SnapshotFrame captures a frame the caller already holds, through the server the socket answers from.
@@ -46,13 +54,11 @@ type still struct{ frame Frame }
 
 func (s still) Frame() (Frame, bool) { return s.frame, s.frame.Box != nil }
 
-// The tags the live page loads its assets with, and the seam between its modules. A capture is a single file, so the
-// assets are inlined and the seam goes. A marker that no longer matches fails the write.
+// The tags the live page loads its assets with. Each becomes the asset itself, and a marker that no longer matches
+// fails the write.
 const (
-	styleTag   = `<link rel="stylesheet" href="inspector.css" />`
-	scriptTag  = `<script type="module" src="inspector.js"></script>`
-	exportMark = "export function toHTML"
-	importMark = `import { toHTML } from "./ansi.js";` + "\n"
+	styleTag  = `<link rel="stylesheet" href="inspector.css" />`
+	scriptTag = `<script type="module" src="inspector.js"></script>`
 )
 
 // WriteCapture writes c as a single HTML file: the inspector's own page, stylesheet and script, plus the frozen
@@ -66,7 +72,7 @@ func WriteCapture(w io.Writer, c Capture) error {
 	if err != nil {
 		return err
 	}
-	script, err := inlineScript()
+	script, err := asset("inspector.js")
 	if err != nil {
 		return err
 	}
@@ -87,27 +93,6 @@ func WriteCapture(w io.Writer, c Capture) error {
 	}
 	_, err = io.WriteString(w, page)
 	return err
-}
-
-// inlineScript joins the page's modules. The import and its matching export go, leaving nothing to resolve.
-func inlineScript() (string, error) {
-	ansi, err := asset("ansi.js")
-	if err != nil {
-		return "", err
-	}
-	main, err := asset("inspector.js")
-	if err != nil {
-		return "", err
-	}
-	ansi, err = replace(ansi, exportMark, "function toHTML")
-	if err != nil {
-		return "", err
-	}
-	main, err = replace(main, importMark, "")
-	if err != nil {
-		return "", err
-	}
-	return ansi + "\n" + main, nil
 }
 
 func asset(name string) (string, error) {

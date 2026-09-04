@@ -27,6 +27,30 @@ func TestSnapshotHoldsTheFrameTheTreeAndTheElements(t *testing.T) {
 	assert.Equal(t, []string{"app", "status"}, ids)
 }
 
+// The hit map IS At's answer, cell by cell. A page reads it instead of working out what covers a cell, so nothing can
+// disagree with At -- and this is what says so.
+func TestSnapshotHoldsAtsAnswerForEveryCell(t *testing.T) {
+	f := newFake()
+	got, err := SnapshotFrame(f.frame)
+	require.NoError(t, err)
+
+	require.Len(t, got.Hits, f.frame.Height)
+	for y, row := range got.Hits {
+		require.Len(t, row, f.frame.Width)
+		for x, index := range row {
+			want := At(f.frame.Box, x, y)
+			if index < 0 {
+				assert.Empty(t, want, "the map says nothing covers %d,%d", x, y)
+				continue
+			}
+			assert.Equal(t, want, got.Elements[index].ID, "the element the map names at %d,%d", x, y)
+		}
+	}
+
+	assert.Equal(t, "status", got.Elements[got.Hits[3][2]].ID, "the child covers its own cells")
+	assert.Equal(t, "app", got.Elements[got.Hits[0][0]].ID, "the root covers the rest")
+}
+
 // A program that has not painted has nothing to capture, and the reason it gives is the program's own.
 func TestSnapshotFailsWhenNothingHasBeenPainted(t *testing.T) {
 	_, err := Snapshot(NewServer(&fake{}))
@@ -47,8 +71,7 @@ func TestWriteCaptureInlinesEveryAsset(t *testing.T) {
 
 	assert.NotContains(t, page, styleTag, "the stylesheet link is replaced by the stylesheet")
 	assert.NotContains(t, page, scriptTag, "the script tag is replaced by the script")
-	assert.NotContains(t, page, importMark, "an import cannot resolve from a file")
-	assert.NotContains(t, page, exportMark, "an export outside a module file is a syntax error")
+	assert.NotContains(t, page, `from "./`, "a relative import cannot resolve from a file")
 	assert.Contains(t, page, "--highlight", "the stylesheet's tokens are in the page")
 	assert.Contains(t, page, "function toHTML", "the ANSI converter is in the page")
 	assert.Contains(t, page, "answerFromCapture", "the reads the page makes are answered from the document")
