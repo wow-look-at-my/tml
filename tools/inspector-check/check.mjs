@@ -231,8 +231,39 @@ try {
 	await waitFor('reset to restore the document',
 		async () => (await rpc({ op: 'query', id: 'send' })).element.rect.w === start.w);
 
+	// 6. A capture of the same program, opened from the filesystem. It is the
+	// same page over a frozen frame, so it has to come up with nothing served.
+	const captured = join(work, 'capture.html');
+	tml('capture', '-o', captured);
+	const still = await browser.newPage({ viewport: { width: 1500, height: 950 } });
+	still.on('pageerror', (err) => { throw err; });
+	// A capture that reaches the network is a capture that opens blank wherever
+	// it is sent, so any request other than the file itself fails this check.
+	still.on('request', (req) => {
+		if (!req.url().startsWith('file://')) throw new Error(`the capture fetched ${req.url()}`);
+	});
+	await still.goto(`file://${captured}`, { waitUntil: 'domcontentloaded' });
+	await still.waitForFunction(() => document.body.dataset.capture === 'true', { timeout: 20000 });
+
+	const drew = await still.textContent('#preview');
+	if (!drew.includes('tml agent')) fail('the capture preview', drew.slice(0, 80), 'the frame the program painted');
+
+	await still.click('.node[data-id="session"]');
+	await still.waitForFunction(() => document.querySelector('#selected-id')?.textContent.trim() === 'session',
+		{ timeout: 5000 });
+	const geometry = await still.textContent('#detail dd:nth-of-type(3)');
+	const live = (await rpc({ op: 'query', id: 'session' })).element.rect;
+	const want = `x${live.x} y${live.y} ${live.w}x${live.h}`;
+	if (geometry.trim() !== want) fail('the capture reports another geometry', geometry.trim(), want);
+
+	// Driving needs the program, so the controls that drive it are not offered.
+	const offered = await still.evaluate(() =>
+		['keys', 'restyle'].filter((id) => getComputedStyle(document.getElementById(id)).display !== 'none'));
+	if (offered.length) fail('a capture offers a control it cannot honour', offered, []);
+
 	console.log(`ok: queried by name, walked the tree, drove a key, restyled, ` +
-		`and dragged ${start.w} columns to ${width} from the browser`);
+		`dragged ${start.w} columns to ${width} from the browser, ` +
+		`and opened a capture of the same frame off the filesystem`);
 } finally {
 	if (browser) await browser.close();
 	cleanup();
