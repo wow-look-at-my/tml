@@ -170,6 +170,47 @@ writing `width` and `height`. Both are real overrides that the engine lays out,
 so a sibling reflows and the terminal shows the same thing the page does. The
 attribute form sets any attribute by name, and one button drops every override.
 
+## A capture is that page over a frozen frame
+
+`tml capture` writes the same page as a self-contained HTML file. It asks the
+questions the browser asks on load -- the frame, the elements, the tree -- and
+writes the answers into the document alongside the page's own stylesheet and
+script. Nothing is fetched when it opens, so the frame travels to whoever needs
+to see it and outlives the program that drew it.
+
+    tml capture -o frame.html                     # the running program
+    tml capture app.tml --width 96 --height 26 -o frame.html
+
+The reads work exactly as they do live: pick an element from the tree or click
+it in the preview, and read its rect, content, clip, scroll and drawn text. The
+writes are gone, and visibly so -- a keystroke and a restyle both need the
+program to lay them out again, so a capture leaves those controls out rather
+than offering a button that cannot work.
+
+`inspect.Snapshot` and `inspect.WriteCapture` are the same thing from Go, over
+any `Handler`. `inspect.SnapshotFrame` takes a frame the caller already holds.
+
+## The page works nothing out
+
+Every number the page shows comes off the protocol, and that includes which
+element a cell belongs to. `op=at` answers one cell; `op=hits` answers every
+cell of the frame in one response, as an index into the elements in document
+order. A capture carries that map, so a click there is a lookup.
+
+The alternative was a hit test written again in the page — the same rule about
+screen rects and clips, in a second language, free to drift from the engine.
+Compiling the Go to wasm would have kept one implementation and cost 9.1 MB
+(2.8 MB gzipped) for the reads alone, which a capture cannot carry.
+
+The page's scripts are TypeScript in `inspect/ui/src`, compiled by
+[ts0](https://github.com/wow-look-at-my/ts0) into `inspect/ui/inspector.js`:
+
+    pnpm install && pnpm build
+
+That output is committed, because `go:embed` reads the module's own tree and
+`go get` has to find it there. CI recompiles it and fails on any diff, so the
+committed file cannot drift from its source.
+
 ## Overrides
 
 `layout.Options.Override` is a function from id to attributes. The engine merges
@@ -182,5 +223,7 @@ picture.
 
 `tools/inspector-check/check.mjs` runs `build/agent` under a pty, asks the CLI
 the questions above, then drives the browser with a pointer and reads the result
-back off the socket. It runs in CI. Starting the agent with `tea.NewProgram`
-instead of `tml.Run` is enough to turn it red.
+back off the socket. It then captures the same program and opens the file from
+disk, where a request to anything but that file fails the check. It runs in CI.
+Starting the agent with `tea.NewProgram` instead of `tml.Run` is enough to turn
+it red.

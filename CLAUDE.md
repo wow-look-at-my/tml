@@ -54,6 +54,10 @@ rather than joined, since they sit at coordinates.
 `Canvas` positions children freely through `Canvas.x`, `Canvas.y` and `Canvas.anchor`, and fills whatever it is offered
 rather than shrinking. A widget can name its own default anchor, which is how `<Popup>` centres itself.
 
+`Text` wraps by default, and `overflow="clip"` or `overflow="ellipsis"` cuts each line at the width instead. A clipped
+Text keeps its line count however narrow it gets, so a card that holds a log tail keeps its height when one line runs
+long. Clipping happens in `render`, because `MaxWidth` cuts without marking the cut.
+
 `Dock` is NOT implemented. It is deliberately absent from `sema.Builtins`, so using it is an unknown-element error rather
 than a silent blank. Add a panel to that list only once it lays out.
 
@@ -139,7 +143,15 @@ builds it. A program built with `tea.NewProgram` is readable and not drivable, a
 `DriveGrace` rather than leave the debugger half working — `testdata/undrivable` is the program that proves the guard
 still fires. A model that caches its frame must invalidate on `tml.RepaintMsg` — the one line a host writes, and a
 restyle fails by name when it is missing. `tml serve` opens a browser inspector on the same protocol, where a click
-selects and a drag rewrites the element's attributes as a real layout override. See docs/inspector.md.
+selects and a drag rewrites the element's attributes as a real layout override. `tml capture` writes that same page over
+a frozen frame as one self-contained HTML file, from a running program or from a document laid out at a given size:
+`inspect.Snapshot` asks the questions the page asks on load, so a capture cannot report what the inspector does not. The
+driving controls are absent there, because a keystroke and a restyle both need the program. See docs/inspector.md.
+
+The page decides NOTHING about layout. Which element covers a cell is `op=hits`, `inspect.At`'s answer for every cell in
+one response, so a capture resolves a click by lookup rather than by a second hit test of its own. Its scripts are
+TypeScript under `inspect/ui/src`, compiled by [ts0](https://github.com/wow-look-at-my/ts0) (`pnpm build`) into the
+committed `inspect/ui/inspector.js` that `go:embed` reads; CI recompiles and fails on a diff.
 
 A test waits on the screen rather than sleeping: `query --await REGEX` and `--await-gone` block until the field matches,
 failing with what the element last drew, and `frame --since` blocks until the next paint. `frame --max-width` measures
@@ -153,6 +165,10 @@ that mattered. A failed reload is delivered to `onChange` as an error and the pr
 the caller's job, and hiding it defeats the point.
 
 ## Testing
+
+Tests run in parallel by default. The inspector, the drivable guard and the socket environment belong to the PROCESS, so a
+test that resets or reads any of them calls `t.Serial()` first — see `inspector_test.go` and `cli/await_test.go`. Without it
+the frame a test waits on is whatever another test painted, which fails as "the program has not painted a frame yet".
 
 Golden files live in `testdata/`. An empty golden seeds itself from the run and then FAILS, so a broken renderer can never
 bless its own output. Read the diff before trusting a reseeded golden.

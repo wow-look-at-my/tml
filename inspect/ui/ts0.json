@@ -1,0 +1,7 @@
+{
+  "entry": "src/inspector.ts",
+  "outfile": "inspector.js",
+  "target": "browser",
+  "format": "esm",
+  "sourcemap": false
+}

@@ -27,6 +27,7 @@ const inspectorView = `<?xml version="1.1" encoding="UTF-8"?>
 	</Template>
 </Component>`
 
+// Every test here owns the process's one inspector, so each one takes the serial barrier before it resets that state.
 func loadInspectorView(t *testing.T) *tml.View {
 	t.Helper()
 	view, err := tml.Load(fstest.MapFS{"app.tml": &fstest.MapFile{Data: []byte(inspectorView)}},
@@ -37,6 +38,7 @@ func loadInspectorView(t *testing.T) *tml.View {
 
 // The frame the inspector answers from is the frame Render painted, so an assertion is about what the program actually
 func TestInspectorAnswersFromTheFrameTheViewPainted(t *testing.T) {
+	t.Serial()
 	exclusive(t)
 	view := loadInspectorView(t)
 	insp := tml.Inspect()
@@ -61,6 +63,7 @@ func TestInspectorAnswersFromTheFrameTheViewPainted(t *testing.T) {
 
 // A restyle is a real override: the next layout uses it, so the geometry the inspector reports back is the geometry
 func TestRestyleChangesTheNextFramesLayout(t *testing.T) {
+	t.Serial()
 	exclusive(t)
 	view := loadInspectorView(t)
 	insp := tml.Inspect()
@@ -92,6 +95,7 @@ func TestRestyleChangesTheNextFramesLayout(t *testing.T) {
 
 // A host that never wired a repaint says so, rather than reporting an override that stays off the screen.
 func TestRestyleWithNoRepaintWiringSaysSo(t *testing.T) {
+	t.Serial()
 	exclusive(t)
 	view := loadInspectorView(t)
 	insp := tml.Inspect()
@@ -105,6 +109,7 @@ func TestRestyleWithNoRepaintWiringSaysSo(t *testing.T) {
 
 // A host that wires no input says so, rather than accepting a keystroke and dropping it.
 func TestAnInspectorWithNoInputWiringRefusesToDrive(t *testing.T) {
+	t.Serial()
 	exclusive(t)
 	loadInspectorView(t)
 	insp := tml.Inspect()
@@ -120,6 +125,7 @@ func TestAnInspectorWithNoInputWiringRefusesToDrive(t *testing.T) {
 
 // OnFrame is what wakes a watcher: the hook fires on the paint, not on a timer.
 func TestOnFrameFiresPerPaint(t *testing.T) {
+	t.Serial()
 	exclusive(t)
 	view := loadInspectorView(t)
 
@@ -134,6 +140,7 @@ func TestOnFrameFiresPerPaint(t *testing.T) {
 
 // The socket is the CLI's whole contract, so it is exercised here against a real view rather than only against a
 func TestSocketServesARealViewsFrame(t *testing.T) {
+	t.Serial()
 	exclusive(t)
 	view := loadInspectorView(t)
 	insp := tml.Inspect()
@@ -152,6 +159,7 @@ func TestSocketServesARealViewsFrame(t *testing.T) {
 
 // A host that recompiles its document renders through a new View, and the only thing it does about that is load. The
 func TestLoadingAgainMovesTheInspectorToTheNewView(t *testing.T) {
+	t.Serial()
 	exclusive(t)
 	first := loadInspectorView(t)
 	insp := tml.Inspect()
@@ -181,6 +189,7 @@ func TestLoadingAgainMovesTheInspectorToTheNewView(t *testing.T) {
 
 // Overrides are the inspector's, not the view's, so they survive a reload and the new view lays them out.
 func TestOverridesSurviveAReload(t *testing.T) {
+	t.Serial()
 	exclusive(t)
 	loadInspectorView(t)
 	insp := tml.Inspect()
@@ -201,6 +210,7 @@ func TestOverridesSurviveAReload(t *testing.T) {
 
 // The socket is Load's doing, not a host's. Nothing below wires an inspector, serves anything, or knows an inspector exists: it
 func TestLoadServesTheSocketWithNoHostWiring(t *testing.T) {
+	t.Serial()
 	exclusive(t)
 	path := filepath.Join(t.TempDir(), "auto.sock")
 	t.Setenv(tml.SocketEnv, path)
@@ -225,6 +235,7 @@ func TestLoadServesTheSocketWithNoHostWiring(t *testing.T) {
 
 // A view that cannot be served is not returned at all. Reporting it and handing back a working View would leave a
 func TestAViewThatCannotBeServedIsNotReturned(t *testing.T) {
+	t.Serial()
 	exclusive(t)
 	// A regular file where the socket's directory has to be. ListenSocket creates a missing directory on purpose, so an
 	blocker := filepath.Join(t.TempDir(), "not-a-dir")
@@ -241,6 +252,7 @@ func TestAViewThatCannotBeServedIsNotReturned(t *testing.T) {
 
 // The socket is not conditional on the environment: a program that sets nothing at all still serves, and the path it
 func TestAProgramServesWithNothingSet(t *testing.T) {
+	t.Serial()
 	exclusive(t)
 	t.Setenv(tml.SocketEnv, "")
 
@@ -256,6 +268,7 @@ func TestAProgramServesWithNothingSet(t *testing.T) {
 
 // The directory carries the right to drive every program in it, so it is this user's and nobody else's.
 func TestTheSocketDirectoryIsPrivateToThisUser(t *testing.T) {
+	t.Serial()
 	exclusive(t)
 	t.Setenv(tml.SocketEnv, "")
 

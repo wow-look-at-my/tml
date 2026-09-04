@@ -34,6 +34,7 @@ tests:
 			- "  input "
 			- "  restyle "
 			- "  serve "
+			- "  capture "
 			- "  list "
 		"!stdout":
 			- tml-test
@@ -74,6 +75,20 @@ tests:
 	  outputs:
 		stdout:
 			- '"id": "header"'
+
+	- desc: capture writes a page that loads nothing
+	  cmd: '"$GO_TOOLCHAIN_DATS_BUILD_DIR/tml" capture testdata/inspect/app.tml --width 40 --height 8 --prop title=STATUS --prop rows=one,two'
+	  inputs:
+		env:
+			TML_INSPECT_DIR: "{outputs.sockets}"
+	  outputs:
+		stdout:
+			- "<!doctype html>"
+			- 'id="capture"'
+			- STATUS
+		"!stdout":
+			- 'src="inspector.js"'
+			- 'href="inspector.css"'
 
 	- desc: ids fails when no program is running
 	  cmd: 'dir=$(mktemp -d); TML_INSPECT_SOCKET= TML_INSPECT_DIR="$dir" "$GO_TOOLCHAIN_DATS_BUILD_DIR/tml" ids; rc=$?; rmdir "$dir"; exit $rc'

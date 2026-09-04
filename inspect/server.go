@@ -179,6 +179,8 @@ func (s *Server) Handle(req Request) Response {
 		return s.frame(req)
 	case "at":
 		return s.at(req)
+	case "hits":
+		return s.hits()
 	case "key":
 		return s.key(req)
 	case "click":
@@ -290,6 +292,31 @@ func (s *Server) at(req Request) Response {
 	}
 	id := At(f.Box, req.X, req.Y)
 	return Response{Hit: id, Found: id != ""}
+}
+
+// hits answers at for every cell in a single response. A reader with no way to call back -- a written page -- resolves
+// a cell by looking it up here, rather than carrying its own copy of what covers what and drifting from this.
+func (s *Server) hits() Response {
+	f, err := s.current()
+	if err != nil {
+		return Response{Error: err.Error()}
+	}
+	where := map[string]int{}
+	for i, id := range IDs(f.Box) {
+		where[id] = i
+	}
+	rows := make([][]int, f.Height)
+	for y := range rows {
+		row := make([]int, f.Width)
+		for x := range row {
+			row[x] = -1
+			if id := At(f.Box, x, y); id != "" {
+				row[x] = where[id]
+			}
+		}
+		rows[y] = row
+	}
+	return Response{Hits: rows}
 }
 
 func (s *Server) key(req Request) Response {
