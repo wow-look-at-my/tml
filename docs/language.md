@@ -171,7 +171,9 @@ Panels:
 - `Grid` — `columns`, `rows`, `gap`, with placement declared per child
 - `Canvas` — free positioning: children sit where they are put, and overlap
 - `Box` — a single-child decorator for border, padding, background and alignment
-- `Text` — character data, wrapped to the width it is given
+- `Text` — character data, wrapped to the width it is given. `overflow="clip"` cuts each line at that width instead, and
+  `overflow="ellipsis"` marks the cut. A clipped Text is as tall as it has lines however narrow it gets, which is what
+  keeps a fixed-height card fixed when one line inside it runs long
 - `Spacer` — occupies space and draws nothing
 
 `Dock` is **not implemented yet**. It is deliberately absent from the builtin list, so using it is reported as an unknown

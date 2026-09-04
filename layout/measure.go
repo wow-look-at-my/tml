@@ -79,6 +79,11 @@ func (e *Engine) measureText(box *Box, inner Constraints) Size {
 	if inner.MaxW <= 0 || natural <= inner.MaxW {
 		return Size{W: natural, H: lipgloss.Height(box.Text)}
 	}
+	// A clipped Text is as tall as it has lines, however narrow it gets. A card holding a log tail keeps its height, and a
+	// line too long for it cannot push the card's border down.
+	if box.Overflow == OverflowClip || box.Overflow == OverflowEllipsis {
+		return Size{W: inner.MaxW, H: lipgloss.Height(box.Text)}
+	}
 	// lipgloss.Wrap is the call Style.Render makes to wrap, so this counts the lines the paint will produce. Rendering a
 	wrapped := lipgloss.Wrap(box.Text, inner.MaxW, "")
 	return Size{W: inner.MaxW, H: lipgloss.Height(wrapped)}

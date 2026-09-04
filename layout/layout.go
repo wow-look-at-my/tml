@@ -25,6 +25,18 @@ type Rect struct{ X, Y, W, H int }
 // Constraints is the space available to a node.
 type Constraints struct{ MaxW, MaxH int }
 
+// Overflow is what a Text does with a line wider than the space it is given.
+type Overflow string
+
+const (
+	// OverflowWrap continues the line on the next row, which is lipgloss's own behavior and the default here.
+	OverflowWrap Overflow = "wrap"
+	// OverflowClip cuts the line at the edge.
+	OverflowClip Overflow = "clip"
+	// OverflowEllipsis cuts it earlier and marks the cut.
+	OverflowEllipsis Overflow = "ellipsis"
+)
+
 // Box is a laid-out node.
 type Box struct {
 	Name string
@@ -38,6 +50,8 @@ type Box struct {
 	Content Size
 	Style   style.Resolved
 	Text    string
+	// Overflow is what a Text does with more text than its width holds; empty on every other element.
+	Overflow Overflow
 	// Native is the widget behind this element, if any. Layout measures it and the renderer asks it to draw; TML never
 	Native   widget.Native
 	Children []*Box
@@ -99,7 +113,7 @@ func (e *Engine) SetOverride(fn func(id string) map[string]string) { e.opts.Over
 
 // layoutAttrs are consumed by the engine; every other attribute is styling, unless a widget claims it. Attached
 var layoutAttrs = set.Of(
-	"width", "height", "orientation", "gap", "style",
+	"width", "height", "orientation", "gap", "style", "overflow",
 	"columns", "rows", "id", "action",
 	"offset", "offsetX", "scrollbar",
 	"title", "titleAlign",
@@ -188,6 +202,9 @@ func (p *pass) build(node *sema.Node) (*Box, error) {
 	// Text collapses its character data into a single string; every other element keeps its children as boxes.
 	if node.Name == "Text" {
 		box.Text = textOf(node)
+		if box.Overflow, err = overflowAttr(node, attrs); err != nil {
+			return nil, err
+		}
 		return box, nil
 	}
 	if native, ok := e.opts.Widgets.Lookup(node.Name); ok && !node.Component {
@@ -262,6 +279,27 @@ func textOf(node *sema.Node) string {
 		}
 	}
 	return b.String()
+}
+
+// overflowAttr reads what a Text does with more text than its width holds. Wrapping is the default, because that loses
+// nothing. A line the reader scans rather than reads -- a log tail in a card -- says clip instead, and then the box is
+// as tall as the text has lines however narrow it gets.
+func overflowAttr(node *sema.Node, attrs map[string]string) (Overflow, error) {
+	raw, ok := attrs["overflow"]
+	if !ok {
+		value, present := node.Attr("overflow")
+		if !present {
+			return OverflowWrap, nil
+		}
+		raw = value.String()
+	}
+	switch Overflow(raw) {
+	case OverflowWrap, OverflowClip, OverflowEllipsis:
+		return Overflow(raw), nil
+	default:
+		return "", &syntax.Error{Pos: node.Pos, Message: fmt.Sprintf(
+			"<Text> overflow: %q is not wrap, clip or ellipsis", raw)}
+	}
 }
 
 // lengthAttr reads a size off the node, or off the merged attributes when an override supplied a size. The override wins,
