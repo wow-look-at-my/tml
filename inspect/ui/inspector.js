@@ -22,6 +22,7 @@ const status = $("status");
 let selected = null;
 let elements = [];
 let cell = { w: 8, h: 16 };
+let pad = { x: 8, y: 8 };
 let drag = null;
 
 // capture is the frozen frame this page was written around, or null on the
@@ -82,49 +83,64 @@ function setStatus(text, state) {
 	status.dataset.state = state;
 }
 
-// measureCell reads the real glyph box out of the rendered preview, so a
-// pointer position converts to a terminal cell exactly. Guessing the size
-// would put every click one column off at some font size.
+// measureCell reads the real cell box out of the rendered preview, so a cell
+// converts to a pixel exactly. Guessing would put every click a column off at
+// some font size.
+//
+// The row pitch is the LINE box, not the glyph box: a span reports the font's
+// own height, which is shorter than the line it sits on, and the difference
+// compounds down the frame until the outline is a row above the element.
 function measureCell() {
 	const probe = document.createElement("span");
-	probe.textContent = "X".repeat(10);
-	probe.style.position = "absolute";
-	probe.style.visibility = "hidden";
+	probe.textContent = "X".repeat(100);
+	probe.style.cssText = "position:absolute;visibility:hidden;white-space:pre;font:inherit";
 	preview.appendChild(probe);
-	const box = probe.getBoundingClientRect();
+	const width = probe.getBoundingClientRect().width / 100;
 	probe.remove();
-	if (box.width > 0) cell = { w: box.width / 10, h: box.height };
+
+	const style = getComputedStyle(preview);
+	const height = parseFloat(style.lineHeight);
+	if (width > 0 && height > 0) cell = { w: width, h: height };
+	pad = { x: parseFloat(style.paddingLeft), y: parseFloat(style.paddingTop) };
 }
+
+// frameRows is the viewport the program painted, which is where the label runs
+// out of room below the outline.
+let frameRows = 0;
 
 function drawFrame(frame) {
 	preview.innerHTML = toHTML(frame.ansi ?? frame.text ?? "");
 	$("frame-meta").textContent = `#${frame.seq} · ${frame.width}x${frame.height}`;
+	frameRows = frame.height;
 	measureCell();
 	placeHighlight();
 }
 
 // placeHighlight puts the outline over the selected element, in cell units
-// scaled by the measured glyph box.
+// scaled by the measured cell box. It carries the element's name, because an
+// outline on its own says where something is and not what it is.
 function placeHighlight() {
 	const el = elements.find((e) => e.id === selected);
 	if (!el) {
 		highlight.hidden = true;
 		return;
 	}
-	const pad = 8; // matches #preview's padding
 	highlight.hidden = false;
-	highlight.style.left = `${pad + el.rect.x * cell.w}px`;
-	highlight.style.top = `${pad + el.rect.y * cell.h}px`;
+	highlight.style.left = `${pad.x + el.rect.x * cell.w}px`;
+	highlight.style.top = `${pad.y + el.rect.y * cell.h}px`;
 	highlight.style.width = `${Math.max(1, el.rect.w) * cell.w}px`;
 	highlight.style.height = `${Math.max(1, el.rect.h) * cell.h}px`;
+	highlight.dataset.label = `${el.element} #${el.id}  ${el.rect.w}x${el.rect.h}@${el.rect.x},${el.rect.y}`;
+	// The label hangs below the outline, and moves inside on the bottom row so
+	// it stays on the picture rather than under it.
+	highlight.dataset.place = el.rect.y + el.rect.h >= frameRows - 1 ? "inside" : "below";
 }
 
 function cellAt(event) {
 	const box = preview.getBoundingClientRect();
-	const pad = 8;
 	return {
-		x: Math.floor((event.clientX - box.left - pad) / cell.w),
-		y: Math.floor((event.clientY - box.top - pad) / cell.h),
+		x: Math.floor((event.clientX - box.left - pad.x) / cell.w),
+		y: Math.floor((event.clientY - box.top - pad.y) / cell.h),
 	};
 }
 
