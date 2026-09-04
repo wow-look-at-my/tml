@@ -83,11 +83,12 @@ func (t *dataTable) build(w int) *table.Table {
 }
 
 func (t *dataTable) Measure(maxW, _ int) (int, int) {
-	out := t.build(0).String()
-	w, h := lipgloss.Size(out)
+	w, _ := lipgloss.Size(t.build(0).String())
 	if maxW > 0 {
 		w = min(w, maxW)
 	}
+	// Height at the width it will draw at, not at the width it wants: a wrapped cell that measured short is clipped.
+	_, h := lipgloss.Size(t.build(w).String())
 	return w, h
 }
 

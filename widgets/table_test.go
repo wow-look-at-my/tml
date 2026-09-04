@@ -68,6 +68,23 @@ func TestTableMeasuresWhatItDraws(t *testing.T) {
 	assert.Equal(t, 8, narrow, "a table never asks for more than it was offered")
 }
 
+// A cell too wide for its column wraps, so the height a table reports has to be the height at the width it was
+// offered. Measured at its natural width instead, the wrapped lines are clipped off by whatever placed it, and rows
+// disappear off the bottom of a table that had room for them.
+func TestTableMeasuresTheHeightItWrapsTo(t *testing.T) {
+	table := build(t, "Table", map[string]string{
+		"columns": "path",
+		"rows":    "/a/long/path/that/will/not/fit,/another/long/path/that/will/not/fit",
+		"border":  "false",
+	})
+
+	const narrow = 14
+	_, measured := table.Measure(narrow, 0)
+	assert.Equal(t, len(split(table.Render(narrow, 0))), measured,
+		"the measured height is the height it draws")
+	assert.Contains(t, table.Render(narrow, 0), "another", "both rows are drawn")
+}
+
 func TestTableRejectsANonBooleanBorder(t *testing.T) {
 	_, err := tryBuild("Table", map[string]string{"border": "yes"})
 	require.Error(t, err)
