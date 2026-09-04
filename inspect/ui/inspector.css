@@ -312,3 +312,9 @@ pre {
 .error {
 	color: var(--highlight);
 }
+
+/* A capture holds a frame nothing is going to repaint. The controls that drive
+   a program go away, rather than sit there and fail when they are used. */
+body[data-capture] :is(#keys, #restyle, .toggle, #detail-pane h3:first-of-type) {
+	display: none;
+}

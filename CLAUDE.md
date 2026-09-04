@@ -143,7 +143,10 @@ builds it. A program built with `tea.NewProgram` is readable and not drivable, a
 `DriveGrace` rather than leave the debugger half working — `testdata/undrivable` is the program that proves the guard
 still fires. A model that caches its frame must invalidate on `tml.RepaintMsg` — the one line a host writes, and a
 restyle fails by name when it is missing. `tml serve` opens a browser inspector on the same protocol, where a click
-selects and a drag rewrites the element's attributes as a real layout override. See docs/inspector.md.
+selects and a drag rewrites the element's attributes as a real layout override. `tml capture` writes that same page over
+a frozen frame as one self-contained HTML file, from a running program or from a document laid out at a given size:
+`inspect.Snapshot` asks the questions the page asks on load, so a capture cannot report what the inspector does not. The
+driving controls are absent there, because a keystroke and a restyle both need the program. See docs/inspector.md.
 
 A test waits on the screen rather than sleeping: `query --await REGEX` and `--await-gone` block until the field matches,
 failing with what the element last drew, and `frame --since` blocks until the next paint. `frame --max-width` measures

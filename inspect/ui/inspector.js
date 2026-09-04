@@ -4,6 +4,11 @@
 // Every number on screen comes from the program's own layout. Nothing here
 // re-measures anything: a preview that computed its own geometry would agree
 // with itself and disagree with the terminal.
+//
+// A capture is the same page over a frozen frame: `tml capture` writes the
+// answers into the document, and the reads below come from there instead of
+// from a socket. The page is one page either way, so a capture cannot show a
+// different thing from the inspector it was captured out of.
 
 import { toHTML } from "./ansi.js";
 
@@ -19,7 +24,15 @@ let elements = [];
 let cell = { w: 8, h: 16 };
 let drag = null;
 
+// capture is the frozen frame this page was written around, or null on the
+// live page.
+const capture = (() => {
+	const held = document.getElementById("capture");
+	return held ? JSON.parse(held.textContent) : null;
+})();
+
 async function rpc(body) {
+	if (capture) return answerFromCapture(body);
 	const res = await fetch("rpc", {
 		method: "POST",
 		headers: { "content-type": "application/json" },
@@ -28,6 +41,40 @@ async function rpc(body) {
 	const answer = await res.json();
 	if (answer.error) throw new Error(answer.error);
 	return answer;
+}
+
+// answerFromCapture serves the read operations out of the frozen answers. A
+// write says what it needs rather than doing nothing: a restyle is a real
+// layout the program has to run.
+function answerFromCapture(req) {
+	switch (req.op) {
+		case "frame":
+			return { frame: capture.frame };
+		case "elements":
+			return { elements: capture.elements };
+		case "tree":
+			return { tree: capture.tree };
+		case "query": {
+			const element = capture.elements.find((e) => e.id === req.id);
+			if (!element) throw new Error(`no element has id ${JSON.stringify(req.id)} in this capture`);
+			return { element };
+		}
+		case "at": {
+			// The innermost element covering the cell wins, which is the deepest
+			// match in document order. This is what the server answers.
+			let hit = "";
+			for (const e of capture.elements) {
+				if (covers(e.rect, req.x, req.y) && covers(e.clip, req.x, req.y)) hit = e.id;
+			}
+			return { hit, found: hit !== "" };
+		}
+		default:
+			throw new Error(`this is a capture, not a running program: ${req.op} needs one`);
+	}
+}
+
+function covers(r, x, y) {
+	return x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h;
 }
 
 function setStatus(text, state) {
@@ -180,8 +227,8 @@ async function refresh() {
 preview.addEventListener("pointerdown", async (event) => {
 	const at = cellAt(event);
 	const el = elements.find((e) => e.id === selected);
-	const inside = el && at.x >= el.rect.x && at.x < el.rect.x + el.rect.w && at.y >= el.rect.y && at.y < el.rect.y + el.rect.h;
-	if (inside) {
+	const inside = el && covers(el.rect, at.x, at.y);
+	if (inside && !capture) {
 		drag = { id: selected, from: at, rect: { ...el.rect }, resize: event.shiftKey };
 		preview.setPointerCapture(event.pointerId);
 		return;
@@ -261,22 +308,26 @@ $("keys").addEventListener("submit", async (event) => {
 });
 
 // The stream is the clock. Every frame the program paints re-reads the
-// elements, so a drag lands and the next frame shows where it landed.
-const stream = new EventSource("events");
-stream.addEventListener("frame", async (event) => {
-	const frame = JSON.parse(event.data);
-	drawFrame(frame);
-	setStatus(`live · frame ${frame.seq}`, "live");
-	if ($("follow").checked) await refresh();
-});
-stream.addEventListener("error", () => setStatus("connection lost", "lost"));
+// elements, so a drag lands and the next frame shows where it landed. A
+// capture has no clock: its one frame is already in the document.
+if (!capture) {
+	const stream = new EventSource("events");
+	stream.addEventListener("frame", async (event) => {
+		const frame = JSON.parse(event.data);
+		drawFrame(frame);
+		setStatus(`live · frame ${frame.seq}`, "live");
+		if ($("follow").checked) await refresh();
+	});
+	stream.addEventListener("error", () => setStatus("connection lost", "lost"));
+}
 
 (async () => {
+	if (capture) document.body.dataset.capture = "true";
 	try {
 		const { frame } = await rpc({ op: "frame", ansi: true });
 		drawFrame(frame);
 		await refresh();
-		setStatus(`live · frame ${frame.seq}`, "live");
+		setStatus(capture ? `capture · frame ${frame.seq} · ${frame.at}` : `live · frame ${frame.seq}`, "live");
 	} catch (err) {
 		setStatus(err.message, "lost");
 	}
