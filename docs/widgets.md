@@ -138,9 +138,11 @@ A button's label is sugar for its `Content` slot, so anything can go inside one:
 | `Table` | `columns`, `rows`, `separator`, `border`, `selected`, `disabled`, `wrap` | Rows are `separator`-joined cells; columns size to their widest. |
 
 Both take focus, and both leave the selection to the host: `selected` is a row index the model owns, so nothing in the
-widget can disagree with what the program thinks is picked. A `Table` marks its row in place -- bold, and reversed while
-the table has focus -- rather than in a cursor gutter, since a row of columns has no single place to put one. The header
-is not a row anyone can select, and `selected="-1"` marks nothing.
+widget can disagree with what the program thinks is picked. A `Table` marks its row in place -- a reversed bar across
+every column, bold while the table has focus -- rather than in a cursor gutter, since a row of columns has no single
+place to put one. The bar is drawn whether or not the table has focus, because the row a keystroke acts on is the host's
+state and does not stop being picked while a filter box holds the ring. The header is not a row anyone can select, and
+`selected="-1"` marks nothing.
 
 Which row a click landed on arrives the same way a `List`'s does, in the event's own coordinates. A table draws its
 header first, so its rows begin a line below:

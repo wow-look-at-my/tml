@@ -56,8 +56,8 @@ func (t *dataTable) AcceptsFocus() bool { return !t.disabled && len(t.rows) > 0 
 
 func (t *dataTable) SetState(state widget.State) { t.state = state }
 
-// cell styles the marked row, and pads a borderless table's columns apart. The gap is padding rather than a rule so
-// that it belongs to the row: a marked row then highlights as an unbroken bar, not as chunks with holes between them.
+// cell styles the marked row, and pads a borderless table's columns apart. Padding rather than a rule keeps the gap
+// part of the row, so the mark reads as an unbroken bar. The mark does not wait for focus; focus adds the bold.
 func (t *dataTable) cell(row, col int) lipgloss.Style {
 	style := lipgloss.NewStyle()
 	if !t.bordered && col < len(t.columns)-1 {
@@ -66,9 +66,9 @@ func (t *dataTable) cell(row, col int) lipgloss.Style {
 	if t.selected < 0 || row != t.selected || t.disabled {
 		return style
 	}
-	style = style.Bold(true)
+	style = style.Reverse(true)
 	if t.state.Focused {
-		style = style.Reverse(true)
+		style = style.Bold(true)
 	}
 	return style
 }
