@@ -135,7 +135,7 @@ A button's label is sugar for its `Content` slot, so anything can go inside one:
 | Element | Attributes | Notes |
 | --- | --- | --- |
 | `List` | `items`, `selected`, `cursor`, `disabled` | A cursor beside the selected row. |
-| `Table` | `columns`, `rows`, `separator`, `border`, `selected`, `disabled` | Rows are `separator`-joined cells; columns size to their widest. |
+| `Table` | `columns`, `rows`, `separator`, `border`, `selected`, `disabled`, `wrap` | Rows are `separator`-joined cells; columns size to their widest. |
 
 Both take focus, and both leave the selection to the host: `selected` is a row index the model owns, so nothing in the
 widget can disagree with what the program thinks is picked. A `Table` marks its row in place -- bold, and reversed while
@@ -149,6 +149,14 @@ header first, so its rows begin a line below:
 if event.ID == "steps" && event.Y >= 0 {
     m.step = clamp(event.Y-1, 0, len(steps)-1)
 }
+```
+
+That arithmetic holds only while a row is a line. A cell too wide for its column wraps by default and takes the next
+line with it, which puts every row below it out of step. `wrap="false"` cuts the cell instead, with an ellipsis to say
+so, and is what a listing whose rows are clicked or scrolled to wants:
+
+```xml
+<Table id="items" columns="DELETED,SIZE,ORIGINAL PATH" rows="{rows}" selected="{selected}" wrap="false"/>
 ```
 
 ### Display

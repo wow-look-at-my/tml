@@ -9,7 +9,7 @@ import (
 	"github.com/wow-look-at-my/tml/widget"
 )
 
-var tableAttrs = []string{"columns", "rows", "separator", "border", "selected", "disabled"}
+var tableAttrs = []string{"columns", "rows", "separator", "border", "selected", "disabled", "wrap"}
 
 // dataTable is a grid of text with headers. Rows arrive as a list of delimited strings because that is the shape the
 type dataTable struct {
@@ -20,6 +20,7 @@ type dataTable struct {
 	// selected is the row the host has marked, counted from the leading data row: the header is not a row anyone selects.
 	selected int
 	disabled bool
+	wrap     bool
 	state    widget.State
 }
 
@@ -35,6 +36,9 @@ func newTable(ctx widget.Context) (widget.Native, error) {
 		return nil, err
 	}
 	if t.disabled, err = ctx.Attrs.Bool("disabled", false); err != nil {
+		return nil, err
+	}
+	if t.wrap, err = ctx.Attrs.Bool("wrap", true); err != nil {
 		return nil, err
 	}
 	for _, raw := range ctx.Attrs.List("rows") {
@@ -70,7 +74,7 @@ func (t *dataTable) cell(row, col int) lipgloss.Style {
 }
 
 func (t *dataTable) build(w int) *table.Table {
-	built := table.New().Headers(t.columns...).Rows(t.rows...).StyleFunc(t.cell)
+	built := table.New().Headers(t.columns...).Rows(t.rows...).StyleFunc(t.cell).Wrap(t.wrap)
 	if w > 0 {
 		built = built.Width(w)
 	}

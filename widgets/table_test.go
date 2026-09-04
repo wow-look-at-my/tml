@@ -85,6 +85,25 @@ func TestTableMeasuresTheHeightItWrapsTo(t *testing.T) {
 	assert.Contains(t, table.Render(narrow, 0), "another", "both rows are drawn")
 }
 
+// wrap="false" keeps a row to a single line, which is what makes a row index a line index: a host that maps a click
+// or a scroll offset onto a row cannot do that arithmetic when a long cell silently takes another line as well.
+func TestATableCanKeepEveryRowToOneLine(t *testing.T) {
+	rows := map[string]string{
+		"columns": "path",
+		"rows":    "/a/long/path/that/will/not/fit,/another/long/path/that/will/not/fit",
+		"border":  "false",
+	}
+	wrapped := build(t, "Table", rows)
+
+	rows["wrap"] = "false"
+	cut := build(t, "Table", rows)
+
+	const narrow = 14
+	assert.Greater(t, len(split(wrapped.Render(narrow, 0))), len(split(cut.Render(narrow, 0))))
+	assert.Len(t, split(cut.Render(narrow, 0)), 4, "a header, the rule under it, and a line for each row")
+	assert.Contains(t, cut.Render(narrow, 0), "…", "a cut cell says it was cut")
+}
+
 func TestTableRejectsANonBooleanBorder(t *testing.T) {
 	_, err := tryBuild("Table", map[string]string{"border": "yes"})
 	require.Error(t, err)
