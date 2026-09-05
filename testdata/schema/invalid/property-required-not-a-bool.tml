@@ -1,0 +1,6 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<!-- rejects: value "yes" is not one of the allowed values -->
+<Component xmlns="urn:tml:v1" name="X">
+	<Property name="a" type="string" required="yes"/>
+	<Template/>
+</Component>
