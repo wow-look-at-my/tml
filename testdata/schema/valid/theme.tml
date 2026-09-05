@@ -1,0 +1,14 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<!-- Both token spellings, every style attribute, and a style that reads a token. -->
+<Theme xmlns="urn:tml:v1" name="full">
+	<Token name="accent" light="#5f5fd7" dark="#e0af68"/>
+	<Token name="gutter" value="1"/>
+	<Token name="frame" value="rounded"/>
+
+	<Style name="card" border="rounded" borderColor="{theme.accent}" padding="0 1"/>
+	<Style name="card.title" extends="card" bold="true"/>
+	<Style name="loud" fg="#fff" bg="9" italic="true" underline="true" strikethrough="false"
+		faint="false" reverse="false" margin="1 2 1 2" align="center" valign="middle"/>
+	<!-- A token supplies the value, so the vocabulary check happens when the sheet resolves. -->
+	<Style name="tokened" border="{theme.frame}" padding="{theme.gutter}"/>
+</Theme>
