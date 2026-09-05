@@ -14,8 +14,7 @@ permissions:
 
 jobs:
   test:
-    # A public repository's GitHub-hosted minutes are free, so this job does not belong on hardware the org runs and
-    # maintains itself. Docker is present either way, which is what the dats phase needs for its sandbox.
+    # A public repository's hosted minutes are free, and ubuntu-latest has the Docker the dats sandbox needs.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
