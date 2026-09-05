@@ -98,8 +98,14 @@ how many there are in all, which takes a 10 000-row transcript from 758 ms a fra
 
 Delegated to `github.com/wow-look-at-my/xml-validator` — strict XML 1.1, namespace validation, UTF-8/BOM rejection and
 line/col positions on elements and attributes alike, so an attribute-scoped diagnostic points at the attribute rather
-than at the element several columns to its left. TML contains no XML parser. XSD self-validation is deliberately unused: a template body holds
-arbitrary user component names, which `processContents="strict"` cannot express.
+than at the element several columns to its left. TML contains no XML parser.
+
+`tml.schema.xsd` is the grammar of a file's DECLARATIONS — `<Component>`, `<Property>`, `<Import>`, `<DataTemplate>`,
+`<Theme>`, `<Token>`, `<Style>` — for an editor, and gated by `schema_test.go`. The `<Template>` body is deliberately
+unchecked: it names components the file imported and widgets the host bound, and this validator allows only
+`processContents="strict"`, which demands a global declaration for every element it matches. `sema/` is the authority on
+the whole file. Two other rules the schema cannot reach: a root in the wrong namespace, and a style attribute's
+vocabulary when a `{theme.token}` supplies the value.
 
 ## Gotchas that decide the design
 

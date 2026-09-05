@@ -7,6 +7,33 @@ The default namespace is `urn:tml:v1`. It is a URN on purpose: a name, not a URL
 
 A file holds exactly one definition, rooted at `<Component>` or `<Theme>`.
 
+## The schema
+
+`tml.schema.xsd` states the grammar of everything on this page except the template body, so an editor pointed at it
+completes and checks a file as it is typed:
+
+```bash
+xml-validator --schema tml.schema.xsd app.tml
+```
+
+It covers the declarations: which children each root takes and in any order, every attribute each one has, the property
+type grammar, the rule that a required property is never defaulted, the rule that a token carries a value or a light and
+dark pair and never one half of it, and the full style attribute list with each one's vocabulary.
+
+**The `<Template>` body is not checked, and cannot be.** It names components the file imported and widgets the host
+bound, and neither is knowable from a schema — xml-validator allows only `processContents="strict"`, which demands a
+declaration for every element it matches, so a schema that checked the body would reject every document that imports
+anything. `sema/analyze.go` checks the body, and it is the authority on the whole file at load time.
+
+Two smaller rules are also out of reach. A root element in the wrong namespace is accepted, because the validator falls
+back to a local-name match at the root; `syntax.Parse` catches it. A style attribute whose value is a `{theme.token}`
+takes the token's word for the vocabulary, because what the token holds is known only when the sheet resolves.
+
+`testdata/schema/valid` and `testdata/schema/invalid` are the corpus that proves it. Each invalid fixture states the
+error it must be rejected for, and `schema_test.go` fails a fixture rejected for a different reason. The same test
+requires every document in the tree that `syntax.Parse` accepts to validate, so the schema can never grow stricter than
+the language.
+
 ## Components
 
 ```xml
