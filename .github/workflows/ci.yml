@@ -14,7 +14,9 @@ permissions:
 
 jobs:
   test:
-    runs-on: ${{ vars.CI_RUNNER_DIND || 'ubuntu-latest' }}
+    # A public repository's GitHub-hosted minutes are free, so this job does not belong on hardware the org runs and
+    # maintains itself. Docker is present either way, which is what the dats phase needs for its sandbox.
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
