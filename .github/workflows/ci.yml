@@ -14,8 +14,8 @@ permissions:
 
 jobs:
   test:
-    # A public repository's hosted minutes are free, and ubuntu-latest has the Docker the dats sandbox needs.
-    runs-on: ubuntu-latest
+    # The live-program dats tests reach a running agent through its inspector socket, which needs this pool's environment.
+    runs-on: ${{ vars.CI_RUNNER_DIND || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v4
 
