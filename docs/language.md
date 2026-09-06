@@ -20,7 +20,7 @@ It covers the declarations. That means which children each root takes, in any or
 
 Two smaller rules are also out of reach. A root element in the wrong namespace is accepted, because the validator falls back to a local-name match at the root. `syntax.Parse` catches it. A style attribute whose value is a `{theme.token}` takes the token's word for the vocabulary. What the token holds is known only when the sheet resolves.
 
-CI runs `xml-validator` over every document in the tree, and again with `--schema tml.schema.xsd` over every component. The schema can therefore never grow stricter than the documents this repository ships. `testdata/schema/valid` is the corpus that carries a declaration of each kind.
+CI runs `xml-validator` over every document in the tree, and again with `--schema tml.schema.xsd` over every component. The schema can therefore never grow stricter than the documents this repository ships. `testdata/schema/valid` is the corpus that carries a declaration of each kind. A job that only validates cannot prove the schema refuses anything. `dats/schema.dats` runs the same binary over `testdata/schema/invalid`, and names the error each fixture must produce. A fixture rejected by the wrong rule fails that suite.
 
 ## Components
 

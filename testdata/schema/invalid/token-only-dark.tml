@@ -1,0 +1,5 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<!-- rejects: required attribute "light" is missing on element "Token" -->
+<Theme xmlns="urn:tml:v1" name="t">
+	<Token name="a" dark="#000"/>
+</Theme>
