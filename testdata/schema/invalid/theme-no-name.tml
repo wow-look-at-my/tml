@@ -1,0 +1,5 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<!-- rejects: required attribute "name" is missing on element "Theme" -->
+<Theme xmlns="urn:tml:v1">
+	<Token name="a" value="1"/>
+</Theme>

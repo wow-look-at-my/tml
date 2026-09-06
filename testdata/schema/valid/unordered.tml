@@ -1,0 +1,16 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<!--
+	The declarations are in no particular order, because the loader dispatches on the child's name rather than on its
+	position. This fixture fails the moment the schema goes back to a fixed order.
+-->
+<Component xmlns="urn:tml:v1" name="Unordered">
+	<Template>
+		<Text>{caption}</Text>
+	</Template>
+	<DataTemplate name="Row">
+		<Property name="value" type="string" required="true"/>
+		<Template><Text>{value}</Text></Template>
+	</DataTemplate>
+	<Property name="caption" type="string" default=""/>
+	<Import src="./minimal.tml"/>
+</Component>

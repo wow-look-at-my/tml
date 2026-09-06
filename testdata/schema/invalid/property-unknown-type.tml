@@ -1,0 +1,6 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<!-- rejects: value "number" does not match pattern -->
+<Component xmlns="urn:tml:v1" name="X">
+	<Property name="a" type="number" default="0"/>
+	<Template/>
+</Component>
