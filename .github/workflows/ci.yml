@@ -13,6 +13,20 @@ permissions:
   artifact-metadata: write
 
 jobs:
+  # Every XML document in the tree, for well-formedness and XML 1.1, and every component against the grammar.
+  validate-xml:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: wow-look-at-my/xml-validator@master
+        with:
+          files: '**/*.tml **/*.xsd **/*.xml'
+      # syntax/testdata holds documents the parser must reject, so the grammar is not their judge.
+      - uses: wow-look-at-my/xml-validator@master
+        with:
+          schema: tml.schema.xsd
+          files: 'examples/**/*.tml testdata/dashboard/*.tml testdata/grid/*.tml testdata/inspect/*.tml testdata/schema/valid/*.tml'
+
   test:
     runs-on: ${{ vars.CI_RUNNER_DIND || 'ubuntu-latest' }}
     steps:

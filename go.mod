@@ -5,7 +5,7 @@ go 1.26
 require (
 	charm.land/lipgloss/v2 v2.0.6
 	github.com/stretchr/testify v1.12.1
-	github.com/wow-look-at-my/xml-validator/validator v0.0.0-20260823201203-7268eddb2e3f // go-toolchain:auto-branch
+	github.com/wow-look-at-my/xml-validator/validator v0.0.0-20260905064311-b54c8b4b3c13 // go-toolchain:auto-branch
 )
 
 require (
@@ -35,7 +35,7 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/spf13/pflag v1.0.9 // indirect
 	github.com/wow-look-at-my/go-containers v0.0.0-20260826161058-40a3d1ef3d41 // go-toolchain:auto-branch
-	github.com/wow-look-at-my/xml-validator/reader v0.0.0-20260823201203-7268eddb2e3f // indirect; go-toolchain:auto-branch
+	github.com/wow-look-at-my/xml-validator/reader v0.0.0-20260905064311-b54c8b4b3c13 // indirect; go-toolchain:auto-branch
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
