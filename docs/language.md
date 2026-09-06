@@ -29,10 +29,9 @@ Two smaller rules are also out of reach. A root element in the wrong namespace i
 back to a local-name match at the root; `syntax.Parse` catches it. A style attribute whose value is a `{theme.token}`
 takes the token's word for the vocabulary, because what the token holds is known only when the sheet resolves.
 
-`testdata/schema/valid` and `testdata/schema/invalid` are the corpus that proves it. Each invalid fixture states the
-error it must be rejected for, and `schema_test.go` fails a fixture rejected for a different reason. The same test
-requires every document in the tree that `syntax.Parse` accepts to validate, so the schema can never grow stricter than
-the language.
+CI runs `xml-validator` over every document in the tree, and again with `--schema tml.schema.xsd` over every component.
+The schema can therefore never grow stricter than the documents this repository ships. `testdata/schema/valid` is the
+corpus that carries a declaration of each kind.
 
 ## Components
 
