@@ -1,0 +1,6 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<!-- rejects: required attribute "name" is missing on element "Property" -->
+<Component xmlns="urn:tml:v1" name="X">
+	<Property type="string" default=""/>
+	<Template/>
+</Component>

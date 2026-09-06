@@ -101,7 +101,7 @@ line/col positions on elements and attributes alike, so an attribute-scoped diag
 than at the element several columns to its left. TML contains no XML parser.
 
 `tml.schema.xsd` is the grammar of a file's DECLARATIONS — `<Component>`, `<Property>`, `<Import>`, `<DataTemplate>`,
-`<Theme>`, `<Token>`, `<Style>` — for an editor, and gated by the `validate-xml` job. The `<Template>` body is deliberately
+`<Theme>`, `<Token>`, `<Style>` — for an editor, gated by the `validate-xml` job and by `schema_test.go`. The `<Template>` body is deliberately
 unchecked: it names components the file imported and widgets the host bound, and this validator allows only
 `processContents="strict"`, which demands a global declaration for every element it matches. `sema/` is the authority on
 the whole file. Two other rules the schema cannot reach: a root in the wrong namespace, and a style attribute's
