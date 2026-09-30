@@ -14,7 +14,6 @@ permissions:
   pull-requests: write
 
 jobs:
-  # Every XML document in the tree, for well-formedness and XML 1.1, and every component against the grammar.
   validate-xml:
     runs-on: ubuntu-latest
     steps:
