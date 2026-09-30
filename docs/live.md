@@ -22,7 +22,7 @@ err := live.Stop()            // pending lines print, the region goes, the curso
 ## How it ends
 
 - `Stop` prints the lines still pending, including a partial line, removes the region, and shows the cursor again. A second `Stop` returns the same result.
-- **SIGINT** gets the same orderly end. The region takes no input, so ctrl+c stays a signal, and a child can own stdin. `Stop` and `Wait` then report `tml.ErrInterrupted`, and `LiveOptions.OnInterrupt` runs after the terminal is restored. The host decides the exit code there.
+- **SIGINT** gets the same orderly end. The region takes no input, so ctrl+c stays a signal. A child can also own stdin. `Stop` and `Wait` then report `tml.ErrInterrupted`, and `LiveOptions.OnInterrupt` runs after the terminal is restored. The host decides the exit code there.
 - **A frame that fails to render** ends the region with that error. The region does not keep its last good frame on screen, because that frame looks like progress that stopped.
 - A line printed after the region ended goes straight to the output. A region that never started prints its lines at `Stop`.
 
