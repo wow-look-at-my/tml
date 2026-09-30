@@ -195,6 +195,16 @@ An auto track sizes to the widest child confined to it. A child spanning several
 
 Placing a child past the last declared track widens the grid with auto tracks rather than dropping the child.
 
+An auto or a star track can carry a range: `*[8..32]`, `auto[..20]`, `*[4..]`. Either end can be left out. A star track that reaches its maximum stops there, and the other star tracks share what it did not take. A lone capped star therefore leaves the rest of the row empty. That keeps a label column near the numbers beside it on a wide terminal. A track below its minimum keeps the minimum, and the grid overflows. A fixed track has no range.
+
+`collapse` lists column indices in the order they give way when the grid is too narrow:
+
+```xml
+<Grid columns="*[8..32],16,4,24,11,9" gap="2" collapse="1,4,5,3">
+```
+
+While the shown columns do not fit, the next column in the list is hidden. A star column counts its minimum for this. A hidden column takes no width and no gap. A child confined to hidden columns draws nothing. A spanning child keeps the shown part of its span. A column the list does not name never goes. An auto column counts what its content measured. With only fixed and star columns, the decision depends on the width alone. Rows that repeat such a grid then hide the same columns and stay in line.
+
 A grid child fills the cell it is placed in. A `1*` track is therefore how you say "as wide as there is room for". A `Stack` is the other way round. A child keeps its own size across the stack, and `align`/`valign` place it, unless it asks for `width="*"`. The difference is that a grid's tracks were declared by the author and a stack's cross axis was not.
 
 An attached property written on a child of anything other than a `Grid` is an error, as is an unknown one such as `Grid.depth`. To ignore them leaves a layout that quietly disregards what was written.

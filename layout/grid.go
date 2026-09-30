@@ -56,20 +56,99 @@ func readPlacement(box *Box, parent string) (placement, error) {
 	return p, nil
 }
 
-// parseTracks reads a track list of auto, fixed and star entries. An empty list is a single auto track, so a Grid with no columns
-func parseTracks(spec string) ([]sema.Length, error) {
-	if strings.TrimSpace(spec) == "" {
-		return []sema.Length{{Kind: sema.LengthAuto}}, nil
+// track is one grid track. An auto or star track can carry a range, written `*[8..32]`. A zero max is no upper bound.
+type track struct {
+	sema.Length
+	min, max int
+}
+
+// clamp keeps a size inside the track's range.
+func (t track) clamp(size int) int {
+	if t.max > 0 {
+		size = min(size, t.max)
 	}
-	var tracks []sema.Length
+	return max(size, t.min)
+}
+
+// parseTracks reads a track list of auto, fixed and star entries. An empty list is a single auto track, so a Grid with no columns
+func parseTracks(spec string) ([]track, error) {
+	if strings.TrimSpace(spec) == "" {
+		return []track{{Length: sema.Length{Kind: sema.LengthAuto}}}, nil
+	}
+	var tracks []track
 	for _, field := range strings.Split(spec, ",") {
-		length, err := sema.ParseLength(strings.TrimSpace(field))
+		t, err := parseTrack(strings.TrimSpace(field))
 		if err != nil {
 			return nil, err
 		}
-		tracks = append(tracks, length)
+		tracks = append(tracks, t)
 	}
 	return tracks, nil
+}
+
+// parseTrack reads one entry: a length, then an optional `[min..max]` range where either end can be left out.
+func parseTrack(field string) (track, error) {
+	spec, bounds, ranged := strings.Cut(field, "[")
+	length, err := sema.ParseLength(strings.TrimSpace(spec))
+	if err != nil {
+		return track{}, err
+	}
+	t := track{Length: length}
+	if !ranged {
+		return t, nil
+	}
+	if length.Kind == sema.LengthCells {
+		return track{}, fmt.Errorf("track %q: a fixed track has no range", field)
+	}
+	inner, closed := strings.CutSuffix(bounds, "]")
+	low, high, dotted := strings.Cut(inner, "..")
+	if !closed || !dotted {
+		return track{}, fmt.Errorf("track %q: a range is written [min..max]", field)
+	}
+	if t.min, err = rangeEnd(low); err != nil {
+		return track{}, fmt.Errorf("track %q: %w", field, err)
+	}
+	if t.max, err = rangeEnd(high); err != nil {
+		return track{}, fmt.Errorf("track %q: %w", field, err)
+	}
+	if t.max > 0 && t.min > t.max {
+		return track{}, fmt.Errorf("track %q: the minimum is larger than the maximum", field)
+	}
+	return t, nil
+}
+
+// rangeEnd reads one end of a track range. An empty end is no bound.
+func rangeEnd(raw string) (int, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return 0, nil
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil || n < 0 {
+		return 0, fmt.Errorf("a range end must be a whole number, got %q", raw)
+	}
+	return n, nil
+}
+
+// parseCollapse reads `collapse`: column indices, in the order they give way when the grid is too narrow for all of them.
+func parseCollapse(spec string, columns int) ([]int, error) {
+	if strings.TrimSpace(spec) == "" {
+		return nil, nil
+	}
+	seen := set.New[int]()
+	var order []int
+	for _, field := range strings.Split(spec, ",") {
+		n, err := strconv.Atoi(strings.TrimSpace(field))
+		if err != nil || n < 0 || n >= columns {
+			return nil, fmt.Errorf("%q is not a column index from 0 to %d", strings.TrimSpace(field), columns-1)
+		}
+		if seen.Contains(n) {
+			return nil, fmt.Errorf("column %d is named twice", n)
+		}
+		seen.Add(n)
+		order = append(order, n)
+	}
+	return order, nil
 }
 
 // initGrid parses the track lists and reads every child's placement. Tracks are widened to cover a child placed past
@@ -89,13 +168,16 @@ func initGrid(box *Box) error {
 			return err
 		}
 		for len(cols) < child.place.column+child.place.columnSpan {
-			cols = append(cols, sema.Length{Kind: sema.LengthAuto})
+			cols = append(cols, track{Length: sema.Length{Kind: sema.LengthAuto}})
 		}
 		for len(rows) < child.place.row+child.place.rowSpan {
-			rows = append(rows, sema.Length{Kind: sema.LengthAuto})
+			rows = append(rows, track{Length: sema.Length{Kind: sema.LengthAuto}})
 		}
 	}
 	box.cols, box.rows = cols, rows
+	if box.collapse, err = parseCollapse(box.attrs["collapse"], len(cols)); err != nil {
+		return &syntax.Error{Pos: box.Pos, Message: fmt.Sprintf("<Grid> collapse: %v", err)}
+	}
 	return nil
 }
 
@@ -116,16 +198,19 @@ func (e *Engine) measureGrid(box *Box, inner Constraints) Size {
 			box.autoHeights[child.place.row] = max(box.autoHeights[child.place.row], child.desired.H)
 		}
 	}
+	clampAuto(box.cols, box.autoWidths)
+	clampAuto(box.rows, box.autoHeights)
 
+	shown := box.visibleColumns(inner.MaxW)
 	content := Size{
-		W: sum(box.autoWidths) + gap*(len(box.cols)-1),
-		H: sum(box.autoHeights) + gap*(len(box.rows)-1),
+		W: shownSum(box.autoWidths, shown, gap),
+		H: shownSum(box.autoHeights, allShown(len(box.rows)), gap),
 	}
 	// A star track divides whatever the grid is given, so the grid asks for all the space available on that axis.
-	if hasStar(box.cols) {
+	if hasStar(box.cols, shown) {
 		content.W = max(content.W, inner.MaxW)
 	}
-	if hasStar(box.rows) {
+	if hasStar(box.rows, allShown(len(box.rows))) {
 		content.H = max(content.H, inner.MaxH)
 	}
 	return content
@@ -133,101 +218,185 @@ func (e *Engine) measureGrid(box *Box, inner Constraints) Size {
 
 func (e *Engine) arrangeGrid(box *Box) {
 	gap := box.Gap()
-	widths := solveTracks(box.cols, box.autoWidths, box.Content.W, gap)
-	heights := solveTracks(box.rows, box.autoHeights, box.Content.H, gap)
+	shownCols := box.visibleColumns(box.Content.W)
+	shownRows := allShown(len(box.rows))
+	widths := solveTracks(box.cols, box.autoWidths, shownCols, box.Content.W, gap)
+	heights := solveTracks(box.rows, box.autoHeights, shownRows, box.Content.H, gap)
 
-	x := offsets(widths, gap)
-	y := offsets(heights, gap)
+	x := offsets(widths, shownCols, gap)
+	y := offsets(heights, shownRows, gap)
 
 	for _, child := range box.Children {
+		// A child in collapsed columns only is arranged into nothing, and nothing is what the renderer draws for it.
 		e.arrange(child, Rect{
 			X: x[child.place.column],
 			Y: y[child.place.row],
-			W: span(widths, child.place.column, child.place.columnSpan, gap),
-			H: span(heights, child.place.row, child.place.rowSpan, gap),
+			W: span(widths, shownCols, child.place.column, child.place.columnSpan, gap),
+			H: span(heights, shownRows, child.place.row, child.place.rowSpan, gap),
 		})
 	}
 }
 
-// solveTracks turns track definitions into cell counts: a fixed track takes what it asked for, an auto track what it
-func solveTracks(tracks []sema.Length, measured []int, available, gap int) []int {
-	sizes := make([]int, len(tracks))
-	used, weight := 0, 0
-
-	for i, track := range tracks {
-		switch track.Kind {
-		case sema.LengthCells, sema.LengthAuto:
-			sizes[i] = measured[i]
-			used += sizes[i]
-		case sema.LengthStar:
-			weight += track.Weight
+// visibleColumns drops columns in `collapse` order until the rest fit in the width. A star column counts its minimum. An
+// unbounded width drops nothing.
+func (b *Box) visibleColumns(available int) []bool {
+	shown := allShown(len(b.cols))
+	if available <= 0 {
+		return shown
+	}
+	gap := b.Gap()
+	need := func() int {
+		total, count := 0, 0
+		for i, t := range b.cols {
+			if !shown[i] {
+				continue
+			}
+			count++
+			if t.Kind == sema.LengthStar {
+				total += t.min
+			} else {
+				total += b.autoWidths[i]
+			}
 		}
+		return total + gap*max(0, count-1)
 	}
-	if weight == 0 {
-		return sizes
+	for _, column := range b.collapse {
+		if need() <= available {
+			break
+		}
+		shown[column] = false
 	}
+	return shown
+}
 
-	leftover := max(0, available-used-gap*(len(tracks)-1))
-	remaining, remainingWeight := leftover, weight
-	for i, track := range tracks {
-		if track.Kind != sema.LengthStar {
+// solveTracks turns the shown tracks into cell counts: a fixed track takes what it asked for, an auto track what it
+// measured, and the star tracks share the rest by weight. A hidden track is zero wide.
+func solveTracks(tracks []track, measured []int, shown []bool, available, gap int) []int {
+	sizes := make([]int, len(tracks))
+	used, count := 0, 0
+	var stars []int
+	for i, t := range tracks {
+		if !shown[i] {
 			continue
 		}
-		if remainingWeight == track.Weight {
-			sizes[i] = remaining
-		} else {
-			sizes[i] = leftover * track.Weight / weight
+		count++
+		if t.Kind == sema.LengthStar {
+			stars = append(stars, i)
+			continue
 		}
-		remaining -= sizes[i]
-		remainingWeight -= track.Weight
+		sizes[i] = measured[i]
+		used += sizes[i]
 	}
+	shareStars(tracks, stars, sizes, max(0, available-used-gap*max(0, count-1)))
 	return sizes
 }
 
-func offsets(sizes []int, gap int) []int {
+// shareStars divides leftover by weight. A track that lands outside its range keeps the nearer bound, and the other
+// tracks divide what is left again. The last open track takes the rounding, so an unbounded row of stars fills exactly.
+func shareStars(tracks []track, open, sizes []int, leftover int) {
+	for len(open) > 0 {
+		weight := 0
+		for _, i := range open {
+			weight += tracks[i].Weight
+		}
+		remaining, remainingWeight := leftover, weight
+		for _, i := range open {
+			if remainingWeight == tracks[i].Weight {
+				sizes[i] = remaining
+			} else {
+				sizes[i] = leftover * tracks[i].Weight / weight
+			}
+			remaining -= sizes[i]
+			remainingWeight -= tracks[i].Weight
+		}
+		var next []int
+		for _, i := range open {
+			if bounded := tracks[i].clamp(sizes[i]); bounded != sizes[i] {
+				sizes[i] = bounded
+				leftover = max(0, leftover-bounded)
+				continue
+			}
+			next = append(next, i)
+		}
+		if len(next) == len(open) {
+			return
+		}
+		open = next
+	}
+}
+
+// clampAuto keeps each auto track's measured size inside its range.
+func clampAuto(tracks []track, measured []int) {
+	for i, t := range tracks {
+		if t.Kind == sema.LengthAuto {
+			measured[i] = t.clamp(measured[i])
+		}
+	}
+}
+
+// offsets is where each track starts. A hidden track starts where the next shown one does and takes no gap.
+func offsets(sizes []int, shown []bool, gap int) []int {
 	out := make([]int, len(sizes))
 	at := 0
 	for i, size := range sizes {
 		out[i] = at
-		at += size + gap
+		if shown[i] {
+			at += size + gap
+		}
 	}
 	return out
 }
 
-// span is the size of a run of tracks, including the gaps swallowed between them.
-func span(sizes []int, start, count, gap int) int {
-	total := 0
+// span is the size of a run of tracks, including the gaps swallowed between the shown ones.
+func span(sizes []int, shown []bool, start, count, gap int) int {
+	total, seen := 0, 0
 	for i := start; i < start+count && i < len(sizes); i++ {
-		if i > start {
+		if !shown[i] {
+			continue
+		}
+		if seen > 0 {
 			total += gap
 		}
 		total += sizes[i]
+		seen++
 	}
 	return total
 }
 
-// fixedSizes seeds the track sizes with the ones already known from the declaration; auto tracks start at nothing and
-func fixedSizes(tracks []sema.Length) []int {
+// fixedSizes seeds the track sizes with the ones already known from the declaration.
+func fixedSizes(tracks []track) []int {
 	sizes := make([]int, len(tracks))
-	for i, track := range tracks {
-		if track.Kind == sema.LengthCells {
-			sizes[i] = track.Cells
+	for i, t := range tracks {
+		if t.Kind == sema.LengthCells {
+			sizes[i] = t.Cells
 		}
 	}
 	return sizes
 }
 
-func sum(sizes []int) int {
-	out := 0
-	for _, size := range sizes {
-		out += size
+// shownSum is the size of the shown tracks and the gaps between them.
+func shownSum(sizes []int, shown []bool, gap int) int {
+	total, count := 0, 0
+	for i, size := range sizes {
+		if shown[i] {
+			total += size
+			count++
+		}
 	}
-	return out
+	return total + gap*max(0, count-1)
 }
 
-func hasStar(tracks []sema.Length) bool {
-	for _, track := range tracks {
-		if track.Kind == sema.LengthStar {
+func allShown(n int) []bool {
+	shown := make([]bool, n)
+	for i := range shown {
+		shown[i] = true
+	}
+	return shown
+}
+
+func hasStar(tracks []track, shown []bool) bool {
+	for i, t := range tracks {
+		if shown[i] && t.Kind == sema.LengthStar {
 			return true
 		}
 	}

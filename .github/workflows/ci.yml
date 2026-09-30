@@ -11,9 +11,9 @@ permissions:
   checks: read
   deployments: write
   artifact-metadata: write
+  pull-requests: write
 
 jobs:
-  # Every XML document in the tree, for well-formedness and XML 1.1, and every component against the grammar.
   validate-xml:
     runs-on: ubuntu-latest
     steps:
@@ -40,6 +40,9 @@ jobs:
 
       # cosmo-platforms names the hosts the one fat APE covers. The action dropped the os= and arch= inputs it used to take.
       - uses: wow-look-at-my/go-toolchain@master
+        # A hung test fails with every goroutine's stack. The step's own limit kills it silently.
+        env:
+          GOFLAGS: -timeout=7m
         with:
           cosmo-platforms: linux/amd64,linux/arm64,darwin/arm64,windows/amd64
 

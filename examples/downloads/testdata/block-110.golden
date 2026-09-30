@@ -1,0 +1,6 @@
+downloads: 3 active, 1 queued, 1 done, 1 failed                                                               
+jobs 07/20 JOB-000123  attempt 004/030  status=pending                                                        
+  ubuntu-24.04-desktop-amd64.iso    █████░░░░░░░░░░░   33%     2.0 GiB / 6.0 GiB      51.2 MiB/s   ETA 01:20  
+  日本語のファイル名.tar.zst        ██████░░░░░░░░░░   40%   120.0 MiB / 300.0 MiB    10.0 MiB/s   ETA 00:18  
+  stream.log                                                   5.0 MiB / ?            1.7 MiB/s               
+  TOTAL                             █████░░░░░░░░░░░   34%     2.1 GiB / 6.3 GiB      43.5 MiB/s   ETA 01:38  

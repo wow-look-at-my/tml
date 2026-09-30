@@ -97,9 +97,32 @@ func (v *View) Render(props Props, width, height int) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	return v.paint(box, width, height), nil
+}
+
+// Fit instantiates the view and lays it out at the given width, as tall as its content, up to maxHeight.
+func (v *View) Fit(props Props, width, maxHeight int) (*layout.Box, error) {
+	node, err := v.Expand(props)
+	if err != nil {
+		return nil, err
+	}
+	return v.engine.Fit(node, width, maxHeight)
+}
+
+// RenderFit produces a frame as tall as its content, up to maxHeight, rather than one that fills a viewport. A region
+// drawn inline under a shell prompt wants this. See Live.
+func (v *View) RenderFit(props Props, width, maxHeight int) (string, error) {
+	box, err := v.Fit(props, width, maxHeight)
+	if err != nil {
+		return "", err
+	}
+	return v.paint(box, width, box.Rect.H), nil
+}
+
+func (v *View) paint(box *layout.Box, width, height int) string {
 	out := render.Render(box)
 	v.record(box, out, width, height)
-	// Readable is half. A view still painting after the grace window with nothing able to drive it is a program the
+	// Readable is half.
 	drives.painted(inspection.isDriven())
-	return out, nil
+	return out
 }
