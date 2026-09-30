@@ -16,7 +16,7 @@ import (
 
 var update = flag.Bool("update", false, "rewrite the golden files")
 
-const status = "listing 16/53 TCLP-123  attempt 12/120  status=pending"
+const status = "jobs 07/20 JOB-000123  attempt 004/030  status=pending"
 
 func frameAt(t *testing.T, width int) string {
 	t.Helper()

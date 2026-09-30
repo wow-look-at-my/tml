@@ -238,7 +238,7 @@ func main() {
 		if err == nil {
 			var out string
 			now := time.Unix(1_800_000_000, 0)
-			out, err = view.RenderFit(props(sample(now), "listing 16/53 TCLP-123  attempt 12/120  status=pending", now), *width, 40)
+			out, err = view.RenderFit(props(sample(now), "jobs 07/20 JOB-000123  attempt 004/030  status=pending", now), *width, 40)
 			fmt.Println(out)
 		}
 		if err != nil {
