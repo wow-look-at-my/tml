@@ -15,11 +15,27 @@ import (
 	"github.com/wow-look-at-my/tml"
 )
 
+// goCommand is the go command that built this test. A toolchain that runs from one packed binary reports a GOROOT
+// with no bin/go inside it, and then the go on PATH is the one to use.
+func goCommand(t *testing.T) string {
+	t.Helper()
+	if bin := filepath.Join(runtime.GOROOT(), "bin", "go"); isFile(bin) {
+		return bin
+	}
+	bin, err := exec.LookPath("go")
+	require.NoError(t, err, "no go command under GOROOT %s or on PATH", runtime.GOROOT())
+	return bin
+}
+
+func isFile(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && info.Mode().IsRegular()
+}
+
 // A real program, built the way this library cannot reach, does not stay up. The unit tests drive the guard's decision
 func TestARealUndrivableProgramDoesNotStayUp(t *testing.T) {
 	bin := filepath.Join(t.TempDir(), "undrivable")
-	build := exec.Command(filepath.Join(runtime.GOROOT(), "bin", "go"),
-		"build", "-o", bin, "./testdata/undrivable")
+	build := exec.Command(goCommand(t), "build", "-o", bin, "./testdata/undrivable")
 	build.Env = append(os.Environ(), "GOFLAGS=")
 	out, err := build.CombinedOutput()
 	require.NoError(t, err, "building the fixture: %s", out)
@@ -42,7 +58,7 @@ func TestARealUndrivableProgramDoesNotStayUp(t *testing.T) {
 		t.Fatal("a program nothing can drive was still running well past the grace window")
 	}
 
-	// Any crash would satisfy the exit code. What has to be true is that it died of THIS, and that whoever reads the
+	// Any crash would satisfy the exit code. What has to be true is that it died of THIS.
 	said := stderr.String()
 	assert.Contains(t, said, "the inspector cannot drive it", "the program said why it stopped")
 	assert.Contains(t, said, "tml.NewProgram", "the program named the fix")
@@ -52,8 +68,7 @@ func TestARealUndrivableProgramDoesNotStayUp(t *testing.T) {
 // The same program is readable for the whole of its short life. Reading is not what the guard is about, and a guard
 func TestAnUndrivableProgramIsReadableWhileItLives(t *testing.T) {
 	bin := filepath.Join(t.TempDir(), "undrivable")
-	build := exec.Command(filepath.Join(runtime.GOROOT(), "bin", "go"),
-		"build", "-o", bin, "./testdata/undrivable")
+	build := exec.Command(goCommand(t), "build", "-o", bin, "./testdata/undrivable")
 	build.Env = append(os.Environ(), "GOFLAGS=")
 	out, err := build.CombinedOutput()
 	require.NoError(t, err, "building the fixture: %s", out)

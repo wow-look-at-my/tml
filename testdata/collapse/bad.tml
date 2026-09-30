@@ -1,0 +1,6 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<Component xmlns="urn:tml:v1" name="Bad">
+	<Template>
+		<Grid columns="1,1" collapse="5"/>
+	</Template>
+</Component>

@@ -72,11 +72,12 @@ type Box struct {
 	height  sema.Length
 
 	// Grid state: the track definitions, the sizes auto tracks measured, and this box's own placement within its parent
-	cols, rows              []sema.Length
+	cols, rows              []track
 	autoWidths, autoHeights []int
+	collapse                []int
 	place                   placement
 
-	// canvas is this box's placement within a parent Canvas; scroll is where a scrolling region's content ended up, which
+	// canvas is this box's placement within a parent Canvas; scroll is where a scrolling region's content ended up.
 	canvas canvasPlacement
 	scroll Scroll
 }
@@ -89,11 +90,11 @@ type Options struct {
 	FS fs.FS
 	// Dark reports whether the view renders against a dark theme.
 	Dark bool
-	// Interaction carries focus and pointer state across frames. A nil value means nothing is focusable, which is what a
+	// Interaction carries focus and pointer state across frames. A nil value means nothing is focusable.
 	Interaction Interaction
 	// Measure is how wide a string is, in cells; nil means lipgloss.Width. See widget.Measurer.
 	Measure widget.Measurer
-	// Override supplies attributes that replace what the document wrote, for the element carrying the given id. It is
+	// Override supplies attributes that replace what the document wrote, for the element carrying the given id.
 	Override func(id string) map[string]string
 }
 
@@ -114,7 +115,7 @@ func (e *Engine) SetOverride(fn func(id string) map[string]string) { e.opts.Over
 // layoutAttrs are consumed by the engine; every other attribute is styling, unless a widget claims it. Attached
 var layoutAttrs = set.Of(
 	"width", "height", "orientation", "gap", "style", "overflow",
-	"columns", "rows", "id", "action",
+	"columns", "rows", "collapse", "id", "action",
 	"offset", "offsetX", "scrollbar",
 	"title", "titleAlign",
 )
@@ -125,6 +126,16 @@ func isLayoutAttr(name string) bool {
 
 // Layout measures and arranges the tree inside a viewport.
 func (e *Engine) Layout(node *sema.Node, width, height int) (*Box, error) {
+	return e.layout(node, width, height, false)
+}
+
+// Fit lays the tree out at the given width, as tall as its content asks, up
+// to maxHeight.
+func (e *Engine) Fit(node *sema.Node, width, maxHeight int) (*Box, error) {
+	return e.layout(node, width, maxHeight, true)
+}
+
+func (e *Engine) layout(node *sema.Node, width, height int, fit bool) (*Box, error) {
 	p := &pass{e: e}
 	box, err := p.build(node)
 	if err != nil {
@@ -134,16 +145,20 @@ func (e *Engine) Layout(node *sema.Node, width, height int) (*Box, error) {
 
 	e.measure(box, Constraints{MaxW: width, MaxH: height})
 
-	// The root fills the viewport unless it asked for a specific size. Filling is what a view wants by default, and it is
+	// The root fills the viewport unless it asked for a specific size. Filling is what a view wants by default.
 	rect := Rect{W: width, H: height}
 	if box.width.Kind == sema.LengthCells {
 		rect.W = min(box.desired.W, width)
 	}
-	if box.height.Kind == sema.LengthCells {
+	if box.height.Kind == sema.LengthCells || fit {
 		rect.H = min(box.desired.H, height)
 	}
 	e.arrange(box, rect)
-	setScreen(box, 0, 0, Rect{W: width, H: height})
+	viewport := Rect{W: width, H: height}
+	if fit {
+		viewport.H = rect.H
+	}
+	setScreen(box, 0, 0, viewport)
 	p.publish()
 	return box, nil
 }

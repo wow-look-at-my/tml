@@ -67,6 +67,52 @@ tests:
 		stdout:
 			- STATUS
 
+	- desc: a grid with room shows every column
+	  cmd: '"$GO_TOOLCHAIN_DATS_BUILD_DIR/tml" render testdata/collapse/app.tml --width 30 --height 1'
+	  inputs:
+		env:
+			TML_INSPECT_DIR: "{outputs.sockets}"
+	  outputs:
+		stdout:
+			- label
+			- second
+			- third!
+
+	- desc: a narrow grid collapses the first column its collapse list names
+	  cmd: '"$GO_TOOLCHAIN_DATS_BUILD_DIR/tml" render testdata/collapse/app.tml --width 15 --height 1'
+	  inputs:
+		env:
+			TML_INSPECT_DIR: "{outputs.sockets}"
+	  outputs:
+		stdout:
+			- label
+			- second
+		"!stdout":
+			- third
+
+	- desc: a narrower grid collapses the next one
+	  cmd: '"$GO_TOOLCHAIN_DATS_BUILD_DIR/tml" render testdata/collapse/app.tml --width 8 --height 1'
+	  inputs:
+		env:
+			TML_INSPECT_DIR: "{outputs.sockets}"
+	  outputs:
+		stdout:
+			- label
+		"!stdout":
+			- second
+			- third
+
+	- desc: a collapse index past the last column fails the check
+	  cmd: '"$GO_TOOLCHAIN_DATS_BUILD_DIR/tml" render testdata/collapse/bad.tml --width 10 --height 1 2>&1'
+	  exit: 1
+	  inputs:
+		env:
+			TML_INSPECT_DIR: "{outputs.sockets}"
+	  outputs:
+		stdout:
+			- "collapse"
+			- "is not a column index"
+
 	- desc: inspect --id header is JSON for that element
 	  cmd: '"$GO_TOOLCHAIN_DATS_BUILD_DIR/tml" inspect testdata/inspect/app.tml --width 40 --height 8 --prop title=STATUS --prop rows=one,two,three --id header'
 	  inputs:

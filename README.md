@@ -64,6 +64,19 @@ func (m *model) View() tea.View {
 
 Run the worked example: `go-toolchain && ./build/dashboard`, or `./build/dashboard -frame` for one frame without a terminal. `./build/agent` is a bigger one. It is a mock coding agent: a transcript that outgrows its viewport, tool output as cards, and a permission prompt that interrupts. It binds two of its own widgets alongside the library's.
 
+## Inline progress
+
+A `tml.Live` draws a view under the shell prompt and repaints it in place. Lines you print go above it and stay in the scrollback. `Stop` takes it away.
+
+```go
+live := tml.NewLive(view, snapshot, tml.LiveOptions{})
+live.Start()
+live.Printf("done %s", name)   // safe from any goroutine
+live.Stop()
+```
+
+A `Grid` with `collapse` drops columns in a set order as the terminal narrows. `./build/downloads` is a mock download manager built this way. See `docs/live.md`.
+
 ## Hot reload
 
 ```go
@@ -123,6 +136,7 @@ go-toolchain
 - `docs/language.md` — the language reference
 - `docs/widgets.md` — the widget library, interaction, and writing your own
 - `docs/images.md` — how a picture reaches a terminal, and what happens when it cannot
+- `docs/live.md` — an inline region pinned below the log, repainted in place
 - `docs/lipgloss-contract.md` — what TML delegates to Lip Gloss, and the traps in it
 - `docs/agent.md` — the mock coding agent, and what building it changed about the language
 - `docs/screenshots.md` — how the pictures above are taken and published
