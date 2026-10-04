@@ -28,7 +28,7 @@ func fadeTarget(dark bool) shade {
 	return shade{255, 255, 255}
 }
 
-// defaultForeground approximates the terminal's own foreground, which is what a row that names no color is drawn in.
+// defaultForeground approximates the terminal's own foreground, the color a row that names none is drawn in.
 func defaultForeground(dark bool) shade {
 	if dark {
 		return shade{200, 200, 200}
@@ -36,8 +36,7 @@ func defaultForeground(dark bool) shade {
 	return shade{60, 60, 60}
 }
 
-// fadePercent is how much of the background a row at depth d of a band of n rows takes, which is what makes an edge
-// read as a gradient rather than one flat line.
+// fadePercent is how much of the background a row this deep into a band takes, so an edge reads as a gradient.
 func fadePercent(depth, band int) int {
 	if band < 2 {
 		return 55
@@ -55,9 +54,7 @@ func shaded(c shade, depth, band int, dark bool) shade {
 	return shade{blend(c.r, to.r, percent), blend(c.g, to.g, percent), blend(c.b, to.b, percent)}
 }
 
-// fadeRow re-colors the foreground of every span in a drawn row toward the background, so the row reads as the edge of
-// what the region holds. A row naming no color of its own is given an approximation of the terminal's default
-// foreground first, because ANSI has no way to adjust a color nobody stated.
+// fadeRow re-colors the foreground of every span in a drawn row toward the background, so it reads as an edge.
 func fadeRow(line string, depth, band int, dark bool) string {
 	if strings.TrimSpace(line) == "" {
 		return line
@@ -83,8 +80,7 @@ func fadeRow(line string, depth, band int, dark bool) string {
 	return out.String()
 }
 
-// fadeParams splits one SGR parameter list into what a fade keeps and the foreground it leaves in effect, which the
-// fade replaces. A list naming no foreground keeps the color already in effect, as does one that only turns on bold.
+// fadeParams splits one SGR parameter list into what a fade keeps and the foreground it replaces.
 func fadeParams(params []int, dark bool) (kept []int, c shade, stated bool) {
 	for i := 0; i < len(params); i++ {
 		switch p := params[i]; {
