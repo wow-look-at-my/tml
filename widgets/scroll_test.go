@@ -150,6 +150,16 @@ func TestScrollboxFadesNothingWhenTheEndIsInView(t *testing.T) {
 	assert.Equal(t, "a\nb\nc", box.Compose(content(lines(3)...), 1, 3))
 }
 
+// A host that hands over a window it cut itself knows which edges have content beyond them, and says so rather than
+// handing over a total it never laid out.
+func TestScrollboxFadesTheEdgeAHostNames(t *testing.T) {
+	above := composer(t, "Scrollbox", map[string]string{"scrollbar": "never", "fade": "true", "moreAbove": "true"})
+	assert.Equal(t, dimmed("a")+"\nb\nc", above.Compose(content(lines(3)...), 1, 3))
+
+	below := composer(t, "Scrollbox", map[string]string{"scrollbar": "never", "fade": "true", "moreBelow": "true"})
+	assert.Equal(t, "a\nb\n"+dimmed("c"), below.Compose(content(lines(3)...), 1, 3))
+}
+
 func TestScrollboxLeavesTheFadeOffUnlessAsked(t *testing.T) {
 	box := composer(t, "Scrollbox", map[string]string{"scrollbar": "never"})
 

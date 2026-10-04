@@ -9,7 +9,7 @@ import (
 	"github.com/wow-look-at-my/tml/widget"
 )
 
-var scrollboxAttrs = []string{"offset", "offsetX", "scrollbar", "contentHeight", "fade"}
+var scrollboxAttrs = []string{"offset", "offsetX", "scrollbar", "contentHeight", "fade", "moreAbove", "moreBelow"}
 
 // scrollbox shows part of content that is taller than the space it has, with a scrollbar beside it when there is more
 type scrollbox struct {
@@ -17,6 +17,8 @@ type scrollbox struct {
 	contentHeight    int
 	bar              string
 	fade             bool
+	moreAbove        bool
+	moreBelow        bool
 	measure          widget.Measurer
 }
 
@@ -27,6 +29,12 @@ func newScrollbox(ctx widget.Context) (widget.Native, error) {
 	}
 	box := &scrollbox{bar: bar, measure: ctx.Measure}
 	if box.fade, err = ctx.Attrs.Bool("fade", false); err != nil {
+		return nil, err
+	}
+	if box.moreAbove, err = ctx.Attrs.Bool("moreAbove", false); err != nil {
+		return nil, err
+	}
+	if box.moreBelow, err = ctx.Attrs.Bool("moreBelow", false); err != nil {
 		return nil, err
 	}
 	if box.offsetY, err = ctx.Attrs.Int("offset", 0); err != nil {
@@ -90,7 +98,7 @@ func (s *scrollbox) Compose(slots widget.Slots, w, h int) string {
 		lines[i] = columns(line, s.offsetX, viewW, s.measure)
 	}
 	if s.fade {
-		fadeEdges(lines, offset, total, h)
+		fadeEdges(lines, s.moreAbove || offset > 0, s.moreBelow || offset+h < total, h)
 	}
 	if gutter == 0 {
 		return strings.Join(lines, "\n")
@@ -153,17 +161,17 @@ func fadeRows(height int) int {
 	return min(rows, max(0, (height-1)/2))
 }
 
-// fadeEdges dims the rows at the ends of the window when there is content beyond them.
-func fadeEdges(lines []string, offset, total, height int) {
+// fadeEdges dims the rows at the ends of the window when there is content beyond them, by the offset and the total or
+func fadeEdges(lines []string, above, below bool, height int) {
 	rows := fadeRows(height)
 	beyond := min(rows, len(lines))
 	depth := make([]int, len(lines))
-	if offset > 0 {
+	if above {
 		for i := range beyond {
 			depth[i] = i + 1
 		}
 	}
-	if offset+height < total {
+	if below {
 		for i := range beyond {
 			j := len(depth) - 1 - i
 			depth[j] = max(depth[j], i+1)
