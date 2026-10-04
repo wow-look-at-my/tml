@@ -135,6 +135,17 @@ func (e *Engine) Fit(node *sema.Node, width, maxHeight int) (*Box, error) {
 	return e.layout(node, width, maxHeight, true)
 }
 
+// Height is how many rows node takes at width, however tall that is.
+func (e *Engine) Height(node *sema.Node, width int) (int, error) {
+	p := &pass{e: e}
+	box, err := p.build(node)
+	if err != nil {
+		return 0, err
+	}
+	// A MaxH of zero is no bound, which is what a scrolling region measures its children against.
+	return e.measure(box, Constraints{MaxW: width}).H, nil
+}
+
 func (e *Engine) layout(node *sema.Node, width, height int, fit bool) (*Box, error) {
 	p := &pass{e: e}
 	box, err := p.build(node)
