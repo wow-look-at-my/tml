@@ -109,6 +109,16 @@ func (v *View) Fit(props Props, width, maxHeight int) (*layout.Box, error) {
 	return v.engine.Fit(node, width, maxHeight)
 }
 
+// ItemHeight is how many rows one item of the named data template takes at width. It counts the rows the engine draws,
+// so a host that windows a long list never keeps a second count of its own. See Window.
+func (v *View) ItemHeight(template string, item sema.Value, width int) (int, error) {
+	node, err := v.program.ExpandItem(template, item, sema.ExpandOptions{Dark: v.dark})
+	if err != nil {
+		return 0, err
+	}
+	return v.engine.Height(node, width)
+}
+
 // RenderFit produces a frame as tall as its content, up to maxHeight, rather than one that fills a viewport. A region
 // drawn inline under a shell prompt wants this. See Live.
 func (v *View) RenderFit(props Props, width, maxHeight int) (string, error) {

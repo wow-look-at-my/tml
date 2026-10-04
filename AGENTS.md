@@ -67,6 +67,8 @@ A pointer event carries `X`/`Y` inside the control it hit, `-1` from the keyboar
 
 Content too long to lay out goes through `Scrollbox`'s `contentHeight`. The host hands over the rows on screen, and says how many there are in all. That takes a 10 000-row transcript from 758 ms a frame to a flat 7.2 ms. See docs/widgets.md.
 
+A list of data-template items too long to lay out scrolls through `tml.Window` (`window.go`). `View.ItemHeight` measures one item with the engine. As a result, the host keeps no row count of its own. The window owns the position, both ends and the follow. Its `Slice` is the items and the `Scrollbox` offset. See docs/widgets.md.
+
 ## Parsing
 
 Delegated to `github.com/wow-look-at-my/xml-validator`: strict XML 1.1, namespace validation, UTF-8/BOM rejection, and line and column positions on elements and attributes alike. An attribute-scoped diagnostic therefore points at the attribute, not at the element several columns to its left. TML contains no XML parser.
