@@ -72,7 +72,7 @@ Every widget also takes the style attributes (`fg`, `bg`, `bold`, `padding`, `bo
 | --- | --- | --- |
 | `Border` | `kind`, `title`, `titleAlign`, `color`, `pad` | A frame around its children. `kind` is a lipgloss border name. The title is spliced into the top edge. |
 | `Popup` | as `Border` | A dialog. Defaults to a rounded border and centres itself on a `Canvas`. |
-| `Scrollbox` | `offset`, `offsetX`, `scrollbar`, `contentHeight` | A viewport onto taller content. The host owns the offset. The wheel reports `Scrolled` and the host moves it. `scrollbar` is `auto`, `always` or `never`. `contentHeight` says the children are a window over content that long -- see below. |
+| `Scrollbox` | `offset`, `offsetX`, `scrollbar`, `contentHeight`, `fade` | A viewport onto taller content. The host owns the offset. The wheel reports `Scrolled` and the host moves it. `scrollbar` is `auto`, `always` or `never`. `contentHeight` says the children are a window over content that long -- see below. `fade` dims the rows at an edge that has content beyond it. |
 
 `Scrollbox` is where the pointer-only rule earns itself. It never takes focus, and its clipping is real. A control scrolled out of view is not in the frame's geometry. A click where it used to be finds nothing.
 

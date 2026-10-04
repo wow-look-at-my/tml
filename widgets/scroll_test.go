@@ -24,7 +24,7 @@ func TestScrollboxShowsTheWindowTheOffsetSelects(t *testing.T) {
 	assert.Equal(t, "c\nd\ne", box.Compose(content(lines(8)...), 1, 3))
 }
 
-// Scrolling stops at the last screenful. How many lines the content wraps to depends on the width the widget was
+// Scrolling stops at the last screenful.
 func TestScrollboxStopsAtTheEnd(t *testing.T) {
 	box := composer(t, "Scrollbox", map[string]string{"offset": "9999", "scrollbar": "never"})
 
@@ -112,6 +112,71 @@ func TestEmptyScrollboxFillsItsSpace(t *testing.T) {
 
 func split(s string) []string { return strings.Split(s, "\n") }
 
+// dimmed is the row the edge fade draws, so a test can say what it expects without spelling out the escapes.
+func dimmed(line string) string { return dimSGR + line + resetSGR }
+
+// An edge with content beyond it is dimmed, which is how a region shows it continues off-screen.
+func TestScrollboxDimsTheEdgeWithContentBeyondIt(t *testing.T) {
+	box := composer(t, "Scrollbox", map[string]string{"offset": "5", "scrollbar": "never", "fade": "true"})
+
+	assert.Equal(t, dimmed("f")+"\ng\nh", box.Compose(content(lines(8)...), 1, 3))
+}
+
+// The bottom edge fades the same way once the content below it runs past the window.
+func TestScrollboxDimsTheBottomEdge(t *testing.T) {
+	box := composer(t, "Scrollbox", map[string]string{"scrollbar": "never", "fade": "true"})
+
+	assert.Equal(t, "a\nb\n"+dimmed("c"), box.Compose(content(lines(8)...), 1, 3))
+}
+
+func TestScrollboxDimsBothEdges(t *testing.T) {
+	box := composer(t, "Scrollbox", map[string]string{"offset": "2", "scrollbar": "never", "fade": "true"})
+
+	assert.Equal(t, dimmed("c")+"\nd\n"+dimmed("e"), box.Compose(content(lines(8)...), 1, 3))
+}
+
+// A tall region has room for a band deeper than one row, so the fade has body rather than a single dim line.
+func TestScrollboxWidensTheFadeOnATallRegion(t *testing.T) {
+	box := composer(t, "Scrollbox", map[string]string{"offset": "4", "scrollbar": "never", "fade": "true"})
+
+	want := dimmed("e") + "\n" + dimmed("f") + "\ng\nh\ni\nj\n" + dimmed("k") + "\n" + dimmed("l")
+	assert.Equal(t, want, box.Compose(content(lines(20)...), 1, 8))
+}
+
+// Nothing is dimmed when the whole content is on screen -- the fade marks what is hidden, not what is displayed.
+func TestScrollboxFadesNothingWhenTheEndIsInView(t *testing.T) {
+	box := composer(t, "Scrollbox", map[string]string{"offset": "9999", "scrollbar": "never", "fade": "true"})
+
+	assert.Equal(t, "a\nb\nc", box.Compose(content(lines(3)...), 1, 3))
+}
+
+func TestScrollboxLeavesTheFadeOffUnlessAsked(t *testing.T) {
+	box := composer(t, "Scrollbox", map[string]string{"scrollbar": "never"})
+
+	assert.Equal(t, "a\nb\nc", box.Compose(content(lines(8)...), 1, 3))
+}
+
+func TestScrollboxRejectsAnUnknownFadeValue(t *testing.T) {
+	_, err := tryBuild("Scrollbox", map[string]string{"fade": "sometimes"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "expected true or false")
+}
+
+// A child's own styling ends with a reset, which would switch the fade off part way across the row.
+func TestScrollboxKeepsTheFadePastAChildsReset(t *testing.T) {
+	box := composer(t, "Scrollbox", map[string]string{
+		"offset":    "5",
+		"scrollbar": "never",
+		"fade":      "true",
+	})
+	rows := lines(8)
+	rows[5] = "\x1b[31mf\x1b[0m tail"
+
+	pad := strings.Repeat(" ", 5)
+	assert.Equal(t, dimmed("\x1b[31mf\x1b[0m"+dimSGR+" tail")+"\ng"+pad+"\nh"+pad,
+		box.Compose(content(rows...), 6, 3))
+}
+
 // A host with more content than it can afford to lay out every frame hands over the rows on screen and says how many
 func TestScrollboxDrawsTheWindowItWasHanded(t *testing.T) {
 	box := composer(t, "Scrollbox", map[string]string{
@@ -138,7 +203,7 @@ func TestScrollboxBarMeasuresTheContentNotTheWindow(t *testing.T) {
 		"4 rows of 4 does not scroll, so there is no thumb at all")
 }
 
-// contentHeight is what the maximum offset is derived from, so a host can ask for the end of the content rather than
+// contentHeight is what the maximum offset is derived from.
 func TestScrollboxClampsToTheContentItWasToldAbout(t *testing.T) {
 	box := composer(t, "Scrollbox", map[string]string{
 		"offset":        "9999",
