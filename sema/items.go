@@ -96,6 +96,42 @@ func (p *Program) expandItems(node *tnode, scope *evalScope, file string, stack 
 	return out, nil
 }
 
+// ExpandItem instantiates one item of the named data template, as an items control repeats it. A host that lays out a
+// list in windows measures each item through it, so the rows it counts are the rows the engine draws.
+func (p *Program) ExpandItem(template string, item Value, opts ExpandOptions) (*Node, error) {
+	var found *compiled
+	for _, c := range p.components {
+		if !c.def.IsData || c.def.Name != template {
+			continue
+		}
+		if found != nil {
+			return nil, fmt.Errorf("data template %q is declared in both %s and %s; name one file's", template, found.file, c.file)
+		}
+		found = c
+	}
+	if found == nil {
+		return nil, fmt.Errorf("no data template is named %q", template)
+	}
+	tokens, err := p.resolveTokens(opts)
+	if err != nil {
+		return nil, err
+	}
+	args, err := itemArgs(item)
+	if err != nil {
+		return nil, err
+	}
+	scope, err := p.bindProps(found, args, tokens, found.def.Pos)
+	if err != nil {
+		return nil, err
+	}
+	children, err := p.expandNodes(found.body, scope, found.file, nil, []string{found.def.Name})
+	if err != nil {
+		return nil, err
+	}
+	// A vertical stack is what an items control lays its instances out in.
+	return &Node{Kind: syntax.ElementNode, Name: "Stack", Attrs: map[string]Value{}, Children: children, Pos: found.def.Pos}, nil
+}
+
 // itemArgs is a single item's fields, as the values its template's properties take. A record supplies them by name. A plain
 func itemArgs(item Value) (map[string]Value, error) {
 	if item.Type().Kind != KindRecord {
