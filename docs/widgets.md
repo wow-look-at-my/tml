@@ -84,6 +84,22 @@ Every widget also takes the style attributes (`fg`, `bg`, `bold`, `padding`, `bo
 
 The same measurement windowed is **7.2 ms and flat**: 7.1 at many rows, 7.2 at 1 000, 7.5 at 10 000. The cost is now the viewport rather than the content. In this mode the children draw from the top, because the host already cut at the offset. `offset` remains the position. Both the scrollbar and the maximum reported through `UI().Target` describe the whole content, which is the only reason to be told its size. The slice is the host's. It owns the content, so only it can say which rows the offset selects.
 
+**A list of items windows through `tml.Window`, not through a count of the host's own.** A conversation is a list of messages, each a data template, and the host does not know how many rows the engine draws one in. `View.ItemHeight(template, item, width)` asks the engine: it measures one item and publishes nothing. A `Window` keeps the scroll position as an item and a row in it, the bottom row on screen. Its `Slice` names the items on screen and the offset that hides the rows above the window. The host hands those items over whole, with no `contentHeight`:
+
+```go
+s := win.Slice(list, rows)   // list reports each item's ItemHeight
+props["items"] = records(s.First, s.Last)
+props["offset"] = s.Offset
+```
+
+```xml
+<Scrollbox offset="{offset}">
+	<Stack itemsSource="{items}" itemTemplate="Message" width="*"/>
+</Scrollbox>
+```
+
+The window stops at the first and the last screenful. It steps over an item of height zero, which is how a host hides one without removing it. It follows the end of the list until the user scrolls away, and again once the user scrolls back to the newest row. `Scroll(n, list, rows)` moves it, and `Follow` sends it to the end.
+
 ### Controls
 
 | Element | Attributes | Notes |
