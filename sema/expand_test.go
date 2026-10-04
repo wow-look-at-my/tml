@@ -178,7 +178,7 @@ func TestThemeTokensResolveAndFollowDarkMode(t *testing.T) {
 	assert.Contains(t, dark.Dump(), `fg="#e0af68"`, "an adaptive token follows the mode")
 }
 
-// A theme token is text until it reaches a typed property, where it is re-read as that type. A token that is not a
+// A theme token is text until it reaches a typed property, where it is re-read as that type.
 func TestTokenIsCheckedAgainstTheTargetType(t *testing.T) {
 	_, err := expand(t, map[string]string{
 		"app.tml": `<Component xmlns="urn:tml:v1" name="App">

@@ -41,12 +41,12 @@ type Element struct {
 	Focus bool `json:"focus"`
 	Hover bool `json:"hover"`
 	Held  bool `json:"held"`
-	// Rect is where the element paints, in viewport coordinates. Content is the space inside its margin, border and
+	// Rect is where the element paints, in viewport coordinates. Content is the space inside its margin.
 	Rect    Rect   `json:"rect"`
 	Content Size   `json:"content"`
 	Clip    Rect   `json:"clip"`
 	Scroll  Scroll `json:"scroll"`
-	// Text is everything this element drew, escape sequences removed. Lines is the same text split, which is what a
+	// Text is everything this element drew, escape sequences removed. Lines is the same text split.
 	Text  string   `json:"text"`
 	Lines []string `json:"lines"`
 	// ANSI is the styled version, present only when the caller asked for it.
@@ -57,7 +57,7 @@ func toRect(r layout.Rect) Rect { return Rect{X: r.X, Y: r.Y, W: r.W, H: r.H} }
 
 // Options change what a description carries.
 type Options struct {
-	// ANSI fills each element's ANSI field. It is off by default because an assertion on styled text is an assertion on
+	// ANSI fills each element's ANSI field.
 	ANSI bool
 }
 
@@ -139,7 +139,7 @@ func Elements(box *layout.Box, state map[string]layout.Target, opts Options) []E
 	return out
 }
 
-// At returns the id of the innermost element covering the cell, or "" when nothing does. It is how a click in the
+// At returns the id of the innermost element covering the cell, or "" when nothing does.
 func At(box *layout.Box, x, y int) string {
 	hit := ""
 	var walk func(*layout.Box)

@@ -29,7 +29,7 @@ func Execute() {
 	}
 }
 
-// loadView opens a .tml file by path. The file's directory becomes the root imports resolve against, so a view is
+// loadView opens a .tml file by path. The file's directory becomes the root imports resolve against.
 func loadView(path string, dark bool, props []string) (*tml.View, tml.Props, error) {
 	dir, file := filepath.Split(path)
 	if dir == "" {

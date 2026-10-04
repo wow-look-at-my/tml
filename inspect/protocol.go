@@ -18,7 +18,8 @@ type Frame struct {
 	ANSI string
 }
 
-// Source is a live program that can report the frame currently on screen. A program that renders through tml.View gets
+// Source is a live program that can report the frame on screen. A program
+// that renders through tml.View gets
 type Source interface {
 	Frame() (Frame, bool)
 }
@@ -73,7 +74,7 @@ type Response struct {
 	IDs      []string   `json:"ids,omitempty"`
 	// Hits is At's answer per cell, row by row, indexing the elements in document order. An empty cell is negative.
 	Hits [][]int `json:"hits,omitempty"`
-	// Hit is the id under a cell for op=at. It is empty when nothing covers the cell, which Found tells apart from "an
+	// Hit is the id under a cell for op=at. It is empty when nothing covers the cell.
 	Hit   string `json:"hit"`
 	Found bool   `json:"found,omitempty"`
 }

@@ -56,7 +56,7 @@ func (t *textbox) Measure(maxW, _ int) (int, int) {
 func (t *textbox) Render(w, _ int) string {
 	shown, empty := t.text()
 
-	// The whole field is underlined, not just the text in it: an empty box with nothing under it is indistinguishable
+	// The whole field is underlined, not the text in it: an empty box with nothing under it is indistinguishable
 	style := lipgloss.NewStyle().Underline(true)
 	if t.disabled {
 		style = style.Faint(true).Underline(false)
@@ -86,7 +86,7 @@ func (t *textbox) column(shown string) int {
 	return min(t.cursor, t.measure.Width(shown))
 }
 
-// caret draws a single cell of the field reversed. The host owns the text, so this is the only thing left that says where
+// caret draws a single cell of the field reversed. The host owns the text.
 func caret(style lipgloss.Style, body string, col int, measure widget.Measurer) string {
 	width := measure.Width(body)
 	if col < 0 || col >= width {

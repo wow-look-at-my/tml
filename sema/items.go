@@ -23,7 +23,7 @@ func isItemsControl(node *tnode) bool {
 	return false
 }
 
-// expandItems builds a single instance of a data template per item. This is the seam that lets a repeated thing be a
+// expandItems builds a single instance of a data template per item.
 func (p *Program) expandItems(node *tnode, scope *evalScope, file string, stack []string) ([]*Node, error) {
 	var source *Expr
 	var template string

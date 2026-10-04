@@ -92,7 +92,7 @@ func TestStarSizingFillsTheViewport(t *testing.T) {
 	}
 }
 
-// The grid fixture proves the whole pipeline handles attached properties: parse, analyse, expand, solve tracks, and
+// The grid fixture proves the whole pipeline handles attached properties: parse, analyse, expand, solve tracks.
 func TestGridRendersThroughTheWholePipeline(t *testing.T) {
 	view, err := tml.Load(os.DirFS("testdata/grid"), "app.tml", tml.Options{})
 	require.NoError(t, err)
@@ -102,7 +102,7 @@ func TestGridRendersThroughTheWholePipeline(t *testing.T) {
 	golden(t, "grid-render", out)
 }
 
-// fakeInput stands in for a bubbles component: it draws itself and accepts a width, exactly both things TML asks of
+// fakeInput stands in for a bubbles component: it draws itself and accepts a width.
 type fakeInput struct{ width int }
 
 func (f *fakeInput) View() string {
@@ -128,7 +128,7 @@ func widgetFS() fstest.MapFS {
 	}
 }
 
-// A bound widget is laid out like any other element: it is told the width the star share gave it and renders into
+// A bound widget is laid out like any other element.
 func TestBoundWidgetIsSizedByLayout(t *testing.T) {
 	input := &fakeInput{}
 	widgets := widget.NewRegistry().Bind("Search", widget.Bubble(input))

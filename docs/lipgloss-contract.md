@@ -1,12 +1,12 @@
 # What TML delegates to Lip Gloss, and the traps in it
 
-TML solves layout constraints and produces rects. Lip Gloss owns measurement, styling and compositing. TML emits no ANSI and does no text wrapping. `render/lipgloss_contract_test.go` pins every behaviour below, so an upstream change fails a test instead of producing garbled frames.
+TML solves layout constraints and produces rects. Lip Gloss owns measurement, styling and compositing. TML emits no ANSI and does no text wrapping. `render/lipgloss_contract_test.go` pins every behaviour below. As a result, an upstream change fails a test instead of producing garbled frames.
 
-Target is `charm.land/lipgloss/v2` v2.0.6. The v2 modules moved off the `github.com/charmbracelet/...` path. The old path still resolves on the proxy. But the served `go.mod` declares `charm.land/lipgloss/v2`, and the build fails with a module path mismatch. Lip Gloss v2 also requires Go >= 1.25.0.
+Target is `charm.land/lipgloss/v2` v2.0.6. The v2 modules moved off the `github.com/charmbracelet/...` path. The old path still resolves on the proxy. But the served `go.mod` declares `charm.land/lipgloss/v2`. The build fails with a module path mismatch. Lip Gloss v2 also requires Go >= 1.25.0.
 
 ## Measurement
 
-`lipgloss.Width`, `Height` and `Size` count display cells and ignore ANSI, and account for wide runes (`世` is 2 cells). This is the whole leaf measure pass — TML never counts bytes or runes itself.
+`lipgloss.Width`, `Height` and `Size` count display cells and ignore ANSI, and account for wide runes (`世` is cells). This is the whole leaf measure pass — TML never counts bytes or runes itself.
 
 `Style.Width(n)` wraps text and pads every line to `n`. It does not truncate. This is what renders a text leaf once layout has assigned it a rect.
 
@@ -30,7 +30,7 @@ TML resolves the cascade in its own style model and emits one fully-resolved `li
 
 **Layer coordinates are parent-relative.** `flattenRecursive` accumulates `absX := layer.x + parentX`. Arrange can emit parent-relative rects and never track absolute screen coordinates.
 
-**But z-index is NOT parent-scoped, and equal z is unordered.** `flatten` sorts with `slices.SortFunc(..., a.layer.z - b.layer.z)` — each layer's own `z`, never an accumulated one. A parent's z creates no stacking context: a nested layer with a high z paints above an unrelated top-level layer with a lower z. And `slices.SortFunc` is not stable, so two layers sharing a z have unspecified paint order.
+**But z-index is NOT parent-scoped, and equal z is unordered.** `flatten` sorts with `slices.SortFunc(..., a.layer.z - b.layer.z)` — each layer's own `z`, not an accumulated one. A parent's z creates no stacking context: a nested layer with a high z paints above an unrelated top-level layer with a lower z. And `slices.SortFunc` is not stable, so layers sharing a z have unspecified paint order.
 
 Consequence: the renderer allocates z from a single tree-wide counter in document order, so every layer gets a distinct, increasing z. Sibling order is never left to the sort. `Overlay` raises the counter into a higher band for its children.
 

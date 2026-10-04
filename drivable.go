@@ -19,7 +19,7 @@ type drivable struct {
 
 var drives drivable
 
-// painted is called as soon as per frame, by the View that painted it. The check runs on a TIMER armed here, never on a
+// painted is called as soon as per frame, by the View that painted it. The check runs on a TIMER armed here.
 func (d *drivable) painted(driven bool) {
 	if driven || underTest() {
 		return
@@ -38,7 +38,7 @@ func (d *drivable) painted(driven bool) {
 	})
 }
 
-// check is the failure itself, with no timer and no exemptions, so a test can reach it without building a program and
+// check is the failure itself, with no timer and no exemptions.
 func (d *drivable) check() {
 	fmt.Fprintf(os.Stderr, "\ntml: this program has been drawing for %s and the inspector cannot drive it.\n"+
 		"Build it with tml.NewProgram (or tml.Run) instead of tea.NewProgram:\n"+
@@ -50,7 +50,7 @@ func (d *drivable) check() {
 	panic("tml: no way to drive this program; build it with tml.NewProgram")
 }
 
-// reset disarms the guard. Test-only, and it exists because the guard is process-wide for the same reason the
+// reset disarms the guard. Test-only.
 func (d *drivable) reset() {
 	d.mu.Lock()
 	defer d.mu.Unlock()
@@ -60,5 +60,5 @@ func (d *drivable) reset() {
 	}
 }
 
-// underTest reports whether this binary was built by `go test`. It is not an off switch: the flag exists only in a
+// underTest reports whether this binary was built by `go test`. It is not an off switch.
 func underTest() bool { return flag.Lookup("test.v") != nil }

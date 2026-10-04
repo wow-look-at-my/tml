@@ -112,7 +112,7 @@ func TestWidgetAttributesAndStylingCoexist(t *testing.T) {
 	assert.NotEqual(t, ansi.Strip(out), out, "the style attribute reached lipgloss")
 }
 
-// Anything a widget does not claim is styling, so a typo lands there and is rejected as a style attribute rather than
+// Anything a widget does not claim is styling.
 func TestUnknownWidgetAttributeIsRejectedAsStyling(t *testing.T) {
 	loaded, err := view(t, app(`<Badge label="new" colour="red"/>`), tml.Options{})
 	require.NoError(t, err)

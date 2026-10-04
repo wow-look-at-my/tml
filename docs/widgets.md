@@ -6,9 +6,9 @@ The split is that **widgets draw and panels solve constraints**. A widget is han
 
 ## Interaction
 
-Two attributes work on any element:
+Attributes work on any element:
 
-- `id` names it. An id is how focus survives from one frame to the next. It is also how the host tells one control from another. Two elements sharing an id is an error where it is written.
+- `id` names it. An id is how focus survives from one frame to the next. It is also how the host tells one control from another. Elements sharing an id is an error where it is written.
 - `action` is the string the element reports when it is activated. The host matches on it, so its `Update` never learns where anything ended up.
 
 ```go
@@ -31,7 +31,7 @@ view := tea.NewView(m.frame())
 view.MouseMode = tea.MouseModeAllMotion  // cell motion only reports movement while a button is held
 ```
 
-A control is reachable two ways. The two are not the same set:
+A control is reachable ways. The two are not the same set:
 
 - the **focus ring** is the widgets that take focus. Tab steps through them, in document order.
 - the **pointer** reaches those plus anything else carrying an id, which is how the wheel finds a `Scrollbox` that is not a tab stop.
@@ -82,7 +82,7 @@ Every widget also takes the style attributes (`fg`, `bg`, `bold`, `padding`, `bo
 <Scrollbox id="transcript" offset="{scroll}" contentHeight="{lines}">
 ```
 
-The same measurement windowed is **7.2 ms and flat**: 7.1 at 100 rows, 7.2 at 1 000, 7.5 at 10 000. The cost is now the viewport rather than the content. In this mode the children draw from the top, because the host already cut at the offset. `offset` remains the position. Both the scrollbar and the maximum reported through `UI().Target` describe the whole content, which is the only reason to be told its size. The slice is the host's. It owns the content, so only it can say which rows the offset selects.
+The same measurement windowed is **7.2 ms and flat**: 7.1 at many rows, 7.2 at 1 000, 7.5 at 10 000. The cost is now the viewport rather than the content. In this mode the children draw from the top, because the host already cut at the offset. `offset` remains the position. Both the scrollbar and the maximum reported through `UI().Target` describe the whole content, which is the only reason to be told its size. The slice is the host's. It owns the content, so only it can say which rows the offset selects.
 
 ### Controls
 
@@ -176,4 +176,4 @@ Then opt into whatever else applies:
 | `Slotted` | Names the regions content can be written into, so a misspelt `<Button.Contnt>` fails when the view loads. |
 | `Anchored` | An opinion about where it sits on a `Canvas`. `Popup` says centre. |
 
-`Border`, `Popup` and `Scrollbox` are built on exactly these interfaces and nothing else, so a widget written outside the language is not a second-class one.
+`Border`, `Popup` and `Scrollbox` are built on exactly these interfaces and nothing else, so a widget written outside. The language is not a second-class one.

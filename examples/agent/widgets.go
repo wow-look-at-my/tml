@@ -8,7 +8,7 @@ import (
 	"github.com/wow-look-at-my/tml/widget"
 )
 
-// Both widgets this example binds are the point of it: neither belongs in the language's own library, both are
+// Both widgets this example binds are the point of it: neither belongs in the language's own library.
 var roles = map[string]struct {
 	label  string
 	colour string
@@ -62,7 +62,7 @@ func (t *transcript) Render(w, h int) string {
 	return body
 }
 
-// body lays every turn out at the given width. A blank line between turns is what makes a wall of text readable as a
+// body lays every turn out at the given width.
 func (t *transcript) body(w int) string {
 	var lines []string
 	for i, e := range t.entries {
@@ -101,7 +101,8 @@ func newDiff(ctx widget.Context) (widget.Native, error) {
 	return &diff{lines: ctx.Attrs.List("lines")}, nil
 }
 
-// Measure reports the height the diff actually draws to, wrapping included. A long line becomes a pair of rows, and a card
+// Measure reports the height the diff draws to, wrapping included. A long
+// line becomes a pair of rows, and a card
 func (d *diff) Measure(maxW, _ int) (int, int) {
 	width := 0
 	for _, line := range d.lines {

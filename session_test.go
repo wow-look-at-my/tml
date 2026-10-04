@@ -31,7 +31,7 @@ func (m driveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m driveModel) View() tea.View { return tea.NewView("") }
 
-// A program built through NewProgram can be typed into; a program built any other way refuses by name. That difference is
+// A program built through NewProgram can be typed into; a program built any other way refuses by name.
 func TestNewProgramIsWhatMakesAProgramDrivable(t *testing.T) {
 	t.Serial()
 	exclusive(t)

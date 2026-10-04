@@ -1,7 +1,4 @@
 // One-shot unix socket that answers a single inspect JSON-line request.
-//
-// The CLI dials, writes one Request, and reads one Response. This is that
-// other end: bind, accept, discard the request, write argv's canned JSON.
 import { createServer } from 'node:net';
 import { readFileSync, unlinkSync } from 'node:fs';
 

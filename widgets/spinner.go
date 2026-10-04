@@ -19,7 +19,7 @@ var spinners = map[string][]string{
 // spinnerKinds is sorted so the diagnostic listing them is stable.
 var spinnerKinds = []string{"arrow", "bar", "circle", "dot", "dots", "line"}
 
-// spinner shows a single frame of an animation. Which frame is the host's business: TML has no clock, and a widget that
+// spinner shows a single frame of an animation. Which frame is the host's business: TML has no clock.
 type spinner struct {
 	frames  []string
 	frame   int
@@ -37,7 +37,7 @@ func newSpinner(ctx widget.Context) (widget.Native, error) {
 		return nil, err
 	}
 	frames := spinners[kind]
-	// A frame counter is normally a tick count that only goes up, so it wraps here rather than making every caller do the
+	// A frame counter is normally a tick count that only goes up.
 	frame = ((frame % len(frames)) + len(frames)) % len(frames)
 	return &spinner{
 		frames:  frames,

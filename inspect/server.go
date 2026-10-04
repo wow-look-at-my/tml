@@ -18,7 +18,7 @@ import (
 // Server answers inspection requests about a live program. A single handler serves a pair of transports. A unix socket carries
 type Server struct {
 	source Source
-	// control is the source when it can also be driven. A nil a single answers every write operation with a reason rather than
+	// control is the source when it can also be driven.
 	control Controller
 
 	mu       sync.Mutex
@@ -31,10 +31,10 @@ type Server struct {
 	waiters []chan struct{}
 }
 
-// frameWait is how long op=frame parks before answering that nothing new was painted. It is short on purpose: the
+// frameWait is how long op=frame parks before answering that nothing new was painted. It is short on purpose.
 const frameWait = 2 * time.Second
 
-// NewServer returns a server reading from source. When source also implements Controller, the driving operations are
+// NewServer returns a server reading from source. When source also implements Controller.
 func NewServer(source Source) *Server {
 	s := &Server{source: source}
 	if c, ok := source.(Controller); ok {
@@ -257,7 +257,7 @@ func (s *Server) tree() Response {
 	return Response{Tree: &t}
 }
 
-// frame reports the painted frame. With Since it waits for a newer frame, so a watcher follows the program instead of
+// frame reports the painted frame. With Since it waits for a newer frame.
 func (s *Server) frame(req Request) Response {
 	deadline := time.After(frameWait)
 	for {

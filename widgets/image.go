@@ -42,7 +42,7 @@ const (
 
 var protocolNames = []string{protoAuto, protoITerm, protoKitty, protoLink, protoMosaic}
 
-// cellAspect is how much taller a terminal cell is than it is wide. Nothing reports the real figure portably, and the default is
+// cellAspect is how much taller a terminal cell is than it is wide. Nothing reports the real figure portably.
 const cellAspect = 2
 
 // imageWidget draws a picture as well as the terminal it is in allows.
@@ -104,7 +104,7 @@ func readImage(fsys fs.FS, dir, src string) ([]byte, error) {
 	return fs.ReadFile(fsys, name)
 }
 
-// detectProtocol reads the environment for a terminal that can draw pixels. There is no portable query that works from
+// detectProtocol reads the environment for a terminal that can draw pixels.
 func detectProtocol(env func(string) string) string {
 	switch {
 	case env("TERM") == "xterm-kitty", env("KITTY_WINDOW_ID") != "":
@@ -218,7 +218,7 @@ func (i *imageWidget) iterm(w, h int) string {
 	})
 }
 
-// mosaic draws the image out of half-block characters: the upper half is the foreground colour and the lower half the
+// mosaic draws the image out of half-block characters.
 func (i *imageWidget) mosaic(w, h int) string {
 	pixels := sample(i.img, w, h*2, i.backdrop())
 

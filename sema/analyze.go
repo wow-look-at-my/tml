@@ -84,7 +84,7 @@ func Analyze(unit *syntax.Unit, opts Options) (*Program, error) {
 		components: make(map[string]*compiled),
 		tokens:     make(map[string]*syntax.Token),
 	}
-	// A theme has no properties and nothing to instantiate, so it is checked for its own sake -- duplicate tokens, an
+	// A theme has no properties and nothing to instantiate, so it is checked for its own sake -- duplicate tokens.
 	if unit.Root.Component != nil {
 		program.root = unit.Root.Component
 		program.rootFile = unit.Root.Path
@@ -259,7 +259,7 @@ func (p *Program) checkNode(c *compiled, node *tnode, names map[string]bool) err
 	return p.checkNodes(c, node.children, scoped)
 }
 
-// forBindings returns the names visible inside a For, which are the enclosing names plus the loop variable and
+// forBindings returns the names visible inside a For.
 func forBindings(node *tnode, names map[string]bool) (map[string]bool, error) {
 	as, ok := attrOf(node, "as")
 	if !ok {
@@ -340,7 +340,7 @@ func (p *Program) checkElementName(c *compiled, node *tnode) error {
 		"unknown element <%s>%s", name, didYouMean(name, p.knownElements(c.file)))}
 }
 
-// checkSlotName rejects a slot a widget does not have. A component's slots are declared in its own template and
+// checkSlotName rejects a slot a widget does not have.
 func (p *Program) checkSlotName(node *tnode, owner, slot string) error {
 	accepted := p.slots[owner]
 	if len(accepted) == 0 {

@@ -108,7 +108,7 @@ func (f *frame) Compose(slots widget.Slots, w, h int) string {
 	return title(style.Render(body), f.title, f.titleAlign, f.measure)
 }
 
-// title writes a label into the top edge of an already-bordered block. It runs after the border is drawn because that
+// title writes a label into the top edge of an already-bordered block.
 func title(rendered, label, align string, measure widget.Measurer) string {
 	if label == "" {
 		return rendered

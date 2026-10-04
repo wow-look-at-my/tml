@@ -11,7 +11,8 @@ func (e *Engine) measure(box *Box, c Constraints) Size {
 	outerW, outerH := box.outer()
 	inner := Constraints{MaxW: max(0, c.MaxW-outerW), MaxH: max(0, c.MaxH-outerH)}
 
-	// An explicit size is a constraint on the children too, not just on the box itself. Measuring them against the
+	// An explicit size is a constraint on the children too, not on the box
+	// itself.
 	if box.width.Kind == sema.LengthCells {
 		inner.MaxW = min(inner.MaxW, max(0, box.width.Cells-outerW))
 	}
@@ -70,7 +71,7 @@ func (e *Engine) measureContent(box *Box, inner Constraints) Size {
 	return content
 }
 
-// measureText reports the height the text needs after wrapping, because lipgloss wraps rather than truncates and the
+// measureText reports the height the text needs after wrapping.
 func (e *Engine) measureText(box *Box, inner Constraints) Size {
 	if box.Text == "" {
 		return Size{}
@@ -83,7 +84,7 @@ func (e *Engine) measureText(box *Box, inner Constraints) Size {
 	if box.Overflow == OverflowClip || box.Overflow == OverflowEllipsis {
 		return Size{W: inner.MaxW, H: lipgloss.Height(box.Text)}
 	}
-	// lipgloss.Wrap is the call Style.Render makes to wrap, so this counts the lines the paint will produce. Rendering a
+	// lipgloss.Wrap is the call Style.Render makes to wrap, so this counts the lines the paint will produce.
 	wrapped := lipgloss.Wrap(box.Text, inner.MaxW, "")
 	return Size{W: inner.MaxW, H: lipgloss.Height(wrapped)}
 }
@@ -98,7 +99,7 @@ func (e *Engine) measureChildren(box *Box, inner Constraints) Size {
 	return fillForStars(box, content, inner)
 }
 
-// fillForStars propagates a star size up the tree. A star child fills the space its parent gives it, so a parent that
+// fillForStars propagates a star size up the tree. A star child fills the space its parent gives it.
 func fillForStars(box *Box, content Size, inner Constraints) Size {
 	for _, child := range box.Children {
 		if child.width.Kind == sema.LengthStar {

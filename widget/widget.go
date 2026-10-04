@@ -31,22 +31,22 @@ type Stateful interface {
 	SetState(State)
 }
 
-// Focusable marks a widget that takes part in the focus ring: tab lands on it and Enter activates it. A widget that
+// Focusable marks a widget that takes part in the focus ring: tab lands on it and Enter activates it.
 type Focusable interface {
-	// AcceptsFocus reports whether this instance is currently focusable. A disabled control returns false, which is what
+	// AcceptsFocus reports whether this instance is focusable. A disabled control returns false, which is what
 	AcceptsFocus() bool
 }
 
-// Composer is a widget that wraps the children written inside it rather than replacing them: a frame, a dialog, a
+// Composer is a widget that wraps the children written inside it rather than replacing them: a frame, a dialog.
 type Composer interface {
 	Native
-	// Inset is the space the widget keeps for itself around its children, so layout can measure them against what is
+	// Inset is the space the widget keeps for itself around its children.
 	Inset() (horizontal, vertical int)
 	// Compose draws the widget at the size it was given, around its children.
 	Compose(slots Slots, w, h int) string
 }
 
-// Layout is how a composer wants its children measured and placed, for the cases the default does not cover. The
+// Layout is how a composer wants its children measured and placed, for the cases the default does not cover.
 type Layout struct {
 	// FillW and FillH take all the space on offer rather than shrinking to fit the children. A viewport does, and so does anything that scrolls.
 	FillW, FillH bool
@@ -54,7 +54,7 @@ type Layout struct {
 	FreeW, FreeH bool
 	// OffsetX and OffsetY shift the children inside the widget. Layout needs to know because a control scrolled halfway
 	OffsetX, OffsetY int
-	// ContentW and ContentH are the size of the whole content when the children are only a window over it, and nothing when
+	// ContentW and ContentH are the size of the whole content when the children are only a window over it.
 	ContentW, ContentH int
 }
 
@@ -63,7 +63,7 @@ type Arranger interface {
 	Arrange() Layout
 }
 
-// Anchored is a widget with an opinion about where it belongs on a canvas. A dialog says center, so a popup lands in
+// Anchored is a widget with an opinion about where it belongs on a canvas. A dialog says center.
 type Anchored interface {
 	DefaultAnchor() string
 }
@@ -72,13 +72,13 @@ type Anchored interface {
 type Context struct {
 	// Attrs are the element's evaluated attributes.
 	Attrs Attrs
-	// FS is the filesystem the view was loaded from, so a widget that reads a file reads it from the same place the
+	// FS is the filesystem the view was loaded from.
 	FS fs.FS
-	// Dir is the directory of the .tml file the element was written in, which is what a relative path in an attribute is
+	// Dir is the directory of the .tml file the element was written in.
 	Dir string
 	// Dark reports whether the view is rendering against a dark theme.
 	Dark bool
-	// Measure is how wide a string is, in cells; nil means lipgloss.Width. A widget measures with this rather than with
+	// Measure is how wide a string is, in cells; nil means lipgloss.Width.
 	Measure Measurer
 }
 
@@ -102,20 +102,20 @@ func (s Slots) Get(name string) []string { return s[name] }
 // Default is the content written directly inside the element.
 func (s Slots) Default() []string { return s[""] }
 
-// Slotted is the optional half of a factory that accepts named content. The names are checked when the view loads, so
+// Slotted is the optional half of a factory that accepts named content. The names are checked when the view loads.
 type Slotted interface {
 	Slots() []string
 }
 
 // Factory builds a widget per element, from that element's attributes. This is the seam the language's own widgets
 type Factory interface {
-	// Attributes lists the attribute names this widget consumes. Everything else written on the element is styling, so
+	// Attributes lists the attribute names this widget consumes. Everything else written on the element is styling.
 	Attributes() []string
 	// Build makes the widget for a single element. A failure here is reported at the element's position, so a bad attribute
 	Build(Context) (Native, error)
 }
 
-// NewFactory pairs the attribute names a widget reads with the function that makes the widget, which is all a Factory is. The
+// NewFactory pairs the attribute names a widget reads with the function that makes the widget, which is all a Factory is.
 func NewFactory(attrs []string, build func(Context) (Native, error)) Factory {
 	return declared{attrs: attrs, build: build}
 }
@@ -222,7 +222,7 @@ func (r *Registry) Names() []string {
 	return names
 }
 
-// Merge layers other's bindings under this registry's own, and returns the result without touching either input. The
+// Merge layers other's bindings under this registry's own, and returns the result without touching either input.
 func (r *Registry) Merge(other *Registry) *Registry {
 	merged := NewRegistry()
 	for _, source := range []*Registry{other, r} {
@@ -249,7 +249,7 @@ type Sizer interface {
 	SetWidth(int)
 }
 
-// Bubble adapts a Bubble Tea component into a native element. Pass a pointer, as in Bubble(&m.input): SetWidth has a
+// Bubble adapts a Bubble Tea component into a native element. Pass a pointer, as in Bubble(&m.input).
 func Bubble(v Viewer) Native { return bubble{v: v} }
 
 // BubbleMeasured is Bubble with the host's own width method, for a host that negotiated the width with its terminal.

@@ -6,8 +6,7 @@ import (
 	"github.com/wow-look-at-my/tml"
 )
 
-// exclusive gives a test a clean inspector and a clean drivable guard. Both are process-wide by design -- every Load
-// adopts into the same inspector -- so a test that asserts on either starts by putting it back to nothing.
+// exclusive gives a test a clean inspector and a clean drivable guard.
 func exclusive(t *testing.T) {
 	t.Helper()
 	tml.ResetInspection()

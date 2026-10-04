@@ -87,7 +87,7 @@ type model struct {
 	offset  int
 	prompt  string
 
-	// patchAt and resultsAt are how many turns had been said when each card arrived, which is what puts the cards back in
+	// patchAt and resultsAt are how many turns had been said when each card arrived.
 	patchAt, resultsAt int
 
 	asking  bool
@@ -111,7 +111,7 @@ func newModel() (*model, error) {
 		return nil, err
 	}
 
-	// The transcript and the diff are this program's own widgets, bound by name and used in the template exactly like a
+	// The transcript and the diff are this program's own widgets.
 	widgets := widget.NewRegistry().
 		BindFactory("Transcript", widget.NewFactory([]string{"entries"}, newTranscript)).
 		BindFactory("Diff", widget.NewFactory([]string{"lines"}, newDiff))
@@ -177,13 +177,13 @@ func (m *model) split() (before, between, after []string) {
 	return m.entries[:patchAt], m.entries[patchAt:resultsAt], m.entries[resultsAt:]
 }
 
-// tail is further down than any transcript reaches. How far the bottom actually is depends on how the text wrapped at
+// tail is further down than any transcript reaches.
 const tail = 1 << 20
 
-// follow pins the session to the bottom, which is where a transcript anyone is reading actually is.
+// follow pins the session to the bottom, which is where a transcript anyone is reading is.
 func (m *model) follow() { m.offset = tail }
 
-// scroll moves the session by delta. While the host is following the tail its own offset is a number past the end, so
+// scroll moves the session by delta. While the host is following the tail its own offset is a number past the end.
 func (m *model) scroll(delta int) int {
 	from, limit := m.offset, tail
 	if target, ok := m.view.UI().Target("session"); ok {
@@ -385,7 +385,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// The flags set the starting state either way round: a still frame and a terminal session are the same program, and a
+	// The flags set the starting state either way round: a still frame and a terminal session are the same program.
 	if *frame {
 		m.width, m.height = *width, *height
 	}
