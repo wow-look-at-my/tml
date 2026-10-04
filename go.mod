@@ -5,6 +5,7 @@ go 1.26.0
 require (
 	charm.land/lipgloss/v2 v2.0.6
 	github.com/stretchr/testify v1.12.1
+	github.com/wow-look-at-my/ansi-optimizer v0.0.0 // go-toolchain:auto-branch
 	github.com/wow-look-at-my/xml-validator/reader v0.0.0 // go-toolchain:auto-branch
 	github.com/wow-look-at-my/xml-validator/validator v0.0.0 // go-toolchain:auto-branch
 )
