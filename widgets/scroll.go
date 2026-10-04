@@ -19,6 +19,7 @@ type scrollbox struct {
 	fade             bool
 	moreAbove        bool
 	moreBelow        bool
+	dark             bool
 	measure          widget.Measurer
 }
 
@@ -27,7 +28,7 @@ func newScrollbox(ctx widget.Context) (widget.Native, error) {
 	if err != nil {
 		return nil, err
 	}
-	box := &scrollbox{bar: bar, measure: ctx.Measure}
+	box := &scrollbox{bar: bar, dark: ctx.Dark, measure: ctx.Measure}
 	if box.fade, err = ctx.Attrs.Bool("fade", false); err != nil {
 		return nil, err
 	}
@@ -98,7 +99,7 @@ func (s *scrollbox) Compose(slots widget.Slots, w, h int) string {
 		lines[i] = columns(line, s.offsetX, viewW, s.measure)
 	}
 	if s.fade {
-		fadeEdges(lines, s.moreAbove || offset > 0, s.moreBelow || offset+h < total, h)
+		fadeEdges(lines, s.moreAbove || offset > 0, s.moreBelow || offset+h < total, h, s.dark)
 	}
 	if gutter == 0 {
 		return strings.Join(lines, "\n")
@@ -143,16 +144,10 @@ func (s *scrollbox) scrollbar(offset, total, view int) []string {
 	return bar
 }
 
-// dimSGR is the terminal's dim attribute, and resetSGR the sequence that ends every styled span a child drew.
-const (
-	dimSGR   = "\x1b[2m"
-	resetSGR = "\x1b[0m"
-)
-
 // fadeTall is the viewport height at which an edge fade widens to a couple of rows. One row is enough to show a short region
 const fadeTall = 8
 
-// fadeRows is how many rows at each edge a viewport of the given height dims. Both bands never meet, so a window
+// fadeRows is how many rows at each edge a viewport of the given height fades. Both bands never meet, so a window
 func fadeRows(height int) int {
 	rows := 1
 	if height >= fadeTall {
@@ -161,72 +156,28 @@ func fadeRows(height int) int {
 	return min(rows, max(0, (height-1)/2))
 }
 
-// fadeEdges dims the rows at the ends of the window when there is content beyond them.
-func fadeEdges(lines []string, above, below bool, height int) {
+// fadeEdges blends the rows at the ends of the window toward the background when there is content beyond them.
+func fadeEdges(lines []string, above, below bool, height int, dark bool) {
 	rows := fadeRows(height)
 	beyond := min(rows, len(lines))
+	// Depth counts inward from the edge, so the row at the edge is the faintest of the band.
 	depth := make([]int, len(lines))
 	if above {
 		for i := range beyond {
-			depth[i] = i + 1
+			depth[i] = rows - i
 		}
 	}
 	if below {
 		for i := range beyond {
 			j := len(depth) - 1 - i
-			depth[j] = max(depth[j], i+1)
+			depth[j] = max(depth[j], rows-i)
 		}
 	}
 	for i, d := range depth {
 		if d > 0 {
-			lines[i] = dim(lines[i])
+			lines[i] = fadeRow(lines[i], d, rows, dark)
 		}
 	}
-}
-
-// dim wraps a drawn row in the terminal's dim attribute, re-asserted after every reset in the row, and leaves a blank
-func dim(line string) string {
-	if strings.TrimSpace(line) == "" {
-		return line
-	}
-	var b strings.Builder
-	b.WriteString(dimSGR)
-	for i := 0; i < len(line); {
-		if end := sgrEnd(line[i:]); end > 0 {
-			b.WriteString(line[i : i+end])
-			if isReset(line[i : i+end]) {
-				b.WriteString(dimSGR)
-			}
-			i += end
-			continue
-		}
-		b.WriteByte(line[i])
-		i++
-	}
-	b.WriteString(resetSGR)
-	return b.String()
-}
-
-// sgrEnd is the length of the select-graphic-rendition sequence at the start of s, or zero when s does not start one.
-func sgrEnd(s string) int {
-	if !strings.HasPrefix(s, "\x1b[") {
-		return 0
-	}
-	i := 2
-	for i < len(s) && (s[i] >= '0' && s[i] <= '9' || s[i] == ';' || s[i] == ':') {
-		i++
-	}
-	if i < len(s) && s[i] == 'm' {
-		return i + 1
-	}
-	return 0
-}
-
-// isReset reports whether an SGR sequence turns every attribute off: a bare ESC[m or the explicit ESC[0m.
-func isReset(seq string) bool {
-	params := strings.TrimSuffix(strings.TrimPrefix(seq, "\x1b["), "m")
-	params = strings.Trim(params, ";")
-	return params == "" || params == "0"
 }
 
 // window takes height rows starting at offset, padding with blanks when the content is shorter than the space.
