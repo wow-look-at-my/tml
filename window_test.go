@@ -147,8 +147,8 @@ func (m measured) Height(i int) int {
 	return h
 }
 
-// draw renders the items a window shows, as a host does.
-func draw(t *testing.T, list measured, s tml.Slice, height int) []string {
+// drawWindow renders the items a window shows, as a host does.
+func drawWindow(t *testing.T, list measured, s tml.Slice, height int) []string {
 	t.Helper()
 	out, err := list.view.Render(tml.Props{
 		"rows":   sema.RecordListValue(list.rows[s.First : s.Last+1]),
@@ -169,11 +169,11 @@ func TestAWindowDrawsFullScreensAtBothEnds(t *testing.T) {
 	}
 
 	w := tml.NewWindow()
-	screen := draw(t, list, w.Slice(list, 6), 6)
+	screen := drawWindow(t, list, w.Slice(list, 6), 6)
 	assert.Equal(t, "last 9", strings.TrimSpace(screen[5]), "the newest line is on the bottom row:\n%s", strings.Join(screen, "\n"))
 
 	w.Scroll(-1000, list, 6)
-	screen = draw(t, list, w.Slice(list, 6), 6)
+	screen = drawWindow(t, list, w.Slice(list, 6), 6)
 	assert.Equal(t, "title 0", strings.TrimSpace(screen[0]))
 	assert.Equal(t, "title 1", strings.TrimSpace(screen[4]), "the screen is full at the top:\n%s", strings.Join(screen, "\n"))
 	assert.Equal(t, "first 1", strings.TrimSpace(screen[5]))
