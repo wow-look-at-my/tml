@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 )
 
-// SocketEnv overrides the path this process serves the inspection protocol on. It is an override and not a switch. A
+// SocketEnv overrides the path this process serves the inspection protocol on. It is an override and not a switch.
 const SocketEnv = "TML_INSPECT_SOCKET"
 
-// DirEnv overrides the directory the default path is built in. It is what a test sets so its programs do not appear in
+// DirEnv overrides the directory the default path is built in.
 const DirEnv = "TML_INSPECT_DIR"
 
 // SocketDir is where a program with no path of its own serves. A single socket per process, named by pid, rather than a shared path

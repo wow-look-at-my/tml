@@ -1,15 +1,4 @@
-// The inspector page. It reads the running program's frame over the same RPC
-// the CLI uses, draws the terminal, and lets you pick an element apart.
-//
-// Every number on screen comes from the program's own layout. Nothing here
-// re-measures anything, and nothing here decides what covers a cell: a page
-// that worked either out for itself would agree with itself and disagree with
-// the terminal.
-//
-// A capture is the same page over a frozen frame: `tml capture` writes the
-// answers into the document, and the reads below come from there instead of
-// from a socket. The page is one page either way, so a capture cannot show a
-// different thing from the inspector it was captured out of.
+// The inspector page.
 
 import { toHTML } from "./ansi.ts";
 import type { Capture, Element, FrameInfo, Node, Request, Response } from "./protocol.ts";
@@ -125,8 +114,7 @@ function measureCell(): void {
 	pad = { x: parseFloat(style.paddingLeft), y: parseFloat(style.paddingTop) };
 }
 
-// frameRows is the viewport the program painted, which is where the label runs
-// out of room below the outline.
+// frameRows is the viewport the program painted, which is where the label runs out of room below the outline.
 let frameRows = 0;
 
 function drawFrame(frame: FrameInfo): void {
@@ -152,8 +140,7 @@ function placeHighlight(): void {
 	highlight.style.width = `${Math.max(1, el.rect.w) * cell.w}px`;
 	highlight.style.height = `${Math.max(1, el.rect.h) * cell.h}px`;
 	highlight.dataset.label = `${el.element} #${el.id}  ${el.rect.w}x${el.rect.h}@${el.rect.x},${el.rect.y}`;
-	// The label hangs below the outline, and moves inside on the bottom row so
-	// it stays on the picture rather than under it.
+	// The label hangs below the outline, and moves inside on the bottom row so it stays on the picture.
 	highlight.dataset.place = el.rect.y + el.rect.h >= frameRows - 1 ? "inside" : "below";
 }
 
@@ -256,7 +243,7 @@ async function refresh(): Promise<void> {
 }
 
 // Pointer handling: a plain click selects what is under it, and a drag on the
-// selected element moves it. Holding shift resizes instead, which is the one
+// selected element moves it. Holding shift resizes instead, which is the
 // gesture a terminal grid has room for.
 //
 // Which element a cell belongs to is the program's answer, never this page's:

@@ -21,7 +21,7 @@ type Value struct {
 // Type reports the value's type.
 func (v Value) Type() Type { return v.typ }
 
-// String returns the underlying text of a string, color or enum value, and a rendered form of anything else. This is
+// String returns the underlying text of a string, color or enum value, and a rendered form of anything else.
 func (v Value) String() string {
 	switch {
 	case v.typ.IsList:
@@ -91,7 +91,7 @@ func ListValue(items []string) Value {
 	return value
 }
 
-// ParseValue reads raw as a literal of type t. A list splits on commas; an empty string is the empty list, which is
+// ParseValue reads raw as a literal of type t. A list splits on commas; an empty string is the empty list.
 func ParseValue(t Type, raw string) (Value, error) {
 	if t.IsList {
 		element := t
@@ -161,7 +161,7 @@ func ParseValue(t Type, raw string) (Value, error) {
 	return value, nil
 }
 
-// validateColor accepts a hex triplet or an ANSI palette index. Names are deliberately not accepted: a theme token is
+// validateColor accepts a hex triplet or an ANSI palette index. Names are deliberately not accepted.
 func validateColor(raw string) error {
 	if raw == "" {
 		return nil

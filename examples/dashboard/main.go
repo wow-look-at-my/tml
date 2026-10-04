@@ -1,4 +1,4 @@
-// Command dashboard is a Bubble Tea program whose entire view is declared in TML. The point of the example is the
+// Command dashboard is a Bubble Tea program whose entire view is declared in TML.
 package main
 
 import (
@@ -71,7 +71,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m *model) View() tea.View { return tea.NewView(m.frame()) }
 
-// frame renders the view to a string. Splitting it out of View keeps the whole UI reachable without a terminal, which
+// frame renders the view to a string. Splitting it out of View keeps the whole UI reachable without a terminal.
 func (m *model) frame() string {
 	out, err := m.view.Render(m.props(), m.width, m.height)
 	if err != nil {
@@ -81,7 +81,7 @@ func (m *model) frame() string {
 	return out
 }
 
-// props is what the document is rendered from, named so that anything else asking about the same frame lays out the
+// props is what the document is rendered from.
 func (m *model) props() tml.Props {
 	return tml.Props{
 		"title":    sema.StringValue("Deployments"),
@@ -105,7 +105,7 @@ func (m *model) matches() []string {
 }
 
 func main() {
-	// -frame renders a single frame and exits, so the example can be smoke tested without a terminal. Bubble Tea needs a
+	// -frame renders a single frame and exits, so the example can be smoke tested without a terminal.
 	frame := flag.Bool("frame", false, "render one frame to stdout and exit")
 	width := flag.Int("width", 60, "viewport width for -frame")
 	height := flag.Int("height", 18, "viewport height for -frame")

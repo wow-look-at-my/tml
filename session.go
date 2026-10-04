@@ -25,7 +25,7 @@ func (s *session) isDriven() bool {
 	return s.driven
 }
 
-// adopt takes over a freshly loaded View, and opens the socket the leading time there is a frame to answer about. The
+// adopt takes over a freshly loaded View, and opens the socket the leading time there is a frame to answer about.
 func (s *session) adopt(v *View) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -81,24 +81,24 @@ func (s *session) close() {
 	s.serving = false
 }
 
-// InspectError reports why the inspection socket is not being served, or nil. A program that asked for a socket by
+// InspectError reports why the inspection socket is not being served, or nil.
 func InspectError() error {
 	inspection.mu.Lock()
 	defer inspection.mu.Unlock()
 	return inspection.err
 }
 
-// RepaintMsg asks the program to draw again. The inspector sends it after an override, and it is the only message a
+// RepaintMsg asks the program to draw again. The inspector sends it after an override.
 type RepaintMsg struct{}
 
-// Run runs a Bubble Tea program with the inspection protocol wired. It exists so that wiring is not a thing to
+// Run runs a Bubble Tea program with the inspection protocol wired.
 func NewProgram(m tea.Model, opts ...tea.ProgramOption) (*tea.Program, error) {
 	p := tea.NewProgram(m, opts...)
 	inspection.drive(p)
 	return p, InspectError()
 }
 
-// Run is NewProgram plus running it, for a host with nothing to say to the program in between. A host that needs the
+// Run is NewProgram plus running it, for a host with nothing to say to the program in between.
 func Run(m tea.Model, opts ...tea.ProgramOption) (tea.Model, error) {
 	p, err := NewProgram(m, opts...)
 	if err != nil {

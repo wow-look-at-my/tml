@@ -10,7 +10,7 @@ import (
 	"github.com/wow-look-at-my/tml/widget"
 )
 
-// anchors are the corners a canvas child can be positioned from. The anchor picks which edges the coordinates are
+// anchors are the corners a canvas child can be positioned from.
 var anchors = []string{"topLeft", "topRight", "bottomLeft", "bottomRight", "center"}
 
 // canvasPlacement is a single child's position on a canvas.
@@ -55,7 +55,7 @@ func initCanvas(box *Box) error {
 	return nil
 }
 
-// defaultAnchor asks a widget where it belongs when nobody said. A dialog answers center; everything else starts in
+// defaultAnchor asks a widget where it belongs when nobody said. A dialog answers center.
 func defaultAnchor(box *Box) string {
 	anchored, ok := box.Native.(widget.Anchored)
 	if !ok {
@@ -67,7 +67,7 @@ func defaultAnchor(box *Box) string {
 	return "topLeft"
 }
 
-// measureFill is what a positioning surface asks for: everything on offer. A canvas has no content of its own to
+// measureFill is what a positioning surface asks for: everything on offer.
 func (e *Engine) measureFill(box *Box, inner Constraints) Size {
 	for _, child := range box.Children {
 		e.measure(child, inner)

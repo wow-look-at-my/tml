@@ -23,12 +23,12 @@ Every item here is a change the example forced, not a note about one:
 
 - `widget.NewFactory` / `NewSlottedFactory` and an exported `Attrs.Errorf`. Binding a widget from outside the module meant writing a factory by hand against unexported helpers, which is not a seam.
 - `sema.ListValue`. A host list went in as a comma-joined string and came back split on the commas inside its own values.
-- `List` truncates a row rather than wrapping it. A wrapped row took two lines and pushed the geometry out of step with what was drawn.
+- `List` truncates a row rather than wrapping it. A wrapped row took a couple of lines and pushed the geometry out of step with what was drawn.
 - Scrolling clamps to the content, in the widget and in the geometry alike, and the frame reports where it landed (`UI().Target(id).Scroll`). Following a growing transcript is otherwise not expressible: only the frame knows how far the wrapped content runs.
-- A borderless `Table` keeps the gap between its columns. Two full cells were running together into one word.
+- A borderless `Table` keeps the gap between its columns. Full cells were running together into one word.
 
 ## What it could not do
 
 The transcript is a widget because TML repeats over a list of strings. It has no way to switch on what a list item **is**. A heterogeneous conversation puts one line a tool call and the next a message. That is either a widget or a language feature. A widget is the honest one today.
 
-The cards are the other half of the same limit. They sit at fixed points in the template, so the host cuts the transcript where each one arrived and hands back three regions. That keeps the chronology right. The host does the interleaving because the template cannot.
+The cards are the other half of the same limit. They sit at fixed points in the template, so the host cuts the transcript where each arrived and hands back regions. That keeps the chronology right. The host does the interleaving because the template cannot.

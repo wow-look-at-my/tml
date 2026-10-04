@@ -1,11 +1,4 @@
 // End-to-end check of the inspection layer against a real program.
-//
-// It starts build/agent under a pty, asks build/tml the questions the live CLI
-// exists to answer, then drives the browser inspector with a pointer and reads
-// the result back off the socket. Every assertion is about what the program
-// reports after the fact, so a pass means the terminal's own layout changed.
-//
-// see docs/inspector.md
 import { spawn, execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -14,9 +7,7 @@ import { chromium } from 'playwright';
 
 const root = process.env.TML_ROOT ?? process.cwd();
 
-// go-toolchain names a local build build/agent and a cross-compiled one
-// build/agent_linux_amd64. CI produces the second, so both are looked for
-// rather than assuming which build ran.
+// go-toolchain names a local build build/agent and a cross-compiled one build/agent_linux_amd64.
 const goos = { linux: 'linux', darwin: 'darwin', win32: 'windows' }[process.platform] ?? process.platform;
 const goarch = { x64: 'amd64', arm64: 'arm64' }[process.arch] ?? process.arch;
 
@@ -44,16 +35,13 @@ function fail(what, got, want) {
 function tml(...args) {
 	return execFileSync(cli, args, {
 		env: { ...process.env, TML_INSPECT_SOCKET: sock },
-		// The caller reads the message off the thrown error. Letting it reach
-		// this process's stderr too would print every retry while the program
-		// is still starting.
+		// The caller reads the message off the thrown error.
 		stdio: ['ignore', 'pipe', 'pipe'],
 	}).toString().trim();
 }
 
-// settled polls until a reading stops changing, which is what a drag needs: the
-// pointer emits an override per cell it crosses, so the first frame wider than
-// the start is a frame from the middle of the gesture.
+// settled polls until a reading stops changing, which is what a drag needs:
+// the pointer emits an override per cell it crosses.
 async function settled(read) {
 	let last = await read();
 	for (;;) {
@@ -72,8 +60,7 @@ function startAgent() {
 	const p = spawn('script', ['-q', '-c', `stty rows 30 cols 100; exec ${agent}`,
 		join(work, 'typescript')],
 	{ stdio: 'ignore', detached: true, env: { ...process.env, TML_INSPECT_SOCKET: sock } });
-	// A program that dies at startup must say so now. Waiting for it to paint
-	// would spend the whole timeout and then report the wrong thing.
+	// A program that dies at startup must say so now.
 	p.on('exit', (code) => { p.died = `the program exited with ${code} before it painted`; });
 	kids.push(p);
 	return p;
@@ -118,14 +105,12 @@ try {
 	if (prompt.rect.w !== 88) fail('prompt width', prompt.rect.w, 88);
 	if (!prompt.text.includes('ask for a change')) fail('prompt text', prompt.text, 'the placeholder');
 
-	// A name that is not there names the ones that are, rather than answering
-	// with an empty element that reads like an element drawing nothing.
+	// A name that is not there names the ones that are, rather than answering with an empty element.
 	let named = '';
 	try { tml('query', '--id', 'nope'); } catch (err) { named = err.stderr.toString(); }
 	if (!named.includes('prompt')) fail('unknown id error', named, 'the list of real ids');
 
-	// 2. The tree carries the boxes with no id, which is where a layout
-	// mistake usually is.
+	// 2. The tree carries the boxes with no id, which is where a layout mistake usually is.
 	const tree = tml('tree');
 	for (const want of ['<Grid>', '<Border>', '#session', '#prompt']) {
 		if (!tree.includes(want)) fail('tree', tree, want);
@@ -148,8 +133,7 @@ try {
 	tml('restyle', '--id', 'send', '--set', 'width=20');
 	const wide = JSON.parse(tml('query', '--id', 'send')).rect;
 	if (wide.w !== 20) fail('width after restyle', wide.w, 20);
-	// The sibling reflows, which is the whole point of overriding the document
-	// rather than painting over the picture.
+	// The sibling reflows, which is the whole point of overriding the document rather than painting over the picture.
 	const squeezed = JSON.parse(tml('query', '--id', 'prompt')).rect;
 	if (squeezed.w >= prompt.rect.w) fail('the sibling did not reflow', squeezed.w, `< ${prompt.rect.w}`);
 	tml('restyle', '--clear');
@@ -222,8 +206,7 @@ try {
 
 	const width = await settled(async () => (await rpc({ op: 'query', id: 'send' })).element.rect.w);
 	if (width <= start.w) fail('width after the drag', width, `> ${start.w}`);
-	// The socket is a second opinion: the CLI sees the same geometry, which is
-	// what proves the drag changed the program and not only the page.
+	// The socket is a second opinion: the CLI sees the same geometry.
 	const overCli = JSON.parse(tml('query', '--id', 'send')).rect.w;
 	if (overCli !== width) fail('the CLI and the page disagree', overCli, width);
 
@@ -231,14 +214,13 @@ try {
 	await waitFor('reset to restore the document',
 		async () => (await rpc({ op: 'query', id: 'send' })).element.rect.w === start.w);
 
-	// 6. A capture of the same program, opened from the filesystem. It is the
-	// same page over a frozen frame, so it has to come up with nothing served.
+	// 6. A capture of the same program, opened from the filesystem.
 	const captured = join(work, 'capture.html');
 	tml('capture', '-o', captured);
 	const still = await browser.newPage({ viewport: { width: 1500, height: 950 } });
 	still.on('pageerror', (err) => { throw err; });
 	// A capture that reaches the network is a capture that opens blank wherever
-	// it is sent, so any request other than the file itself fails this check.
+	// it is sent, so any request other than the file.
 	still.on('request', (req) => {
 		if (!req.url().startsWith('file://')) throw new Error(`the capture fetched ${req.url()}`);
 	});

@@ -105,7 +105,7 @@ func TestTextMeasuresItsWrappedHeight(t *testing.T) {
 	assert.Equal(t, 1, wide.Children[0].Rect.H, "given room, it stays on one line")
 }
 
-// Padding and borders come out of the content box, so a box's content area is smaller than its rect by exactly the
+// Padding and borders come out of the content box.
 func TestFrameReducesTheContentBox(t *testing.T) {
 	root := el("Box", map[string]string{"width": "20", "height": "5", "padding": "1 2", "border": "normal"})
 	box := layoutTree(t, root, 40, 10)

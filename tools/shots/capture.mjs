@@ -1,11 +1,4 @@
-// capture drives each shot in a real terminal -- ttyd serving a PTY, xterm.js
-// in Chromium -- and writes a PNG of it, plus an index page for the site the
-// pictures are published to.
-//
-// A real terminal is the point. The examples can already render a frame with
-// -frame, and the goldens pin that text, but a frame is not proof that a
-// program draws in a terminal, answers a key press, or picks colours a terminal
-// can show. see docs/screenshots.md
+// capture drives each shot in a real terminal -- ttyd serving a PTY, xterm.js in Chromium -- and writes a PNG of it.
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
@@ -22,14 +15,11 @@ const terminal = { cols: 96, rows: 30 };
 const repo = path.resolve(import.meta.dirname, "../..");
 const out = path.join(repo, "build/shots");
 
-// The site the pictures are published to. A branch build shows its own picture
-// beside the default branch's, which is the whole diff check.
+// The site the pictures are published to.
 const site = "https://sites.pazer.build/tml";
 
-// The browser to drive: a Chromium already on the machine, or the one Playwright
-// installs for itself. /usr/bin/chromium-browser is deliberately not on the list
-// -- on Ubuntu it is a stub that tells you to install a snap, and it launches
-// far enough to look like a browser before saying so.
+// The browser to drive: a Chromium already on the machine, or the Playwright
+// installs for itself. /usr/bin/chromium-browser is deliberately.
 const candidates = [
 	process.env.CHROME,
 	"/opt/pw-browsers/chromium",
@@ -37,18 +27,15 @@ const candidates = [
 	"/usr/bin/google-chrome",
 ].filter(Boolean);
 
-// browserPath is undefined when none of them is there, which leaves Playwright
-// to find its own -- `npx playwright install chromium` is the other way to have
-// one, and how CI gets it.
+// browserPath is undefined when none of them is there, which leaves Playwright to find its own -- `npx playwright install chromium` is the other way to
+// have one, and how CI gets it.
 function browserPath() {
 	const found = candidates.find((path) => existsSync(path));
 	console.log(found ? `browser: ${found}` : "browser: Playwright's own");
 	return found;
 }
 
-// The binary a shot runs. go-toolchain names a local build build/gallery and a
-// cross-compiled one build/gallery_linux_amd64 -- CI produces the second -- so
-// this looks for both rather than assuming which build ran.
+// The binary a shot runs. go-toolchain names a local build build/gallery and a cross-compiled one build/gallery_linux_amd64.
 const goos = { linux: "linux", darwin: "darwin", win32: "windows" }[process.platform] ?? process.platform;
 const goarch = { x64: "amd64", arm64: "arm64" }[process.arch] ?? process.arch;
 
@@ -69,8 +56,8 @@ async function freePort() {
 	return port;
 }
 
-// serve starts ttyd on the command, in the DOM renderer so the terminal's text
-// is in the page: the capture waits on what was actually drawn rather than on a
+// serve starts ttyd on the command, in the DOM renderer so the terminal's
+// text is in the page: the capture waits on what was drawn rather than on a
 // timer, and a canvas would leave it with nothing to look at.
 async function serve(shot) {
 	const port = await freePort();
@@ -143,9 +130,7 @@ async function capture(browser, shot) {
 	}
 	const { port, stop } = await serve(shot);
 	const page = await browser.newPage({ viewport: { width: 1200, height: 700 }, deviceScaleFactor: 2 });
-	// xterm pads a row with non-breaking spaces, which read as ordinary spaces
-	// and match nothing. Everything here compares against what the picture
-	// looks like, so the text has to say what it looks like.
+	// xterm pads a row with non-breaking spaces, which read as ordinary spaces and match nothing.
 	const screen = async () => (await page.locator(".xterm-rows").innerText()).replaceAll("\u00a0", " ");
 	try {
 		await page.goto(`http://127.0.0.1:${port}/`);
@@ -157,9 +142,7 @@ async function capture(browser, shot) {
 			await page.keyboard.press(key);
 			await page.waitForTimeout(60);
 		}
-		// The examples animate on a tick, so a spinner is mid-frame whenever the
-		// picture is taken. One settled frame after the last key press is as still
-		// as this gets.
+		// The examples animate on a tick, so a spinner is mid-frame whenever the picture is taken.
 		await page.waitForTimeout(400);
 		try {
 			await waitFor(async () => (await screen()).includes(shot.expect), shot.expect, 5000);

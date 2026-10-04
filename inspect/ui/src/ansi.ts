@@ -1,7 +1,5 @@
 // Turns a terminal frame into HTML spans, one span per run of identical
-// styling. The preview has to show what the terminal shows: an inspector that
-// renders a program's colours differently from the terminal is an inspector
-// that lies about the thing it is inspecting.
+// styling.
 
 const BASE = [
 	"#000000", "#cd3131", "#0dbc79", "#e5e510",
@@ -23,8 +21,8 @@ interface Style {
 }
 
 // xterm256 is the 256-colour cube plus the grey ramp, computed rather than
-// tabulated: the formula is the definition, and a table would be 240 lines
-// that can drift from it.
+// tabulated: the formula is the definition, and a table would be many
+// lines that can drift from it.
 function xterm256(n: number): string {
 	if (n < 16) return BASE[n];
 	if (n < 232) {
@@ -102,8 +100,7 @@ export function toHTML(text: string): string {
 		at = m.index + m[0].length;
 	}
 	html += span(text.slice(at), style);
-	// Anything left is a cursor move or a mode set, neither of which the
-	// preview can honour.
+	// Anything left is a cursor move or a mode set, neither of which the preview can honour.
 	return html.replace(/\x1b\[[0-9;?]*[A-Za-z]/g, "");
 }
 

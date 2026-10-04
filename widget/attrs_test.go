@@ -50,7 +50,7 @@ func TestAttrsFallBackWhenAbsent(t *testing.T) {
 	assert.Nil(t, a.List("missing"))
 }
 
-// An attribute nobody can parse is a mistake in the template. Reporting it beats rendering something plausible, which
+// An attribute nobody can parse is a mistake in the template. Reporting it beats rendering something plausible.
 func TestAttrsRejectUnparseableValues(t *testing.T) {
 	a := strs(map[string]string{
 		"count": "many", "ratio": "half", "on": "yes", "glyph": "ab",

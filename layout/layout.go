@@ -42,7 +42,7 @@ type Box struct {
 	Name string
 	// Rect is the box's outer rect, margin included, relative to the parent's content origin.
 	Rect Rect
-	// Screen is the same box in viewport coordinates, with margin excluded so it covers the cells the box actually
+	// Screen is the same box in viewport coordinates, with margin excluded so it covers the cells the box
 	Screen Rect
 	// Clip is the region an ancestor still shows. It is the viewport for anything outside a Scrollbox, and the visible
 	Clip Rect

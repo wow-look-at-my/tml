@@ -1,4 +1,4 @@
-// Command gallery is an interactive tour of the widget library. Every control on screen is declared in ui/app.tml and
+// Command gallery is an interactive tour of the widget library.
 package main
 
 import (
@@ -52,7 +52,7 @@ type model struct {
 	quitting      bool
 }
 
-// tick drives the spinner, the progress bar and the sparkline. A declarative widget draws the frame it is handed, so
+// tick drives the spinner, the progress bar and the sparkline. A declarative widget draws the frame it is handed.
 type tick time.Time
 
 func ticker() tea.Cmd {
@@ -107,7 +107,7 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	for _, event := range m.view.UI().Update(msg) {
 		switch event.Kind {
 		case tml.Activated:
-			// A list is a single control to the ring, so which row was clicked is in the event's own coordinates rather than in an
+			// A list is a single control to the ring.
 			if event.ID == "services" && event.Y >= 0 {
 				m.selected = clamp(event.Y, 0, len(services)-1)
 				continue
@@ -279,7 +279,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// The flags set the starting state either way round: a still frame and a terminal session are the same program, and a
+	// The flags set the starting state either way round: a still frame and a terminal session are the same program.
 	m.tab, m.confirming = *tab, *popup
 	// An animation shown at its start reads as an animation that does not work, so both begin partway through.
 	m.query, m.progress, m.frame = "sched", 62, 3

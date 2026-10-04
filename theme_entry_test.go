@@ -35,7 +35,7 @@ func TestAThemeEntryStillCatchesACyclicExtends(t *testing.T) {
 	assert.ErrorContains(t, err, "extends itself")
 }
 
-// A theme entry declares no component, so there is no root to instantiate: the refusal has to name that plainly rather
+// A theme entry declares no component, so there is no root to instantiate.
 func TestAThemeEntryRefusesToExpand(t *testing.T) {
 	fsys := fstest.MapFS{"theme.tml": &fstest.MapFile{Data: []byte(themeXMLHeader + `
 <Theme xmlns="urn:tml:v1" name="slh">

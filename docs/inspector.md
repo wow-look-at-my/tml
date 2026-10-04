@@ -6,23 +6,23 @@ The unit of every answer is one element, not the screen. `tml query --id prompt`
 
 ## There is nothing to attach, and nothing to turn on
 
-The process's one inspector adopts every `View` that `Load` builds. It opens the socket the first time there is a frame to answer about. No variable and no flag gates this. A program that loads a document is a program the inspector can reach.
+The process's inspector adopts every `View` that `Load` builds. It opens the socket the first time there is a frame to answer about. No variable and no flag gates this. A program that loads a document is a program the inspector can reach.
 
 ```sh
 ./myprogram &
 tml query --id prompt
 ```
 
-Neither command names a socket. The program serves on `$XDG_RUNTIME_DIR/tml/<pid>.sock`, and `tml` looks there, dials what it finds and uses the one that answers. `tml list` is every program running now. Two or more, and it says so and asks for `--socket`.
+Neither command names a socket. The program serves on `$XDG_RUNTIME_DIR/tml/<pid>.sock`, and `tml` looks there, dials what it finds and uses the one that answers. `tml list` is every program running now. Two or more. It says so and asks for `--socket`.
 
 - `TML_INSPECT_SOCKET` overrides the path. It is an override, not a switch: with it unset the program still serves.
 - `TML_INSPECT_DIR` overrides the directory the default path is built in, which is what a test sets to keep its programs out of the user's listing.
 - The directory is 0700. The socket carries the right to drive the program, so its boundary is the same one the user's own shell already has.
 - A view that cannot be served is not returned: `Load` fails, naming the path. Handing back a working View and a program nothing can reach is the state this exists to remove.
 
-That is deliberate. It is the whole design. To wire an inspector once took six calls, in the right order. A host that made five of them got a program inspectable in principle and useless in fact. Its tests then went back to pane captures, which cannot tell a status line that moved from one that did not. An environment variable is the same failure with fewer steps. A capability every program has is worth more than one every program can have.
+That is deliberate. It is the whole design. To wire an inspector once took calls, in the right order. A host that made five of them got a program inspectable in principle and useless. Its tests then went back to pane captures, which cannot tell a status line that moved from one that did not. An environment variable is the same failure with fewer steps. A capability every program has is worth more than one every program can have.
 
-`tml.NewProgram` is the other half, and the one thing a host does. It builds the Bubble Tea program, so the protocol has something to type into and the program can be driven as well as read. It returns the program, because a host that kills it from a worker or sends to it needs the handle. `tml.Run` is the same plus running it, for a host with nothing to say in between.
+`tml.NewProgram` is the other half, and the thing a host does. It builds the Bubble Tea program. As a result, the protocol has something to type into and the program can be driven as well as read. It returns the program, because a host that kills it from a worker or sends to it needs the handle. `tml.Run` is the same plus running it, for a host with nothing to say in between.
 
 It cannot be automatic. The inspector delivers a keystroke as a message to a running `*tea.Program`. That program does not exist when this package initialises, and Go offers no way to intercept another package's constructor. A guard enforces it instead. A view still painting `DriveGrace` after its first frame, with nothing able to drive it, takes the program down and names this function. A program the debugger only half works against is not one this library keeps running. See `drivable.go`, and `testdata/undrivable` for the program that proves the guard still fires.
 
@@ -94,11 +94,11 @@ $ tml query --id notice --field text --await-gone 'working' --timeout 30s
 
 Both block until the field matches, or stops matching. Both exit non-zero on a timeout, and name what the element last drew. "expected output to contain X" never says that. `tml frame --since N` is the same idea for the whole screen. It blocks until a frame newer than N. A test can therefore wait on the repaint it wants.
 
-`tml frame --max-width` prints the widest line of the frame in DISPLAY CELLS. That number catches a region that fits its own rectangle and paints past its edge. Bytes and runes are both a different number. A box rule is three bytes a cell. A wide glyph is one rune in two cells.
+`tml frame --max-width` prints the widest line of the frame in DISPLAY CELLS. That number catches a region that fits its own rectangle and paints past its edge. Bytes and runes are both a different number. A box rule is three bytes a cell. A wide glyph is one rune in multiple cells.
 
 ## The browser inspector
 
-`tml serve` opens a local page carrying a live preview of the terminal, the element tree, and the element you pick. It talks to the program over the same socket, so it needs no cooperation from the host beyond the hooks above.
+`tml serve` opens a local page carrying a live preview of the terminal, the element tree, and the element you pick. It talks to the program over the same socket. As a result, it needs no cooperation from the host beyond the hooks above.
 
 Clicking the preview selects the element under the cell. Dragging moves it, by writing `margin-left` and `margin-top` overrides. Shift-dragging resizes it, by writing `width` and `height`. Both are real overrides that the engine lays out, so a sibling reflows and the terminal shows the same thing the page does. The attribute form sets any attribute by name, and one button drops every override.
 

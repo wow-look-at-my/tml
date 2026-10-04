@@ -55,7 +55,7 @@ func TestTheSessionRenders(t *testing.T) {
 	}
 }
 
-// The script is the model here, so the permission beat has to actually stop it: a harness that ran the command and
+// The script is the model here, so the permission beat has to stop it.
 func TestThePermissionBeatStopsTheScript(t *testing.T) {
 	m := agent(t)
 	run(t, m, 6)
@@ -71,7 +71,7 @@ func TestThePermissionBeatStopsTheScript(t *testing.T) {
 	assert.Contains(t, ansi.Strip(m.render()), "bash go test ./...")
 }
 
-// Denying stops the session rather than carrying on without the thing that was refused, and says so where the user is
+// Denying stops the session rather than carrying on without the thing that was refused.
 func TestDenyingStopsTheSession(t *testing.T) {
 	m := agent(t)
 	run(t, m, 6)
@@ -84,7 +84,7 @@ func TestDenyingStopsTheSession(t *testing.T) {
 	assert.Equal(t, len(script), m.at, "there is nothing left to step")
 }
 
-// The permission popup is a modal, so escape has to dismiss it rather than quitting the whole program out from under
+// The permission popup is a modal.
 func TestEscapeAnswersTheQuestionRatherThanQuitting(t *testing.T) {
 	m := agent(t)
 	run(t, m, 6)
@@ -95,7 +95,7 @@ func TestEscapeAnswersTheQuestionRatherThanQuitting(t *testing.T) {
 	assert.True(t, m.denied)
 }
 
-// Typing at the prompt reaches the prompt, and sending it puts the text in the transcript -- with a note, because
+// Typing at the prompt reaches the prompt, and sending it puts the text in the transcript -- with a note.
 func TestTypingReachesThePromptAndSending(t *testing.T) {
 	m := agent(t)
 	require.NotContains(t, m.render(), "tml: ")
@@ -122,7 +122,7 @@ func TestSpaceStepsTheScript(t *testing.T) {
 	assert.Contains(t, ansi.Strip(m.render()), "add a --json flag")
 }
 
-// The session follows the tail by asking to scroll further than there is, so the wheel has to move from where the
+// The session follows the tail by asking to scroll further than there is.
 func TestScrollingUpLeavesTheTail(t *testing.T) {
 	m := agent(t)
 	run(t, m, 5)
@@ -158,7 +158,7 @@ func TestClickingAContextFileSelectsIt(t *testing.T) {
 	assert.Contains(t, ansi.Strip(m.render()), "> report/json")
 }
 
-// Every role the script uses has to be a role the transcript knows, or the whole view is an error string instead of a
+// Every role the script uses has to be a role the transcript knows.
 func TestEveryScriptedRoleIsDrawable(t *testing.T) {
 	m := agent(t)
 	for range len(script) {

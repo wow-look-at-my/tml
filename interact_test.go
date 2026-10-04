@@ -113,7 +113,7 @@ func TestClickingLandsOnTheControlUnderThePointer(t *testing.T) {
 	assert.Equal(t, "quit", events[0].ID)
 }
 
-// Clicking where a disabled control is drawn does nothing: it never entered the ring, so there is nothing under the
+// Clicking where a disabled control is drawn does nothing: it never entered the ring.
 func TestClickingADisabledControlDoesNothing(t *testing.T) {
 	loaded := interactive(t, buttons, 40, 3)
 
@@ -142,7 +142,8 @@ func TestHoverReachesTheFrame(t *testing.T) {
 	assert.NotEqual(t, before, after)
 }
 
-// A control scrolled out of its viewport is not on the screen, so clicking where it would have been must not reach it.
+// A control scrolled out of its viewport is not on the screen, so clicking
+// where it.
 func TestScrolledOutControlsCannotBeClicked(t *testing.T) {
 	loaded := interactive(t, `<Scrollbox offset="4" height="2" width="20">
 		<Stack>
@@ -156,7 +157,7 @@ func TestScrolledOutControlsCannotBeClicked(t *testing.T) {
 	}
 }
 
-// Where a scrolling region actually stopped is a number only the frame knows: how far the content runs depends on the
+// Where a scrolling region stopped is a number only the frame knows.
 func TestTheFrameReportsWhereAScrollingRegionLanded(t *testing.T) {
 	loaded := interactive(t, `<Scrollbox id="log" offset="9999" height="2" width="20">
 		<Stack>
@@ -185,7 +186,7 @@ func TestANonScrollingControlReportsNoScroll(t *testing.T) {
 	assert.False(t, ok)
 }
 
-// A view with nothing focusable is not broken, it simply has no ring.
+// A view with nothing focusable is not broken, it has no ring.
 func TestAViewWithNoControlsHasNoRing(t *testing.T) {
 	loaded := interactive(t, `<Text>just words</Text>`, 20, 1)
 
@@ -195,7 +196,7 @@ func TestAViewWithNoControlsHasNoRing(t *testing.T) {
 	assert.Empty(t, key(t, loaded, "tab", 20, 1))
 }
 
-// A pair of controls answering to the same id would make focus ambiguous from a single frame to the next, so it is rejected where
+// A pair of controls answering to the same id would make focus ambiguous from a single frame to the next.
 func TestDuplicateIDsAreRejected(t *testing.T) {
 	loaded, err := view(t, app(`<Stack>
 		<Button id="go" label="One"/>
@@ -208,7 +209,7 @@ func TestDuplicateIDsAreRejected(t *testing.T) {
 	assert.Contains(t, err.Error(), `id "go" is already used`)
 }
 
-// Geometry and output have to agree, or a click lands on nothing. These walk the panels that place children at
+// Geometry and output have to agree, or a click lands on nothing.
 func TestPublishedRectsMatchWhereControlsArePainted(t *testing.T) {
 	for _, panel := range []struct {
 		name     string

@@ -21,7 +21,7 @@ func TestListMarksTheSelectedItem(t *testing.T) {
 	assert.Equal(t, []string{"  one  ", "> two  ", "  three"}, plain(l.Render(7, 3)))
 }
 
-// The gutter is kept on every row, or the text shifts sideways as the selection moves and the whole list appears to
+// The gutter is kept on every row.
 func TestListKeepsItsGutterOnEveryRow(t *testing.T) {
 	l := build(t, "List", map[string]string{"items": "a,b"})
 

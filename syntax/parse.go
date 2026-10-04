@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/wow-look-at-my/xml-validator/reader"
 	"github.com/wow-look-at-my/xml-validator/validator"
 )
 
@@ -12,6 +13,9 @@ import (
 func Parse(path string, src []byte) (*File, error) {
 	if err := validator.Validate(bytes.NewReader(src)); err != nil {
 		return nil, xmlError(path, err)
+	}
+	if reader.SniffVersion(src) != reader.Version11 {
+		return nil, errorf(Pos{File: path, Line: 1, Col: 1}, `a .tml file is XML 1.1: it must open with <?xml version="1.1" encoding="UTF-8"?>`)
 	}
 	doc, err := validator.ParseTree(bytes.NewReader(src))
 	if err != nil {
@@ -107,7 +111,7 @@ func parseComponent(path string, el *validator.Element) (*Component, error) {
 				"one component per file: %s defines \"%s\" and a nested \"%s\"; put \"%s\" in its own file and <Import> it",
 				path, name, componentName(child), componentName(child))
 		case "DataTemplate":
-			// Same shape as a component -- properties and a template -- and a different way in. A component is written as an
+			// Same shape as a component -- properties and a template -- and a different way in.
 			data, err := parseComponent(path, child)
 			if err != nil {
 				return nil, err
@@ -125,7 +129,7 @@ func parseComponent(path string, el *validator.Element) (*Component, error) {
 	return component, nil
 }
 
-// componentName reads the name attribute of an element that is supposed to be a component definition, for the
+// componentName reads the name attribute of an element that is supposed to be a component definition.
 func componentName(el *validator.Element) string {
 	name, _ := attr(el, "name")
 	return name
@@ -345,7 +349,7 @@ func lookupAttr(el *validator.Element, name string) (validator.Attr, bool) {
 	return validator.Attr{}, false
 }
 
-// checkAttrs rejects any attribute the element does not define. An unknown attribute is almost always a typo, and
+// checkAttrs rejects any attribute the element does not define. An unknown attribute is almost always a typo.
 func checkAttrs(path string, el *validator.Element, allowed ...string) error {
 	for _, a := range el.Attrs {
 		if isNamespaceDecl(a) {

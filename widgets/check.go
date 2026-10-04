@@ -14,7 +14,7 @@ var marks = map[string][2]string{
 	"Radio":    {"( )", "(•)"},
 }
 
-// check is a labelled on/off control. Checkbox and Radio differ only in their glyphs: which of several is exclusive is
+// check is a labelled on/off control. Checkbox and Radio differ only in their glyphs.
 type check struct {
 	kind     string
 	label    string

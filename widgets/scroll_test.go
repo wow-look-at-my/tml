@@ -24,7 +24,7 @@ func TestScrollboxShowsTheWindowTheOffsetSelects(t *testing.T) {
 	assert.Equal(t, "c\nd\ne", box.Compose(content(lines(8)...), 1, 3))
 }
 
-// Scrolling stops at the last screenful. How many lines the content wraps to depends on the width the widget was
+// Scrolling stops at the last screenful.
 func TestScrollboxStopsAtTheEnd(t *testing.T) {
 	box := composer(t, "Scrollbox", map[string]string{"offset": "9999", "scrollbar": "never"})
 
@@ -138,7 +138,7 @@ func TestScrollboxBarMeasuresTheContentNotTheWindow(t *testing.T) {
 		"4 rows of 4 does not scroll, so there is no thumb at all")
 }
 
-// contentHeight is what the maximum offset is derived from, so a host can ask for the end of the content rather than
+// contentHeight is what the maximum offset is derived from.
 func TestScrollboxClampsToTheContentItWasToldAbout(t *testing.T) {
 	box := composer(t, "Scrollbox", map[string]string{
 		"offset":        "9999",

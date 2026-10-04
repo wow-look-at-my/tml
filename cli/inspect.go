@@ -100,7 +100,7 @@ func describe(box *layout.Box, sc scroll, keepANSI bool) element {
 
 func init() { root.AddCommand(newInspectCmd()) }
 
-// newInspectCmd builds the command fresh, so a caller -- a test especially -- gets its own flag values rather than
+// newInspectCmd builds the command fresh.
 func newInspectCmd() *cobra.Command {
 	var (
 		dark          bool
