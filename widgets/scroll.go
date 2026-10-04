@@ -9,13 +9,17 @@ import (
 	"github.com/wow-look-at-my/tml/widget"
 )
 
-var scrollboxAttrs = []string{"offset", "offsetX", "scrollbar", "contentHeight"}
+var scrollboxAttrs = []string{"offset", "offsetX", "scrollbar", "contentHeight", "fade", "moreAbove", "moreBelow"}
 
 // scrollbox shows part of content that is taller than the space it has, with a scrollbar beside it when there is more
 type scrollbox struct {
 	offsetX, offsetY int
 	contentHeight    int
 	bar              string
+	fade             bool
+	moreAbove        bool
+	moreBelow        bool
+	dark             bool
 	measure          widget.Measurer
 }
 
@@ -24,7 +28,16 @@ func newScrollbox(ctx widget.Context) (widget.Native, error) {
 	if err != nil {
 		return nil, err
 	}
-	box := &scrollbox{bar: bar, measure: ctx.Measure}
+	box := &scrollbox{bar: bar, dark: ctx.Dark, measure: ctx.Measure}
+	if box.fade, err = ctx.Attrs.Bool("fade", false); err != nil {
+		return nil, err
+	}
+	if box.moreAbove, err = ctx.Attrs.Bool("moreAbove", false); err != nil {
+		return nil, err
+	}
+	if box.moreBelow, err = ctx.Attrs.Bool("moreBelow", false); err != nil {
+		return nil, err
+	}
 	if box.offsetY, err = ctx.Attrs.Int("offset", 0); err != nil {
 		return nil, err
 	}
@@ -85,6 +98,9 @@ func (s *scrollbox) Compose(slots widget.Slots, w, h int) string {
 	for i, line := range lines {
 		lines[i] = columns(line, s.offsetX, viewW, s.measure)
 	}
+	if s.fade {
+		fadeEdges(lines, s.moreAbove || offset > 0, s.moreBelow || offset+h < total, h, s.dark)
+	}
 	if gutter == 0 {
 		return strings.Join(lines, "\n")
 	}
@@ -126,6 +142,42 @@ func (s *scrollbox) scrollbar(offset, total, view int) []string {
 		bar[i] = "█"
 	}
 	return bar
+}
+
+// fadeTall is the viewport height at which an edge fade widens to a couple of rows. One row is enough to show a short region
+const fadeTall = 8
+
+// fadeRows is how many rows at each edge a viewport of the given height fades. Both bands never meet, so a window
+func fadeRows(height int) int {
+	rows := 1
+	if height >= fadeTall {
+		rows = 2
+	}
+	return min(rows, max(0, (height-1)/2))
+}
+
+// fadeEdges blends the rows at the ends of the window toward the background when there is content beyond them.
+func fadeEdges(lines []string, above, below bool, height int, dark bool) {
+	rows := fadeRows(height)
+	beyond := min(rows, len(lines))
+	// Depth counts inward from the edge, so the row at the edge is the faintest of the band.
+	depth := make([]int, len(lines))
+	if above {
+		for i := range beyond {
+			depth[i] = rows - i
+		}
+	}
+	if below {
+		for i := range beyond {
+			j := len(depth) - 1 - i
+			depth[j] = max(depth[j], rows-i)
+		}
+	}
+	for i, d := range depth {
+		if d > 0 {
+			lines[i] = fadeRow(lines[i], d, rows, dark)
+		}
+	}
 }
 
 // window takes height rows starting at offset, padding with blanks when the content is shorter than the space.
