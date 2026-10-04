@@ -161,7 +161,7 @@ func fadeRows(height int) int {
 	return min(rows, max(0, (height-1)/2))
 }
 
-// fadeEdges dims the rows at the ends of the window when there is content beyond them, by the offset and the total or
+// fadeEdges dims the rows at the ends of the window when there is content beyond them.
 func fadeEdges(lines []string, above, below bool, height int) {
 	rows := fadeRows(height)
 	beyond := min(rows, len(lines))
