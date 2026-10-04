@@ -144,7 +144,7 @@ func parseRef(body string) (*Ref, error) {
 	return ref, nil
 }
 
-// isIdent reports whether s is a bare name. Anything else -- an operator, a call, a path -- is outside the grammar and
+// isIdent reports whether s is a bare name. Anything else -- an operator, a call.
 func isIdent(s string) bool {
 	if s == "" {
 		return false

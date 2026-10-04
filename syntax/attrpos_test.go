@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// colOf is the column of needle on the given line, counted from its start, which is the column the parser reports for a
+// colOf is the column of needle on the given line, counted from its start.
 func colOf(t *testing.T, src string, line int, needle string) int {
 	t.Helper()
 	lines := strings.Split(src, "\n")

@@ -11,7 +11,7 @@ import (
 	"github.com/wow-look-at-my/tml/syntax"
 )
 
-// Node is an element after expansion. Components, slots and control flow are gone; only native elements, panels and
+// Node is an element after expansion. Components, slots and control flow are gone; only native elements.
 type Node struct {
 	Kind     syntax.NodeKind
 	Name     string
@@ -20,7 +20,7 @@ type Node struct {
 	Children []*Node
 	Text     string
 	Pos      syntax.Pos
-	// Slot is which of the parent's slots this child was written into, empty for the default slot. A component's slots are
+	// Slot is which of the parent's slots this child was written into, empty for the default slot.
 	Slot string
 	// Component marks a node that carries a component's name rather than an element's. Nothing downstream may resolve it
 	Component bool
@@ -94,7 +94,7 @@ func (p *Program) Expand(args map[string]Value, opts ExpandOptions) (*Node, erro
 		Attrs:    map[string]Value{},
 		Children: children,
 		Pos:      entry.def.Pos,
-		// The root wears the component's name, which is what makes a dumped tree readable. Marking it keeps that name from
+		// The root wears the component's name, which is what makes a dumped tree readable.
 		Component: true,
 	}, nil
 }
@@ -155,7 +155,7 @@ func (p *Program) bindProps(c *compiled, args map[string]Value, tokens map[strin
 			return nil, &syntax.Error{Pos: at, Message: fmt.Sprintf(
 				"property %q has no value and no default", name)}
 		}
-		// A default sees the theme but not the instance's other properties, so defaults never depend on the order they are
+		// A default sees the theme but not the instance's other properties.
 		raw, err := declared.deflt.Eval(&evalScope{tokens: tokens})
 		if err != nil {
 			return nil, &syntax.Error{Pos: declared.pos, Message: fmt.Sprintf("property %q default: %v", name, err)}
@@ -257,7 +257,7 @@ func (p *Program) expandNative(node *tnode, scope *evalScope, file string, slots
 		}
 		out.Children = append(out.Children, items...)
 	}
-	// A native element's slots stay slots: unlike a component, whose template decides where the content goes, a widget is
+	// A native element's slots stay slots: unlike a component, whose template decides where the content goes.
 	content, err := collectSlotContent(node)
 	if err != nil {
 		return nil, err
@@ -319,7 +319,7 @@ func (p *Program) expandInstance(c *compiled, node *tnode, scope *evalScope, fil
 	return p.expandNodes(c.body, inner, c.file, passed, append(stack, c.def.Name))
 }
 
-// collectSlotContent splits a call site's children into named slots and the default slot. `<Card.actions>` fills the
+// collectSlotContent splits a call site's children into named slots and the default slot.
 func collectSlotContent(node *tnode) (map[string][]*tnode, error) {
 	content := map[string][]*tnode{}
 	for _, child := range node.children {
@@ -352,7 +352,7 @@ func (p *Program) expandSlot(node *tnode, scope *evalScope, file string, slots *
 
 	if slots != nil {
 		if content, ok := slots.content[name]; ok && len(content) > 0 {
-			// Content belongs to the call site: it sees the caller's names, the caller's file for resolving components, and the
+			// Content belongs to the call site: it sees the caller's names, the caller's file for resolving components.
 			return p.expandNodes(content, slots.scope, slots.file, slots.outer, stack)
 		}
 	}

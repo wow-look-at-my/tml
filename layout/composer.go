@@ -5,7 +5,7 @@ import (
 	"github.com/wow-look-at-my/tml/widget"
 )
 
-// composer is the widget behind this box if it wraps children, and nil otherwise. A composer with nothing inside it is
+// composer is the widget behind this box if it wraps children, and nil otherwise.
 func (b *Box) composer() widget.Composer {
 	if b.Native == nil {
 		return nil
@@ -23,7 +23,7 @@ func (b *Box) Composer() widget.Composer { return b.composer() }
 // Slot is which of the parent widget's slots this box was written into.
 func (b *Box) Slot() string { return b.slot }
 
-// arrangement is how this box's widget wants its children handled. The nothing value is the default: shrink to the
+// arrangement is how this box's widget wants its children handled. The nothing value is the default.
 func arrangement(box *Box) widget.Layout {
 	arranger, ok := box.Native.(widget.Arranger)
 	if !ok {
@@ -69,7 +69,7 @@ func (e *Engine) measureComposer(box *Box, inner Constraints) Size {
 		content.H += size.H
 	}
 
-	// A free axis measured the children at their full extent, which is not what the widget occupies: it takes what it is
+	// A free axis measured the children at their full extent, which is not what the widget occupies.
 	if want.FreeW && inner.MaxW > 0 {
 		content.W = min(content.W, max(0, inner.MaxW-insetW))
 	}

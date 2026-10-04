@@ -67,7 +67,7 @@ func TestCanvasPlacesChildrenAtCoordinates(t *testing.T) {
 	assert.Equal(t, Rect{X: 3, Y: 1, W: 4, H: 2}, child(root, 0).Rect)
 }
 
-// An anchor picks which edges the coordinates are measured from, so a child pinned to a corner stays there when the
+// An anchor picks which edges the coordinates are measured from.
 func TestCanvasAnchorsToEveryCorner(t *testing.T) {
 	tests := []struct {
 		anchor string
@@ -142,7 +142,7 @@ func TestCanvasRejectsNonsensePlacement(t *testing.T) {
 func TestComposerChildrenGoInsideItsInset(t *testing.T) {
 	bindings := map[string]widget.Native{"Frame": wrapper{insetW: 4, insetH: 2}}
 
-	// Inside a stack rather than at the root, which fills the viewport by design and would say nothing about what the
+	// Inside a stack rather than at the root.
 	root := layoutWith(t, bindings, el("Stack", nil, el("Frame", nil, text("hello"))), 20, 10)
 	frame := child(root, 0)
 
@@ -150,7 +150,6 @@ func TestComposerChildrenGoInsideItsInset(t *testing.T) {
 	assert.Equal(t, Rect{X: 0, Y: 0, W: 5, H: 1}, child(frame, 0).Rect)
 }
 
-// A scrolling region measures its children against unlimited height -- that is what lets the content be taller than
 func TestUnboundedComposerLetsChildrenOverflow(t *testing.T) {
 	bindings := map[string]widget.Native{"Scroller": wrapper{insetW: 1, free: true}}
 	tall := el("Stack", nil, text("a"), text("b"), text("c"), text("d"), text("e"))
@@ -161,7 +160,7 @@ func TestUnboundedComposerLetsChildrenOverflow(t *testing.T) {
 	assert.Equal(t, 5, child(root, 0).Rect.H, "the content keeps its full height")
 }
 
-// A control scrolled halfway off the top is clicked where it is drawn, so the offset has to reach the geometry rather
+// A control scrolled halfway off the top is clicked where it is drawn.
 func TestScrolledComposerShiftsItsChildren(t *testing.T) {
 	bindings := map[string]widget.Native{"Scroller": wrapper{free: true, offsetY: 2}}
 	tall := el("Stack", nil, text("a"), text("b"), text("c"), text("d"))
@@ -171,7 +170,7 @@ func TestScrolledComposerShiftsItsChildren(t *testing.T) {
 	assert.Equal(t, -2, child(root, 0).Rect.Y)
 }
 
-// Scrolling stops at the content on both axes. The widget draws the last screenful rather than blank space, so the
+// Scrolling stops at the content on both axes. The widget draws the last screenful rather than blank space.
 func TestAScrolledComposerStopsAtItsContent(t *testing.T) {
 	bindings := map[string]widget.Native{
 		"Scroller": wrapper{free: true, freeW: true, offsetX: 99, offsetY: 99},

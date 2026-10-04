@@ -20,7 +20,7 @@ type Node struct {
 	Rect    Rect   `json:"rect"`
 	Content Size   `json:"content"`
 	Clip    Rect   `json:"clip"`
-	// Text is what this node drew, escapes removed and truncated to a single line, so a tree stays readable. The full text is
+	// Text is what this node drew, escapes removed and truncated to a single line, so a tree stays readable.
 	Text     string `json:"text,omitempty"`
 	Focus    bool   `json:"focus"`
 	Children []Node `json:"children,omitempty"`
@@ -49,7 +49,7 @@ func node(box *layout.Box, state map[string]layout.Target, path string) Node {
 	if t, ok := state[box.ID]; ok && box.ID != "" {
 		n.Focus = t.Focus
 	}
-	// A leaf's own text is worth showing; a container's is every descendant's text concatenated, which says nothing and
+	// A leaf's own text is worth showing; a container's is every descendant's text concatenated.
 	if len(box.Children) == 0 {
 		n.Text = summary(box)
 	}

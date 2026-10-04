@@ -37,7 +37,7 @@ func KeyMsg(key string) tea.KeyPressMsg {
 	return tea.KeyPressMsg{Code: code, Text: string(code)}
 }
 
-// namedKeys is every key a driver can ask for by name. A name that is not here is a single character, so the map is
+// namedKeys is every key a driver can ask for by name. A name that is not here is a single character.
 var namedKeys = map[string]rune{
 	"enter": tea.KeyEnter, "tab": tea.KeyTab, "esc": tea.KeyEscape,
 	"escape": tea.KeyEscape, "space": tea.KeySpace, "backspace": tea.KeyBackspace,

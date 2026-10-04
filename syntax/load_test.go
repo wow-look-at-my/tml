@@ -50,7 +50,7 @@ func TestLoadPutsHelpersAndSelfInScope(t *testing.T) {
 		"a component sees itself and its data templates")
 }
 
-// A file defines exactly a single component. A component nested under the root is another definition, and it is refused by
+// A file defines exactly a single component. A component nested under the root is another definition.
 func TestLoadRefusesTwoComponentsInOneFile(t *testing.T) {
 	src, err := os.ReadFile("testdata/two-components.tml")
 	require.NoError(t, err)
@@ -66,7 +66,7 @@ func TestLoadRefusesTwoComponentsInOneFile(t *testing.T) {
 	assert.Contains(t, err.Error(), "one component per file")
 }
 
-// An import cycle only makes names mutually visible, so loading must terminate rather than fail. Self-instantiation is
+// An import cycle only makes names mutually visible, so loading must terminate rather than fail.
 func TestLoadTerminatesOnAnImportCycle(t *testing.T) {
 	fsys := fstest.MapFS{
 		"a.tml": {Data: []byte(component("A", `<Import src="./b.tml"/>`))},
@@ -119,7 +119,8 @@ func TestLoadRejects(t *testing.T) {
 	})
 
 	t.Run("two imported components cannot share a name in one scope", func(t *testing.T) {
-		// The old shape for this clash was a nested definition, which the only-component rule now refuses earlier. Duplicate
+		// The shape for this clash was a nested definition, which the
+		// only-component rule now refuses earlier. Duplicate
 		fsys := fstest.MapFS{
 			"app.tml":        {Data: []byte(component("App", `<Import src="./card.tml"/><Import src="./other/card.tml"/>`))},
 			"card.tml":       {Data: []byte(component("Card", ``))},

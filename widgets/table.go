@@ -11,7 +11,7 @@ import (
 
 var tableAttrs = []string{"columns", "rows", "separator", "border", "selected", "disabled", "wrap"}
 
-// dataTable is a grid of text with headers. Rows arrive as a list of delimited strings because that is the shape the
+// dataTable is a grid of text with headers.
 type dataTable struct {
 	columns   []string
 	rows      [][]string

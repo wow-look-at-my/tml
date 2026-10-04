@@ -17,7 +17,7 @@ import (
 	"github.com/wow-look-at-my/tml/widget"
 )
 
-// checkerboard is a picture with known colours in known places, so a test can say where a colour ended up rather than
+// checkerboard is a picture with known colours in known places.
 func checkerboard(t *testing.T, w, h int) []byte {
 	t.Helper()
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
@@ -69,7 +69,7 @@ func TestImageDrawsAMosaicOfHalfBlocks(t *testing.T) {
 	assert.Contains(t, out, "\x1b[", "the pixels are colour, so there is styling")
 }
 
-// The shape survives: a wide image is not stretched into a square, allowing for a terminal cell being about a pair of times as
+// The shape survives: a wide image is not stretched into a square.
 func TestImageKeepsItsShape(t *testing.T) {
 	wide := picture(t, "wide.png", checkerboard(t, 40, 10), nil, true)
 

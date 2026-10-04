@@ -64,13 +64,13 @@ type Style struct {
 type NodeKind int
 
 const (
-	// ElementNode is a markup element: a panel, a native element, a component instance, or a language directive such as
+	// ElementNode is a markup element: a panel, a native element, a component instance.
 	ElementNode NodeKind = iota
 	// TextNode is character data, which may contain {expr} interpolations.
 	TextNode
 )
 
-// Node is a single entry in a template body. Name holds the element's local name, including any dot: "Stack", "Card", and
+// Node is a single entry in a template body. Name holds the element's local name, including any dot: "Stack", "Card".
 type Node struct {
 	Kind     NodeKind
 	Name     string

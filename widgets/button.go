@@ -10,10 +10,10 @@ import (
 
 var buttonAttrs = []string{"label", "disabled", "variant"}
 
-// buttonSlots is the region a button's content goes in. A button is a frame around something, and that something is
+// buttonSlots is the region a button's content goes in. A button is a frame around something.
 var buttonSlots = []string{"Content"}
 
-// variants are the looks a button comes in, as a foreground colour for its border and label. Anything more specific is
+// variants are the looks a button comes in, as a foreground colour for its border and label.
 var variants = map[string]string{
 	"default": "",
 	"primary": "12",
@@ -74,7 +74,7 @@ func (b *button) Compose(slots widget.Slots, w, h int) string {
 	if len(content) == 0 {
 		content = slots.Default()
 	}
-	// The label is the content when nothing was written inside, which is what makes the common case a single attribute rather
+	// The label is the content when nothing was written inside.
 	body := strings.Join(content, "\n")
 	if len(content) == 0 {
 		body = b.label

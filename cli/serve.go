@@ -17,7 +17,7 @@ import (
 
 func init() { root.AddCommand(newServeCmd()) }
 
-// proxy answers inspection requests by forwarding them over the program's socket. A single connection per request keeps a
+// proxy answers inspection requests by forwarding them over the program's socket.
 type proxy struct {
 	path string
 	// mu guards nothing but the error the last dial produced, so the page can be told why it went quiet.

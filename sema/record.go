@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// RecordValue builds a value with named fields. It exists because a list could only ever hold strings, so anything a
+// RecordValue builds a value with named fields. It exists because a list could only ever hold strings.
 func RecordValue(fields map[string]Value) Value {
 	copied := make(map[string]Value, len(fields))
 	for name, value := range fields {
@@ -15,7 +15,7 @@ func RecordValue(fields map[string]Value) Value {
 	return Value{typ: Type{Kind: KindRecord}, fields: copied}
 }
 
-// RecordListValue builds a list of records, which is what a host passes for a repeated structure: the messages in a
+// RecordListValue builds a list of records, which is what a host passes for a repeated structure.
 func RecordListValue(items []map[string]Value) Value {
 	value := Value{typ: Type{Kind: KindRecord, IsList: true}}
 	for _, item := range items {
@@ -24,7 +24,7 @@ func RecordListValue(items []map[string]Value) Value {
 	return value
 }
 
-// Field reads a single named part of a record. A field nobody declared is an ERROR naming what the record does hold, not an
+// Field reads a single named part of a record. A field nobody declared is an ERROR naming what the record does hold.
 func (v Value) Field(name string) (Value, error) {
 	if v.typ.Kind != KindRecord || v.typ.IsList {
 		return Value{}, fmt.Errorf("%s has no fields; only a record does", v.typ)
