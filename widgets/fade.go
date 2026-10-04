@@ -45,7 +45,7 @@ func fadePercent(depth, band int) int {
 	return 35 + 35*(depth-1)/(band-1)
 }
 
-// blend moves one channel part of the way to the background, rounded to the nearest color, which is all ANSI can hold.
+// blend moves one channel part of the way to the background, rounded to the nearest color.
 func blend(from, to, percent int) int { return (from*(100-percent) + to*percent + 50) / 100 }
 
 // shaded is the color a row at depth d of a band of n rows draws a given foreground in.
