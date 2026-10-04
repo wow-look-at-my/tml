@@ -5,6 +5,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/wow-look-at-my/xml-validator/reader"
 	"github.com/wow-look-at-my/xml-validator/validator"
 )
 
@@ -12,6 +13,9 @@ import (
 func Parse(path string, src []byte) (*File, error) {
 	if err := validator.Validate(bytes.NewReader(src)); err != nil {
 		return nil, xmlError(path, err)
+	}
+	if reader.SniffVersion(src) != reader.Version11 {
+		return nil, errorf(Pos{File: path, Line: 1, Col: 1}, `a .tml file is XML 1.1: it must open with <?xml version="1.1" encoding="UTF-8"?>`)
 	}
 	doc, err := validator.ParseTree(bytes.NewReader(src))
 	if err != nil {
