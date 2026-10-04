@@ -38,6 +38,8 @@ Two-pass measure/arrange. Implemented panels: `Stack`, `Grid`, `Canvas`, `Box`, 
 
 `Grid` declares tracks and each child declares placement through attached properties (`Grid.row`, `Grid.column`, and the two span variants). Track solving is fixed, then auto, then star. Grid children are composited through lipgloss layers rather than joined, since they sit at coordinates.
 
+A `Grid` track takes a range (`*[8..32]`), and `collapse` names the columns that give way, in order, when the grid is too narrow. A hidden column takes no width and no gap, and `render` skips a grid child with no area. See docs/language.md.
+
 `Canvas` positions children freely through `Canvas.x`, `Canvas.y` and `Canvas.anchor`, and fills whatever it is offered rather than shrinking. A widget can name its own default anchor, which is how `<Popup>` centres itself.
 
 `Text` wraps by default, and `overflow="clip"` or `overflow="ellipsis"` cuts each line at the width instead. A clipped Text keeps its line count however narrow it gets. A card that holds a log tail therefore keeps its height when one line runs long. Clipping happens in `render`, because `MaxWidth` cuts without marking the cut.
@@ -95,6 +97,8 @@ The root is the importable package, so a Bubble Tea app imports `github.com/wow-
 - `inspect/` — the per-element inspection protocol, its socket and HTTP transports, and the browser inspector's page
 - `examples/dashboard/` — a Bubble Tea program whose whole view is TML
 - `examples/gallery/` — every library widget on one interactive screen
+- `examples/downloads/` — a mock download manager on a `tml.Live` region, with goldens at widths
+- `live.go` — `Live`, the inline region
 - `examples/agent/` — a mock coding agent, the proving ground. See docs/agent.md for what it loads on and what it proved
 - `tools/shots/` — the ttyd screenshot capture, its shot list, and the index page the site serves
 - `tools/inspector-check/` — the CI check that drives the inspector against a running program, over the socket and in a browser
@@ -108,6 +112,10 @@ Answers questions about the frame `Render` painted, one element at a time: recta
 The page decides NOTHING about layout. Which element covers a cell is `op=hits`, `inspect.At`'s answer for every cell in one response. A capture therefore resolves a click by lookup, not by a second hit test of its own. Its scripts are TypeScript under `inspect/ui/src`. [ts0](https://github.com/wow-look-at-my/ts0) (`pnpm build`) compiles them into the committed `inspect/ui/inspector.js` that `go:embed` reads. CI recompiles that file and fails on a diff.
 
 A test waits on the screen rather than sleeping. `query --await REGEX` and `--await-gone` block until the field matches, and fail with what the element last drew. `frame --since` blocks until the next paint. `frame --max-width` measures the widest line in display cells, which is the number that catches a region painting past its own edge.
+
+## Live regions
+
+`tml.Live` (`live.go`) is an inline Bubble Tea program with no input. It pins a view below the log and repaints it from a props function on an interval. `Println`/`Printf`/`Write` queue lines above it. At most one print is in flight, and `tea.Sequence` orders it, so lines keep their order. SIGINT becomes an orderly close through a program filter. `View.RenderFit` lays a view out as tall as its content. See docs/live.md.
 
 ## Hot reload
 

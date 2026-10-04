@@ -14,7 +14,7 @@ import (
 // marginZero is the absent margin; setting a nothing margin on a style is harmless but pointless, so it is skipped.
 var marginZero sema.Thickness
 
-// Render composes a laid-out tree into terminal output. Composition is bottom-up: every box renders its children to
+// Render composes a laid-out tree into terminal output. Composition is bottom-up.
 func Render(box *layout.Box) string {
 	if box.Name == "#text" {
 		return box.Text
@@ -48,7 +48,7 @@ func Render(box *layout.Box) string {
 		st = st.Height(h)
 	}
 
-	// A container's content is already composed, so overflow has to be clipped. Width alone would make lipgloss WRAP the
+	// A container's content is already composed, so overflow has to be clipped.
 	if box.Name != "Text" || box.Native != nil {
 		if w > 0 {
 			st = st.MaxWidth(w)
@@ -103,15 +103,19 @@ func renderChildren(box *layout.Box) string {
 	case "Canvas":
 		return canvas(box, parts)
 	default:
-		// A decorator holds a single child in practice; stacking any extras vertically keeps the output well-formed rather
+		// A decorator holds a single child in practice.
 		return lipgloss.JoinVertical(lipgloss.Left, parts...)
 	}
 }
 
-// compose places children at the coordinates arrange gave them, which joining cannot express as soon as children sit on a
+// compose places children at the coordinates arrange gave them.
 func compose(box *layout.Box, parts []string) string {
 	layers := make([]*lipgloss.Layer, 0, len(parts))
 	for i, child := range box.Children {
+		// A child with no area is in a collapsed column, or in a track sized to nothing. It draws nothing.
+		if child.Rect.W == 0 || child.Rect.H == 0 {
+			continue
+		}
 		layers = append(layers, lipgloss.NewLayer(parts[i]).
 			X(child.Rect.X).
 			Y(child.Rect.Y).
