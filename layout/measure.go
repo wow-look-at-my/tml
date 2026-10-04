@@ -73,8 +73,9 @@ func (e *Engine) measureContent(box *Box, inner Constraints) Size {
 
 // measureText reports the height the text needs after wrapping.
 func (e *Engine) measureText(box *Box, inner Constraints) Size {
+	// An empty Text is an empty line, one row tall, as lipgloss.Height says. A blank line in a list of lines must keep its row.
 	if box.Text == "" {
-		return Size{}
+		return Size{H: 1}
 	}
 	natural := e.opts.Measure.Width(box.Text)
 	if inner.MaxW <= 0 || natural <= inner.MaxW {

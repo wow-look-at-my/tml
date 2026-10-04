@@ -94,6 +94,15 @@ func TestVerticalIsTheDefaultOrientation(t *testing.T) {
 	assert.Equal(t, 1, box.Children[1].Rect.Y, "children stack downward by default")
 }
 
+// A blank line in a list of lines keeps its row, so the lines after it stay where the host counted them.
+func TestAnEmptyTextIsOneRowTall(t *testing.T) {
+	root := el("Stack", nil, text("a"), text(""), text("b"))
+	box := layoutTree(t, root, 10, 10)
+
+	assert.Equal(t, 1, box.Children[1].Rect.H, "an empty line is a row")
+	assert.Equal(t, 2, box.Children[2].Rect.Y, "the line after the blank one is not pulled up into it")
+}
+
 // Wrapping changes how much vertical space a text needs, so measure has to account for it or the parent under-budgets
 func TestTextMeasuresItsWrappedHeight(t *testing.T) {
 	root := el("Stack", nil, text("the quick brown fox jumps"))
