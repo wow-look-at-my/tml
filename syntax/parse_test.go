@@ -77,7 +77,7 @@ func TestParsePreservesDottedNames(t *testing.T) {
 	assert.Equal(t, "1", row)
 }
 
-// A file defines exactly a single component; a nested <Component> is another definition and is refused with the file and
+// A file defines exactly a single component.
 func TestParseRefusesANestedComponent(t *testing.T) {
 	_, err := parseSource(t, `<Component xmlns="urn:tml:v1" name="App">
 	<Component name="Row"><Template/></Component>
@@ -205,7 +205,7 @@ func TestParseRejects(t *testing.T) {
 			wantErr: "more than one <Template>",
 		},
 		{
-			// A single definition per file, per CLAUDE.md: a file's root is exactly a single <Component> or <Theme>. XML forbids more than that
+			// A single definition per file, per CLAUDE.md: a file's root is exactly a single <Component> or <Theme>.
 			name:    "a second root component",
 			body:    `<Component xmlns="urn:tml:v1" name="A"><Template/></Component><Component xmlns="urn:tml:v1" name="B"><Template/></Component>`,
 			wantErr: "unexpected content after root element",

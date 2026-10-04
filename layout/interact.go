@@ -17,18 +17,18 @@ type Target struct {
 	Scroll Scroll
 }
 
-// Scroll is how far a scrolling region's content is shifted, and how far it could be. The maximum depends on how the
+// Scroll is how far a scrolling region's content is shifted, and how far it could be.
 type Scroll struct{ X, Y, MaxX, MaxY int }
 
 // Interaction is the focus and pointer state a frame renders against. Layout asks it how each focusable element should
 type Interaction interface {
-	// States reports how each element should draw, in the order given. It is asked before anything is measured, so the
+	// States reports how each element should draw, in the order given. It is asked before anything is measured.
 	States(targets []Target) []widget.State
-	// Frame publishes the same elements for the frame just laid out, this time with the geometry they landed on.
+	// Frame publishes the same elements for the frame laid out, this time with the geometry they landed on.
 	Frame(targets []Target)
 }
 
-// pass is the mutable state of a single layout call. Keeping it off the engine means a pair of goroutines can lay out against the
+// pass is the mutable state of a single layout call.
 type pass struct {
 	e       *Engine
 	targets []*Box
@@ -78,7 +78,7 @@ func (p *pass) publish() {
 	p.e.opts.Interaction.Frame(targets)
 }
 
-// track records a widget the user can reach: a widget that takes focus, or a widget that was given an id, which is how a
+// track records a widget the user can reach: a widget that takes focus, or a widget that was given an id.
 func (p *pass) track(box *Box) error {
 	if box.ID != "" {
 		if first, dup := p.ids[box.ID]; dup {

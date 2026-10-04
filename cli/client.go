@@ -26,7 +26,7 @@ func socketFlag(cmd *cobra.Command, dest *string) {
 		"path of the program's inspection socket (default: discover, or $TML_INSPECT_SOCKET)")
 }
 
-// dial connects, or says why it could not in terms of what the caller can do about it. A missing socket file and a
+// dial connects, or says why it could not in terms of what the caller can do about it.
 func dial(path string) (*client, error) {
 	if path == "" {
 		return nil, errors.New("no socket resolved")
@@ -56,7 +56,7 @@ func (c *client) do(req inspect.Request) (inspect.Response, error) {
 	return res, nil
 }
 
-// ask opens a connection, asks a single question and closes it. A single-shot subcommand is this plus a printer. flag is
+// ask opens a connection, asks a single question and closes it.
 func ask(flag string, req inspect.Request) (inspect.Response, error) {
 	path, err := resolveSocket(flag)
 	if err != nil {

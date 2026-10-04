@@ -16,7 +16,7 @@ import (
 
 var update = flag.Bool("update", false, "rewrite the golden files")
 
-// gallery builds the model the binary builds, with the terminal pinned to a profile that can only do colour. Otherwise the
+// gallery builds the model the binary builds, with the terminal pinned to a profile that can only do colour.
 func gallery(t *testing.T) *model {
 	t.Helper()
 	for _, name := range []string{
@@ -60,7 +60,7 @@ func TestEverySectionRenders(t *testing.T) {
 	}
 }
 
-// The gallery routes every control through its action string, so an action the model has no case for is a button that
+// The gallery routes every control through its action string.
 func TestEveryControlInTheRingIsWiredUp(t *testing.T) {
 	m := gallery(t)
 	seen := 0
@@ -82,7 +82,7 @@ func TestEveryControlInTheRingIsWiredUp(t *testing.T) {
 	assert.Greater(t, seen, 10, "the walk reached the sections' own controls, not just the tabs")
 }
 
-// The check above is only worth anything if act can actually say no.
+// The check above is only worth anything if act can say no.
 func TestAnUnknownActionIsRejected(t *testing.T) {
 	m := gallery(t)
 
@@ -90,7 +90,7 @@ func TestAnUnknownActionIsRejected(t *testing.T) {
 	assert.True(t, m.act("save"))
 }
 
-// Clicking a tab is the whole loop: the click lands on a rect the last frame published, the ring turns it into an
+// Clicking a tab is the whole loop: the click lands on a rect the last frame published.
 func TestClickingATabSwitchesSection(t *testing.T) {
 	m := gallery(t)
 	require.NotContains(t, m.frameOf(), "tml: ")
@@ -139,7 +139,7 @@ func TestEscapeClosesThePopupFirst(t *testing.T) {
 	assert.NotNil(t, cmd, "with nothing left to dismiss it quits")
 }
 
-// Activating Quit and then Yes leaves through the popup, which is the only path where an action has to reach the
+// Activating Quit and then Yes leaves through the popup.
 func TestConfirmingQuitEndsTheProgram(t *testing.T) {
 	m := gallery(t)
 	require.NotContains(t, m.frameOf(), "tml: ")
@@ -154,7 +154,7 @@ func TestConfirmingQuitEndsTheProgram(t *testing.T) {
 	assert.NotNil(t, cmd)
 }
 
-// The log is a scrolling region, not a tab stop, so the wheel over it is the only way to reach it -- which is the
+// The log is a scrolling region, not a tab stop.
 func TestTheWheelScrollsTheLog(t *testing.T) {
 	m := gallery(t)
 	m.tab = "data"
@@ -167,7 +167,7 @@ func TestTheWheelScrollsTheLog(t *testing.T) {
 	assert.NotContains(t, ansi.Strip(m.frameOf()), "step 1 finished", "the first line has scrolled off")
 }
 
-// A list is a single control to the ring, so clicking a row is the host reading the event's own coordinates. This is the
+// A list is a single control to the ring, so clicking a row is the host reading the event's own coordinates.
 func TestClickingAListRowSelectsIt(t *testing.T) {
 	m := gallery(t)
 	m.tab = "data"
@@ -180,7 +180,8 @@ func TestClickingAListRowSelectsIt(t *testing.T) {
 	assert.Contains(t, ansi.Strip(m.frameOf()), "> scheduler", "the cursor moved to the row that was clicked")
 }
 
-// press clicks and releases over a single point, which is what actually activates a control: a press alone is only the
+// press clicks and releases over a single point, which is what activates a
+// control.
 func press(m *model, x, y int) (tea.Model, tea.Cmd) {
 	m.Update(tea.MouseClickMsg{X: x, Y: y, Button: tea.MouseLeft})
 	return m.Update(tea.MouseReleaseMsg{X: x, Y: y, Button: tea.MouseLeft})

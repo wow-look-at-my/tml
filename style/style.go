@@ -13,7 +13,7 @@ import (
 	"github.com/wow-look-at-my/tml/syntax"
 )
 
-// Resolved is a single element's finished styling. Margin is kept out of the lipgloss.Style on purpose: lipgloss treats the
+// Resolved is a single element's finished styling. Margin is kept out of the lipgloss.Style on purpose.
 type Resolved struct {
 	Style  lipgloss.Style
 	Margin sema.Thickness
@@ -26,7 +26,7 @@ func (r Resolved) Frame() (horizontal, vertical int) {
 	return r.Style.GetHorizontalFrameSize(), r.Style.GetVerticalFrameSize()
 }
 
-// ContentOffset is the distance from a box's outer top-left corner to the leading cell of its content. A child's rect is
+// ContentOffset is the distance from a box's outer top-left corner to the leading cell of its content.
 func (r Resolved) ContentOffset() (x, y int) {
 	x = r.Margin.Left + r.Style.GetPaddingLeft() + r.Style.GetBorderLeftSize()
 	y = r.Margin.Top + r.Style.GetPaddingTop() + r.Style.GetBorderTopSize()
@@ -38,7 +38,7 @@ type Sheet struct {
 	styles map[string]map[string]string
 }
 
-// NewSheet flattens the named styles from the given themes. Token references in style attributes are resolved here, so
+// NewSheet flattens the named styles from the given themes. Token references in style attributes are resolved here.
 func NewSheet(themes []*syntax.Theme, tokens map[string]string) (*Sheet, error) {
 	declared := map[string]*syntax.Style{}
 	for _, theme := range themes {
@@ -98,7 +98,7 @@ func (s *Sheet) flatten(declared map[string]*syntax.Style, name string, tokens m
 	return attrs, nil
 }
 
-// resolveTokens evaluates the theme references a style attribute may contain. Styles live in a theme, so a token is
+// resolveTokens evaluates the theme references a style attribute may contain. Styles live in a theme.
 func resolveTokens(raw string, tokens map[string]string) (string, error) {
 	expr, err := sema.ParseExpr(raw)
 	if err != nil {
@@ -125,7 +125,7 @@ func resolveTokens(raw string, tokens map[string]string) (string, error) {
 	return b.String(), nil
 }
 
-// Resolve builds the finished style for an element: the named style when the element names a style, with inline attributes layered on
+// Resolve builds the finished style for an element: the named style when the element names a style.
 func (s *Sheet) Resolve(named string, inline map[string]string) (Resolved, error) {
 	attrs := map[string]string{}
 	if named != "" {

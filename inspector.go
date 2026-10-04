@@ -16,7 +16,7 @@ type Inspector struct {
 	view *View
 	srv  *inspect.Server
 
-	// keys and clicks are how the inspector drives the program. A host wires them to whatever delivers input -- for
+	// keys and clicks are how the inspector drives the program.
 	mu     sync.Mutex
 	onKey  func(string) error
 	onClk  func(x, y int) error
@@ -32,7 +32,7 @@ func newInspector(v *View) *Inspector {
 	return i
 }
 
-// Attach points the inspector at another View, and is how a host survives recompiling its own document. Load bakes in
+// Attach points the inspector at another View, and is how a host survives recompiling its own document.
 func (i *Inspector) Attach(v *View) {
 	i.mu.Lock()
 	old := i.view
@@ -72,14 +72,14 @@ func (i *Inspector) OnClick(fn func(x, y int) error) {
 	i.mu.Unlock()
 }
 
-// OnRepaint wires the way this host is asked to draw again. An override only reaches the screen on the next paint, and
+// OnRepaint wires the way this host is asked to draw again. An override only reaches the screen on the next paint.
 func (i *Inspector) OnRepaint(fn func() error) {
 	i.mu.Lock()
 	i.onPnt = fn
 	i.mu.Unlock()
 }
 
-// repaint asks the host to draw again and waits for the frame that answers. It waits so a caller that restyles and
+// repaint asks the host to draw again and waits for the frame that answers.
 func (i *Inspector) repaint() error {
 	i.mu.Lock()
 	fn := i.onPnt
@@ -188,7 +188,8 @@ func (v *View) recordFrames(on bool) {
 	v.frames.on.Store(on)
 }
 
-// record stores the frame just painted. It is called from Render, so the cost on a program with no inspector attached
+// record stores the frame painted. It is called from Render, so the cost on a
+// program with no inspector attached
 func (v *View) record(box *layout.Box, ansi string, width, height int) {
 	if v.frames == nil || !v.frames.on.Load() {
 		return
@@ -218,7 +219,7 @@ func (v *View) lastFrame() (inspect.Frame, bool) {
 	return v.frames.frame, true
 }
 
-// OnFrame registers a function called after each recorded frame. The inspector uses it to wake watchers the moment the
+// OnFrame registers a function called after each recorded frame.
 func (v *View) OnFrame(fn func()) {
 	if v.frames == nil {
 		v.frames = &frameRecord{}

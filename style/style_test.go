@@ -71,7 +71,7 @@ func TestStyleAttributesResolveThemeTokens(t *testing.T) {
 	assert.Equal(t, 6, resolved.Style.GetHorizontalPadding(), "3 cells each side")
 }
 
-// Margin is deliberately kept off the lipgloss style: lipgloss treats the width set on a style as the border box and
+// Margin is deliberately kept off the lipgloss style.
 func TestMarginIsKeptOutOfTheLipglossStyle(t *testing.T) {
 	sheet, err := NewSheet(nil, nil)
 	require.NoError(t, err)

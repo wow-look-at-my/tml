@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// DefaultWatchInterval is how often Watch looks for changes. Terminal layout is iterated on by saving and looking, so
+// DefaultWatchInterval is how often Watch looks for changes. Terminal layout is iterated on by saving and looking.
 const DefaultWatchInterval = 250 * time.Millisecond
 
 // Watch reloads a view whenever any .tml file under dir changes, calling onChange with the result. It runs until ctx

@@ -40,7 +40,7 @@ func newScrollbox(ctx widget.Context) (widget.Native, error) {
 	return box, nil
 }
 
-// Arrange is the whole point of a scrolling region: the content is measured against unlimited height, so it is free to
+// Arrange is the whole point of a scrolling region: the content is measured against unlimited height.
 func (s *scrollbox) Arrange() widget.Layout {
 	return widget.Layout{
 		FreeH:    true,
@@ -51,7 +51,7 @@ func (s *scrollbox) Arrange() widget.Layout {
 	}
 }
 
-// Inset reserves the scrollbar column. Auto cannot know yet whether there is anything to scroll -- that needs the
+// Inset reserves the scrollbar column.
 func (s *scrollbox) Inset() (int, int) {
 	if s.bar == "never" {
 		return 0, 0
@@ -75,7 +75,7 @@ func (s *scrollbox) Compose(slots widget.Slots, w, h int) string {
 	offset := clamp(s.offsetY, 0, max(0, total-h))
 	from := offset
 	if s.contentHeight > 0 {
-		// The children ARE the window: the host cut it at the offset, so cutting again here would show the rows after the
+		// The children ARE the window: the host cut it at the offset.
 		total = s.contentHeight
 		offset = clamp(s.offsetY, 0, max(0, total-h))
 		from = 0
@@ -128,7 +128,7 @@ func (s *scrollbox) scrollbar(offset, total, view int) []string {
 	return bar
 }
 
-// window takes height rows starting at offset, padding with blanks when the content is shorter than the space. The
+// window takes height rows starting at offset, padding with blanks when the content is shorter than the space.
 func window(lines []string, offset, height int) []string {
 	if height <= 0 {
 		return nil

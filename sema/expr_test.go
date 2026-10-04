@@ -63,7 +63,7 @@ func TestEscapedBracesProduceLiteralText(t *testing.T) {
 	assert.Equal(t, "{title}", value.String(), "{{ and }} are the only escaping the language has")
 }
 
-// A lone reference keeps its type, so padding="{gutter}" is still a thickness. Mixing a reference with text produces a
+// A lone reference keeps its type, so padding="{gutter}" is still a thickness.
 func TestSoleReferenceKeepsItsTypeButInterpolationDoesNot(t *testing.T) {
 	thickness, err := ParseType("thickness")
 	require.NoError(t, err)

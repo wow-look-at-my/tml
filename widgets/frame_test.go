@@ -68,7 +68,7 @@ func TestBorderKindsAreNamed(t *testing.T) {
 	assert.Contains(t, err.Error(), "expected one of ascii, block, double, hidden, normal, rounded, thick")
 }
 
-// An empty frame is still a frame: it measures and draws itself, because layout only takes over the children when
+// An empty frame is still a frame: it measures and draws itself.
 func TestEmptyBorderStillDrawsItself(t *testing.T) {
 	border := build(t, "Border", nil)
 

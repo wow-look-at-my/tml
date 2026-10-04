@@ -33,7 +33,7 @@ func renderAwait(t *testing.T, body string) *tml.View {
 	return view
 }
 
-// An await returns as soon as the element draws the pattern, and it returns the element rather than a bare bool, so
+// An await returns as soon as the element draws the pattern, and it returns the element rather than a bare bool.
 func TestAwaitFieldReturnsWhenTheElementDrawsIt(t *testing.T) {
 	view := renderAwait(t, "waiting")
 
@@ -61,7 +61,7 @@ func TestAwaitFieldGoneReturnsWhenTheTextLeaves(t *testing.T) {
 	assert.NotContains(t, el.Text, "working")
 }
 
-// A timeout names what the element actually drew. "expected output to contain X" says nothing about what was on
+// A timeout names what the element drew.
 func TestAwaitFieldTimeoutReportsWhatItDrew(t *testing.T) {
 	renderAwait(t, "still here")
 
@@ -71,7 +71,7 @@ func TestAwaitFieldTimeoutReportsWhatItDrew(t *testing.T) {
 	assert.Contains(t, err.Error(), "still here")
 }
 
-// An id the frame does not declare is not a match that has not happened yet, so it fails with the timeout and says the
+// An id the frame does not declare is not a match that has not happened yet.
 func TestAwaitFieldReportsAnIDTheFrameDoesNotDeclare(t *testing.T) {
 	renderAwait(t, "here")
 

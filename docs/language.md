@@ -14,11 +14,11 @@ A file holds exactly one definition, rooted at `<Component>` or `<Theme>`.
 xml-validator --schema tml.schema.xsd app.tml
 ```
 
-It covers the declarations. That means which children each root takes, in any order, and every attribute each one has. It also covers the property type grammar. It states that a required property is never defaulted. It states that a token carries a value, or a light and dark pair, and never one half of it. It also lists every style attribute with its vocabulary.
+It covers the declarations. That means which children each root takes, in any order, and every attribute each has. It also covers the property type grammar. It states that a required property is never defaulted. It states that a token carries a value, or a light and dark pair, and never one half of it. It also lists every style attribute with its vocabulary.
 
 **The `<Template>` body is not checked, and cannot be.** It names components the file imported and widgets the host bound. A schema knows neither. xml-validator allows only `processContents="strict"`, which demands a declaration for every element it matches. A schema that checked the body therefore rejects every document that imports anything. `sema/analyze.go` checks the body. It is the authority on the whole file at load time.
 
-Two smaller rules are also out of reach. A root element in the wrong namespace is accepted, because the validator falls back to a local-name match at the root. `syntax.Parse` catches it. A style attribute whose value is a `{theme.token}` takes the token's word for the vocabulary. What the token holds is known only when the sheet resolves.
+Smaller rules are also out of reach. A root element in the wrong namespace is accepted, because the validator falls back to a local-name match at the root. `syntax.Parse` catches it. A style attribute whose value is a `{theme.token}` takes the token's word for the vocabulary. What the token holds is known only when the sheet resolves.
 
 CI runs `xml-validator` over every document in the tree, and again with `--schema tml.schema.xsd` over every component. The schema can therefore never grow stricter than the documents this repository ships. `testdata/schema/valid` is the corpus that carries a declaration of each kind. A job that only validates cannot prove the schema refuses anything. `dats/schema.dats` runs the same binary over `testdata/schema/invalid`, and names the error each fixture must produce. A fixture rejected by the wrong rule fails that suite.
 
@@ -41,7 +41,7 @@ CI runs `xml-validator` over every document in the tree, and again with `--schem
 </Component>
 ```
 
-A file defines exactly one component, rooted at `<Component>` (or exactly one theme, rooted at `<Theme>`). A component that shares its file with a second one is refused: one file, one component. Reuse is `<Import>`, never nesting.
+A file defines exactly one component, rooted at `<Component>` (or exactly one theme, rooted at `<Theme>`). A component that shares its file with a second one is refused: one file, one component. Reuse is `<Import>`, not nesting.
 
 ### Properties
 
@@ -53,7 +53,7 @@ Types: `string`, `int`, `bool`, `color`, `length`, `thickness`, `enum(a|b|c)`, a
 - `length` is `auto`, a cell count, or a star share (`*`, `2*`).
 - `thickness` is the CSS shorthand: `1`, `1 2`, or `1 2 3 4` clockwise from the top.
 
-A default is evaluated against the theme only, never against the component's other properties, so defaults do not depend on declaration order.
+A default is evaluated against the theme only, not against the component's other properties, so defaults do not depend on declaration order.
 
 ### Imports
 
@@ -85,7 +85,7 @@ A call site fills a named slot with XAML property-element syntax. Untagged child
 
 **Slot content is a closure over the call site.** It expands in the caller's scope and the caller's file. It therefore sees the caller's properties and the caller's imports, not the component it is passed into. This is what makes a component substitutable without knowing where it is used.
 
-Components do not nest lexically for anything else either: an instance sees its own properties and the theme, never the enclosing component's names.
+Components do not nest lexically for anything else either: an instance sees its own properties and the theme, not the enclosing component's names.
 
 ## Expressions
 
@@ -97,7 +97,7 @@ The grammar is a name, optionally a theme token, optionally negated:
 - `Hello {name}!` — interpolation in text or in any attribute value
 - `{{` and `}}` — literal braces, the only escaping there is
 
-There is no arithmetic and there are no calls. Every reference is therefore checked when the view loads, including references inside a branch that is never taken. An unknown name is an error, never an empty string.
+There is no arithmetic and there are no calls. Every reference is therefore checked when the view loads, including references inside a branch that is never taken. An unknown name is an error, not an empty string.
 
 **A lone reference keeps its type.** `padding="{gutter}"` stays a thickness. `title="pad {gutter}"` is a string. This is why a typed property can be forwarded to a typed attribute without restating the type.
 
@@ -120,7 +120,7 @@ There is no arithmetic and there are no calls. Every reference is therefore chec
 
 `<For>` repeats markup the document already wrote. An items control repeats a TEMPLATE over items the PROGRAM supplies. What a row looks like is the document's business. What a row contains is the host's.
 
-Two attributes make any element an items control. `itemsSource` takes a list. `itemTemplate` names a `<DataTemplate>`. Neither reaches the rendered element. They say what it contains, not what it is.
+Attributes make any element an items control. `itemsSource` takes a list. `itemTemplate` names a `<DataTemplate>`. Neither reaches the rendered element. They say what it contains, not what it is.
 
 ```xml
 <Component xmlns="urn:tml:v1" name="App">
@@ -226,7 +226,7 @@ Layout attributes are not forwarded through a component instance: every attribut
 </Theme>
 ```
 
-A token has either a single `value` or a `light`/`dark` pair, never both and never half a pair. The pair follows `Options.Dark`.
+A token has either a single `value` or a `light`/`dark` pair, not both and never half a pair. The pair follows `Options.Dark`.
 
 Style attributes: `fg`, `bg`, `bold`, `italic`, `underline`, `strikethrough`, `faint`, `reverse`, `padding`, `margin`, `border`, `borderColor`, `align`, `valign`. Borders are named: `none`, `normal`, `rounded`, `thick`, `double`, `hidden`, `block`, `ascii`.
 

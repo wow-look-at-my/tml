@@ -64,7 +64,7 @@ func newTreeCmd() *cobra.Command {
 	return cmd
 }
 
-// printNode writes a single node and its children as an indented outline. Geometry rides on the same line, because the
+// printNode writes a single node and its children as an indented outline. Geometry rides on the same line.
 func printNode(w io.Writer, node inspect.Node, indent string, idsOnly bool) error {
 	show := !idsOnly || node.ID != ""
 	next := indent

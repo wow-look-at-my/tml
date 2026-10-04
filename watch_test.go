@@ -94,7 +94,8 @@ func TestWatchReloadsOnChange(t *testing.T) {
 	assert.Contains(t, out, "after", "the reloaded view reflects the edit")
 }
 
-// A reload that fails must reach the caller. Keeping the last good view quietly would hide the very typo hot reload
+// A reload that fails must reach the caller. Keeping the last good view
+// quietly would hide the typo hot reload
 func TestWatchDeliversReloadFailures(t *testing.T) {
 	dir := t.TempDir()
 	writeApp(t, dir, `<Text>fine</Text>`)

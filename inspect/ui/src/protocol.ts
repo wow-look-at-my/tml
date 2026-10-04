@@ -1,6 +1,4 @@
-// The wire this page speaks, as the Go side defines it: inspect/protocol.go
-// and inspect/element.go carry the same names, and inspect/capture.go carries
-// Capture. These are declarations of what arrives, never a second model of it.
+// The wire this page speaks, as the Go side defines it: inspect/protocol.go.
 
 export interface Rect {
 	x: number;
@@ -81,8 +79,7 @@ export interface Response {
 }
 
 // Capture is what `tml capture` writes into the document. hits is At's answer
-// per cell, indexing elements, so this page never works out for itself what
-// covers a cell.
+// per cell, indexing elements.
 export interface Capture {
 	frame: FrameInfo;
 	elements: Element[];

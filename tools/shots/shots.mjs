@@ -1,19 +1,14 @@
 // The shot list: what to run, how to get it into the state worth looking at,
 // and what to call the picture.
 //
-// A shot is driven two ways. `args` puts the program in a state before the
-// terminal is even attached, which is what makes a picture reproducible; `keys`
-// are typed into the real terminal afterwards, which is what proves the input
-// path works outside a test harness.
+// A shot is driven ways. `args` puts the program in a state before the terminal
+// is even attached, which is what makes a picture reproducible; `keys` are
+// typed into the real terminal afterwards, which is what proves the input path
+// works outside a test harness.
 //
 // `expect` is text the terminal has to be showing before the picture counts. A
 // program that died on its arguments still leaves a terminal to screenshot, and
 // a black rectangle published as a screenshot is worse than a failed build.
-//
-// `rows` is the terminal to take the picture in. It is per shot because these
-// layouts fill the terminal they are given: a page shot in more rows than it
-// has content for is mostly empty space, and one shot in fewer drops whatever
-// was pinned to the bottom.
 export const shots = [
 	{
 		name: "gallery-controls",

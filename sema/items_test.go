@@ -40,7 +40,7 @@ const messageHeader = `<Component xmlns="urn:tml:v1" name="MessageHeader">
 	</Template>
 </Component>`
 
-// transcriptFiles is the message fixture as files the loader actually sees.
+// transcriptFiles is the message fixture as files the loader sees.
 func transcriptFiles() map[string]string {
 	return map[string]string{"app.tml": transcript, "MessageHeader.tml": messageHeader}
 }
@@ -160,7 +160,8 @@ func TestAnItemsSourceMustBeAList(t *testing.T) {
 	assert.Contains(t, err.Error(), "needs a list")
 }
 
-// TestAListOfStringsStillWorks: the case that is genuinely just text should not have to be wrapped in a record to be
+// TestAListOfStringsStillWorks: the case that is genuinely text should not
+// have to be wrapped in a record to be
 func TestAListOfStringsStillWorks(t *testing.T) {
 	got, err := expand(t, map[string]string{
 		"app.tml": `<Component xmlns="urn:tml:v1" name="App">

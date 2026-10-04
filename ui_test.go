@@ -149,7 +149,7 @@ func TestClickingNothingDoesNothing(t *testing.T) {
 	assert.Empty(t, u.Update(tea.MouseClickMsg{X: 1, Y: 0, Button: tea.MouseRight}))
 }
 
-// Overlapping controls are painted in document order, so the later control is the only control the user can see and therefore the
+// Overlapping controls are painted in document order.
 func TestTheTopmostControlWinsAClick(t *testing.T) {
 	u := NewUI()
 	ring(u, target("under", "", 0, 0, 10, 3), target("over", "", 2, 1, 4, 1))
@@ -174,7 +174,7 @@ func TestWheelReportsScrollOverAControl(t *testing.T) {
 	assert.Empty(t, u.Update(tea.MouseWheelMsg{X: 40, Y: 40, Button: tea.MouseWheelUp}))
 }
 
-// A control can vanish between frames -- a popup closes, an `if` flips. Focus falls back to the leading rather than
+// A control can vanish between frames -- a popup closes, an `if` flips.
 func TestFocusRecoversWhenItsControlDisappears(t *testing.T) {
 	u := NewUI()
 	ring(u, target("save", "", 0, 0, 8, 1), target("quit", "", 0, 1, 8, 1))

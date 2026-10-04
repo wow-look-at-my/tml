@@ -31,12 +31,12 @@ func Names() []string { return Library().Names() }
 // builder makes a single widget from a single element's context.
 type builder func(widget.Context) (widget.Native, error)
 
-// factory pairs a builder with the attribute names it reads. The engine hands anything not on that list to the
+// factory pairs a builder with the attribute names it reads.
 func factory(build builder, attrs []string) widget.Factory {
 	return widget.NewFactory(attrs, build)
 }
 
-// slotted is a factory that also names the regions content can be written into, so a misspelt <Button.Contnt> is
+// slotted is a factory that also names the regions content can be written into.
 func slotted(build builder, attrs, slots []string) widget.Factory {
 	return widget.NewSlottedFactory(attrs, slots, build)
 }

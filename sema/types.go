@@ -17,7 +17,7 @@ const (
 	KindLength
 	KindThickness
 	KindEnum
-	// KindRecord is a value with named fields. It is the only kind a host can build but a document cannot write as a
+	// KindRecord is a value with named fields.
 	KindRecord
 )
 

@@ -8,7 +8,7 @@ import (
 	"github.com/wow-look-at-my/tml/syntax"
 )
 
-// Dump renders an expanded tree as indented text. It backs `tml tree` and the expansion golden files, so its output is
+// Dump renders an expanded tree as indented text. It backs `tml tree` and the expansion golden files.
 func (n *Node) Dump() string {
 	var b strings.Builder
 	n.dump(&b, 0)

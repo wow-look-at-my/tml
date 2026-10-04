@@ -38,7 +38,7 @@ func (u *Unit) InScope(fromFile string) []string {
 	return names
 }
 
-// Load parses entry and everything it imports, transitively. Paths are slash-separated and relative to the root of
+// Load parses entry and everything it imports, transitively.
 func Load(fsys fs.FS, entry string) (*Unit, error) {
 	unit := &Unit{
 		Files:  make(map[string]*File),

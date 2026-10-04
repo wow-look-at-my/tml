@@ -4,6 +4,10 @@ on:
   push:
     branches: ['**']
 
+concurrency:
+  group: gha_${{ github.repository }}_${{ github.workflow }}_${{ github.ref != 'refs/heads/master' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
 permissions:
   id-token: write
   contents: write
@@ -34,8 +38,9 @@ jobs:
       - uses: actions/checkout@v4
 
       # inspect/ui/inspector.js is compiled from inspect/ui/src, and committed because go:embed reads the module's tree.
+      - uses: extractions/setup-just@v2
       - name: Compile the inspector page
-        run: corepack enable && pnpm install && pnpm build
+        run: corepack enable && pnpm install && just build
       - name: Check the committed page is what its source compiles to
         run: git diff --exit-code -- inspect/ui/inspector.js
 

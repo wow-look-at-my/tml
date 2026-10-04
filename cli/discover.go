@@ -42,7 +42,7 @@ func resolveSocket(flag string) (string, error) {
 	}
 }
 
-// livePrograms is every socket in dir that a program is still behind. Each is dialled rather than trusted: a
+// livePrograms is every socket in dir that a program is still behind. Each is dialled rather than trusted.
 func livePrograms(dir string) ([]program, error) {
 	entries, err := os.ReadDir(dir)
 	if os.IsNotExist(err) {

@@ -40,7 +40,7 @@ func (k EventKind) String() string {
 	}
 }
 
-// Event is a single interaction, reported back to the host. Action is the element's action attribute: the string the
+// Event is a single interaction, reported back to the host. Action is the element's action attribute.
 type Event struct {
 	Kind   EventKind
 	ID     string
@@ -50,14 +50,14 @@ type Event struct {
 	X, Y int
 }
 
-// KeyMap is which keys drive the focus ring. Replace it when the host wants a key for itself -- a list that owns the
+// KeyMap is which keys drive the focus ring.
 type KeyMap struct {
 	Next     []string
 	Prev     []string
 	Activate []string
 }
 
-// DefaultKeyMap moves with tab and the arrows and fires on enter or space. The arrows are included because a row of
+// DefaultKeyMap moves with tab and the arrows and fires on enter or space.
 func DefaultKeyMap() KeyMap {
 	return KeyMap{
 		Next:     []string{"tab", "down", "right"},
@@ -143,7 +143,7 @@ func (u *UI) Update(msg tea.Msg) []Event {
 		u.press = ""
 		target := u.hit(msg.X, msg.Y)
 		u.hover = target
-		// Releasing somewhere else cancels, which is what every other button in every other toolkit does and what lets a
+		// Releasing somewhere else cancels.
 		if pressed == "" || target != pressed {
 			return nil
 		}
@@ -279,7 +279,7 @@ func (u *UI) event(key string, kind EventKind, delta, x, y int) []Event {
 	}}
 }
 
-// hit finds the control under a point. Later targets win, because that is the order they are painted in and so the
+// hit finds the control under a point. Later targets win.
 func (u *UI) hit(x, y int) string {
 	found := ""
 	for i, target := range u.targets {

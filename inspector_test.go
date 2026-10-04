@@ -27,7 +27,8 @@ const inspectorView = `<?xml version="1.1" encoding="UTF-8"?>
 	</Template>
 </Component>`
 
-// Every test here owns the process's one inspector, so each one takes the serial barrier before it resets that state.
+// Every test here owns the process's one inspector, so each takes the serial
+// barrier before it resets that state.
 func loadInspectorView(t *testing.T) *tml.View {
 	t.Helper()
 	view, err := tml.Load(fstest.MapFS{"app.tml": &fstest.MapFile{Data: []byte(inspectorView)}},
@@ -36,7 +37,8 @@ func loadInspectorView(t *testing.T) *tml.View {
 	return view
 }
 
-// The frame the inspector answers from is the frame Render painted, so an assertion is about what the program actually
+// The frame the inspector answers from is the frame Render painted, so an
+// assertion is about what the program
 func TestInspectorAnswersFromTheFrameTheViewPainted(t *testing.T) {
 	t.Serial()
 	exclusive(t)
@@ -138,7 +140,7 @@ func TestOnFrameFiresPerPaint(t *testing.T) {
 	assert.Equal(t, 3, painted)
 }
 
-// The socket is the CLI's whole contract, so it is exercised here against a real view rather than only against a
+// The socket is the CLI's whole contract.
 func TestSocketServesARealViewsFrame(t *testing.T) {
 	t.Serial()
 	exclusive(t)
@@ -157,7 +159,7 @@ func TestSocketServesARealViewsFrame(t *testing.T) {
 	assert.Equal(t, "hello", res.Element.Text)
 }
 
-// A host that recompiles its document renders through a new View, and the only thing it does about that is load. The
+// A host that recompiles its document renders through a new View, and the only thing it does about that is load.
 func TestLoadingAgainMovesTheInspectorToTheNewView(t *testing.T) {
 	t.Serial()
 	exclusive(t)
@@ -179,7 +181,7 @@ func TestLoadingAgainMovesTheInspectorToTheNewView(t *testing.T) {
 	assert.Equal(t, 60, after.Width, "the frame is the new view's, not the old one's")
 	assert.Greater(t, after.Seq, before.Seq, "frame numbers continue across the swap")
 
-	// The old view stops recording, so a stray paint on it cannot come back as the current frame.
+	// The view stops recording, so a stray paint on it cannot come back as the current frame.
 	_, err = first.Render(nil, 11, 11)
 	require.NoError(t, err)
 	still, ok := insp.Frame()
@@ -233,11 +235,11 @@ func TestLoadServesTheSocketWithNoHostWiring(t *testing.T) {
 	assert.Equal(t, "hello", res.Element.Text)
 }
 
-// A view that cannot be served is not returned at all. Reporting it and handing back a working View would leave a
+// A view that cannot be served is not returned at all.
 func TestAViewThatCannotBeServedIsNotReturned(t *testing.T) {
 	t.Serial()
 	exclusive(t)
-	// A regular file where the socket's directory has to be. ListenSocket creates a missing directory on purpose, so an
+	// A regular file where the socket's directory has to be. ListenSocket creates a missing directory on purpose.
 	blocker := filepath.Join(t.TempDir(), "not-a-dir")
 	require.NoError(t, os.WriteFile(blocker, []byte("x"), 0o600))
 	t.Setenv(tml.SocketEnv, filepath.Join(blocker, "x.sock"))
