@@ -9,7 +9,7 @@ type Heights interface {
 }
 
 // Window is a scroll position over a list too long to lay out whole: an item
-// and a row in it, the bottom row on screen.
+// and a row in it. That is the bottom row on screen.
 type Window struct {
 	item, row int
 	follow    bool
@@ -83,7 +83,7 @@ func (w *Window) resolve(list Heights, rows int) bool {
 	return true
 }
 
-// fill moves the position down until the rows from the start of the list to it fill the window, so the window never
+// fill moves the position down until the rows from the start of the list to it fill the window. The window never
 // ends on the oldest row above blank ones. A position that reaches the newest row follows the list again.
 func (w *Window) fill(list Heights, rows int) {
 	used := w.row + 1

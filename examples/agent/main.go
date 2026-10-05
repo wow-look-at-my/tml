@@ -83,7 +83,6 @@ type model struct {
 	entries []string
 	state   beat
 	tokens  int
-	frame   int
 	offset  int
 	prompt  string
 
@@ -215,7 +214,8 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width, m.height = msg.Width, msg.Height
 		return m, nil
 	case tick:
-		m.frame++
+		// The view counts its own animation frames: the host moves them on and paints what comes out.
+		m.view.Advance()
 		return m, ticker()
 	case tea.KeyPressMsg:
 		if cmd, handled := m.hotkey(msg); handled {
@@ -330,7 +330,6 @@ func (m *model) render() string {
 	out, err := m.view.Render(tml.Props{
 		"status":      sema.StringValue(m.state.status),
 		"working":     sema.BoolValue(m.state.working),
-		"frame":       sema.StringValue(strconv.Itoa(m.frame)),
 		"tokens":      sema.StringValue(strconv.Itoa(m.tokens)),
 		"cost":        sema.StringValue(cost(m.tokens)),
 		"files":       sema.ListValue(files),

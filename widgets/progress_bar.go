@@ -56,7 +56,7 @@ func (b *progressBar) label() string {
 }
 
 func (b *progressBar) Measure(maxW, _ int) (int, int) {
-	// A bar has no natural length: it is as long as it is allowed to be, with enough room for the label when a label exists.
+	// A bar has no natural length. It is as long as it is allowed to be, with enough room for the label when a label exists.
 	width := maxW
 	if width <= 0 {
 		width = 20 + b.measure.Width(b.label())

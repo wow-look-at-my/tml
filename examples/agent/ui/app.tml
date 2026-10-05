@@ -5,7 +5,6 @@
 	<Property name="model" type="string" default="mockingbird-1"/>
 	<Property name="status" type="string" default="ready"/>
 	<Property name="working" type="bool" default="false"/>
-	<Property name="frame" type="int" default="0"/>
 	<Property name="tokens" type="int" default="0"/>
 	<Property name="budget" type="int" default="200000"/>
 	<Property name="cost" type="string" default="$0.00"/>
@@ -43,7 +42,7 @@
 				<Stack orientation="horizontal" gap="2">
 					<Text style="title">tml agent</Text>
 					<Badge label="{model}" style="model"/>
-					<Spinner kind="dots" frame="{frame}" color="{theme.accent}" if="{working}"/>
+					<Spinner kind="dots" color="{theme.accent}" if="{working}"/>
 					<Spacer width="*"/>
 					<Text style="muted">{cost}</Text>
 					<ProgressBar value="{tokens}" max="{budget}" width="18"

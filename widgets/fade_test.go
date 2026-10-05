@@ -14,7 +14,7 @@ func TestFadePercentStepsWithTheBand(t *testing.T) {
 	assert.Equal(t, 70, fadePercent(2, 2))
 }
 
-// Every spelling of a foreground is resolved to channels first, so the fade adjusts a 256-color or a named color the
+// Every spelling of a foreground is resolved to channels first. The fade adjusts a 256-color or a named color the
 // same way it adjusts an RGB one.
 func TestFadeParamsResolvesEveryForegroundSpelling(t *testing.T) {
 	tests := []struct {

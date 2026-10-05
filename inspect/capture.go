@@ -103,7 +103,7 @@ func asset(name string) (string, error) {
 	return string(body), nil
 }
 
-// replace swaps a marker and fails when it is absent, so a rename in the page breaks a test rather than shipping a
+// replace swaps a marker and fails when it is absent. A rename in the page breaks a test rather than shipping a
 // capture that opens blank.
 func replace(text, old, with string) (string, error) {
 	if !strings.Contains(text, old) {

@@ -36,6 +36,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The prose gate, at the top of the job. A finding is about the checkout, so it fails here rather than after the build.
+      - uses: wow-look-at-my/actions@ste-lint#latest
+
       # inspect/ui/inspector.js is compiled from inspect/ui/src, and committed because go:embed reads the module's tree.
       - uses: extractions/setup-just@v2
       - name: Compile the inspector page

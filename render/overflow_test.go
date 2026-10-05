@@ -13,7 +13,7 @@ import (
 	"github.com/wow-look-at-my/tml/sema"
 )
 
-// A card holding a log is the case overflow exists for: the box is as tall as
+// A card holding a log is the case overflow exists for. The box is as tall as
 // the log has lines, and a long line neither wraps nor pushes the border down.
 const overflowDoc = `<?xml version="1.1" encoding="UTF-8"?>
 <Component xmlns="urn:tml:v1" name="Card">

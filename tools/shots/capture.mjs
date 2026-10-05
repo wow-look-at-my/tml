@@ -27,8 +27,7 @@ const candidates = [
 	"/usr/bin/google-chrome",
 ].filter(Boolean);
 
-// browserPath is undefined when none of them is there, which leaves Playwright to find its own -- `npx playwright install chromium` is the other way to
-// have one, and how CI gets it.
+// browserPath is undefined when none of them is there, which leaves Playwright to find its own. `npx playwright install chromium` is the other way to have one, and how CI gets it.
 function browserPath() {
 	const found = candidates.find((path) => existsSync(path));
 	console.log(found ? `browser: ${found}` : "browser: Playwright's own");
@@ -57,7 +56,7 @@ async function freePort() {
 }
 
 // serve starts ttyd on the command, in the DOM renderer so the terminal's
-// text is in the page: the capture waits on what was drawn rather than on a
+// text is in the page. The capture waits on what was drawn rather than on a
 // timer, and a canvas would leave it with nothing to look at.
 async function serve(shot) {
 	const port = await freePort();
@@ -87,11 +86,11 @@ async function waitFor(check, what, timeout = 15000) {
 	throw new Error(`timed out waiting for ${what}`);
 }
 
-// size makes the terminal exactly cols x rows. xterm sizes itself to the window,
-// so the window is what has to be worked out: measure a cell, measure what the
-// page puts around the terminal, then resize to fit. Anything else leaves the
-// picture at whatever size the browser happened to open at, and a layout that
-// fills its terminal would differ every run.
+// size makes the terminal exactly cols x rows. xterm sizes itself to the window.
+// The window is what has to be worked out: measure a cell, measure what the page
+// puts around the terminal, then resize to fit. Anything else leaves the picture
+// at whatever size the browser happened to open at, and a layout that fills its
+// terminal would differ every run.
 async function size(page, cols, rows) {
 	const metrics = async () => page.evaluate(() => {
 		const measure = document.querySelector(".xterm-char-measure-element");
@@ -122,7 +121,7 @@ async function size(page, cols, rows) {
 }
 
 // capture takes one picture. It waits for the program to have painted -- a
-// terminal that has not drawn yet is a black rectangle, and a fixed sleep is a
+// terminal that has not drawn yet is a black rectangle. A fixed sleep is a
 // guess that goes stale on a slower machine.
 async function capture(browser, shot) {
 	if (!shot.expect) {

@@ -122,7 +122,7 @@ The page's scripts are TypeScript in `inspect/ui/src`, compiled by [ts0](https:/
 
     pnpm install && pnpm build
 
-That output is committed, because `go:embed` reads the module's own tree and `go get` has to find it there. CI recompiles it and fails on any diff, so the committed file cannot drift from its source.
+That output is committed, because `go:embed` reads the module's own tree and `go get` has to find it there. CI recompiles it and fails on any diff. The committed file cannot drift from its source.
 
 ## Overrides
 

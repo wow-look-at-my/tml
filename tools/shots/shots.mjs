@@ -2,13 +2,13 @@
 // and what to call the picture.
 //
 // A shot is driven ways. `args` puts the program in a state before the terminal
-// is even attached, which is what makes a picture reproducible; `keys` are
+// is even attached, which is what makes a picture reproducible. `keys` are
 // typed into the real terminal afterwards, which is what proves the input path
 // works outside a test harness.
 //
 // `expect` is text the terminal has to be showing before the picture counts. A
-// program that died on its arguments still leaves a terminal to screenshot, and
-// a black rectangle published as a screenshot is worse than a failed build.
+// program that died on its arguments still leaves a terminal to screenshot. A
+// black rectangle published as a screenshot is worse than a failed build.
 export const shots = [
 	{
 		name: "gallery-controls",

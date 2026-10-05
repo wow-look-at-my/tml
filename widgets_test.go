@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/wow-look-at-my/tml"
+	"github.com/wow-look-at-my/tml/sema"
 	"github.com/wow-look-at-my/tml/widget"
 )
 
@@ -140,3 +141,44 @@ func TestPopupCoversTheViewOnACanvas(t *testing.T) {
 type fixedView string
 
 func (f fixedView) View() string { return string(f) }
+
+// A Spinner's frame belongs to the engine. The host passes none: showing the element is what animates it, and hiding it is
+// what stops the repainting.
+func TestASpinnerAnimatesOnlyWhileItIsVisible(t *testing.T) {
+	loaded, err := view(t, `<Component xmlns="urn:tml:v1" name="App">
+		<Property name="state" type="string" default="visible"/>
+		<Template><Stack><Spinner kind="line" state="{state}"/></Stack></Template>
+	</Component>`, tml.Options{})
+	require.NoError(t, err)
+
+	hidden := tml.Props{"state": sema.StringValue("hidden")}
+	shown := tml.Props{"state": sema.StringValue("visible")}
+
+	// The spinner is the only thing on the frame, so a row of blanks is the whole of "it drew nothing".
+	blank := strings.Repeat(" ", 10)
+	firstRow := func(p tml.Props) string {
+		t.Helper()
+		out, err := loaded.Render(p, 10, 3)
+		require.NoError(t, err)
+		return strings.Split(ansi.Strip(out), "\n")[0]
+	}
+
+	assert.Equal(t, blank, firstRow(hidden), "a hidden spinner draws nothing")
+	assert.False(t, loaded.Animating(), "and leaves the host nothing to keep painting")
+
+	loaded.Advance()
+	assert.Equal(t, blank, firstRow(hidden), "a step taken while it is hidden changes nothing on screen")
+
+	before := firstRow(shown)
+	assert.NotEqual(t, blank, before, "showing it again draws the frame the engine is on")
+	assert.True(t, loaded.Animating(), "and the host has something to paint for again")
+
+	loaded.Advance()
+	after := firstRow(shown)
+	assert.NotEqual(t, before, after, "a step moves the spinner on with no frame passed in from the host")
+
+	loaded.Advance()
+	assert.NotContains(t, firstRow(shown), after, "and it keeps moving as long as it is shown")
+	assert.Equal(t, blank, firstRow(hidden), "hiding it again passes no frame at all")
+	assert.False(t, loaded.Animating())
+}
