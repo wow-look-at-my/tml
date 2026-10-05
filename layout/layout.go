@@ -174,7 +174,7 @@ func (e *Engine) Height(node *sema.Node, width int) (int, error) {
 }
 
 func (e *Engine) layout(node *sema.Node, width, height int, fit bool) (*Box, error) {
-	p := &pass{e: e}
+	p := &pass{e: e, paints: true}
 	// A layout answers for the tree in front of it, so the last frame's answer must not outlive it.
 	e.animating = false
 	box, err := p.build(node)
@@ -282,8 +282,8 @@ func (p *pass) build(node *sema.Node) (*Box, error) {
 		box.Native = native
 	}
 	if box.Native != nil {
-		// An animating widget that is on screen is the whole answer to "does the host still have to paint".
-		if animator, ok := box.Native.(widget.Animator); ok && box.Visibility == Visible && animator.Animating() {
+		// An animating widget in a painted frame is the whole answer to "does the host still have to paint".
+		if animator, ok := box.Native.(widget.Animator); ok && p.paints && box.Visibility == Visible && animator.Animating() {
 			e.animating = true
 		}
 		// A widget nothing drew takes no input: the pointer cannot land on a slot that was kept blank or given back.

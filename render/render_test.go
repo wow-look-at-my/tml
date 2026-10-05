@@ -171,6 +171,14 @@ func TestHiddenKeepsItsRowAndCollapsedDropsIt(t *testing.T) {
 	assert.Equal(t, []string{"one", "three"}, trimmed(collapsed))
 }
 
+// A Stack whose children all measured to nothing still has a gap to put nowhere: it draws nothing rather than panicking.
+func TestAStackWithOnlyEmptyChildrenDrawsNothing(t *testing.T) {
+	empty := el("Stack", nil)
+	stack := el("Stack", map[string]string{"gap": "1"}, empty, el("Text", map[string]string{"state": "collapsed"}, &sema.Node{Kind: syntax.TextNode, Text: "gone"}))
+
+	assert.Equal(t, "", strings.TrimRight(fitTree(t, stack, 10, 4), " \n"))
+}
+
 // trimmed is a frame's lines with their padding removed, so a blank row reads as an empty string.
 func trimmed(lines []string) []string {
 	out := make([]string, len(lines))

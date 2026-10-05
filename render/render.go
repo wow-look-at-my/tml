@@ -157,6 +157,11 @@ func joinStack(box *layout.Box, parts []string) string {
 	}
 	parts = kept
 
+	if len(parts) == 0 {
+		// Every child measured to nothing: the stack has nothing to draw and nothing to put a gap between.
+		return ""
+	}
+
 	if gap > 0 {
 		spaced := make([]string, 0, len(parts)*2-1)
 		for i, part := range parts {
