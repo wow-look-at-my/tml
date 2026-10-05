@@ -60,11 +60,21 @@ func (e *Engine) arrangeStack(box *Box) {
 	if vertical {
 		available = box.Content.H
 	}
-	available = max(0, available-gap*(len(box.Children)-1))
+	// Only placed children get a gap: a collapsed element leaves no blank cell where the gap beside it would be.
+	placed := 0
+	for _, child := range box.Children {
+		if stackPlaces(child, vertical) {
+			placed++
+		}
+	}
+	available = max(0, available-gap*max(0, placed-1))
 
 	// Fixed and auto children keep what they asked for; the remainder is shared out by star weight.
 	used, weight := 0, 0
 	for _, child := range box.Children {
+		if !stackPlaces(child, vertical) {
+			continue
+		}
 		length, size := child.width, child.desired.W
 		if vertical {
 			length, size = child.height, child.desired.H
@@ -80,8 +90,16 @@ func (e *Engine) arrangeStack(box *Box) {
 	offset := 0
 	remaining := leftover
 	remainingWeight := weight
+	first := true
 
-	for i, child := range box.Children {
+	for _, child := range box.Children {
+		if !stackPlaces(child, vertical) {
+			continue
+		}
+		if !first {
+			offset += gap
+		}
+		first = false
 		mainLength, crossLength := child.width, child.height
 		main := child.desired.W
 		crossAvailable := box.Content.H
@@ -122,9 +140,6 @@ func (e *Engine) arrangeStack(box *Box) {
 		}
 
 		offset += main
-		if i < len(box.Children)-1 {
-			offset += gap
-		}
 	}
 }
 
