@@ -37,6 +37,12 @@ type Focusable interface {
 	AcceptsFocus() bool
 }
 
+// Animator is the optional half of a widget that changes without input from the host.
+type Animator interface {
+	// Animating reports whether the widget still changes on its own.
+	Animating() bool
+}
+
 // Composer is a widget that wraps the children written inside it rather than replacing them: a frame, a dialog.
 type Composer interface {
 	Native
@@ -80,6 +86,8 @@ type Context struct {
 	Dark bool
 	// Measure is how wide a string is, in cells; nil means lipgloss.Width.
 	Measure Measurer
+	// Frame is the animation step the engine is on; a widget that animates draws it, others ignore it.
+	Frame int
 }
 
 // Measurer reports the width of a string in display cells. A terminal draws a ZWJ sequence like a family emoji in a width only it knows

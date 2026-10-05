@@ -93,7 +93,8 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width, m.height = msg.Width, msg.Height
 		return m, nil
 	case tick:
-		m.frame++
+		// The view counts its own animation frames: the host moves them on and paints what comes out.
+		m.view.Advance()
 		m.progress = (m.progress + 3) % 101
 		m.load = append(m.load[1:], 1+(m.frame*7)%9)
 		return m, ticker()
@@ -217,7 +218,6 @@ func (m *model) View() tea.View {
 func (m *model) frameOf() string {
 	out, err := m.view.Render(tml.Props{
 		"status":      sema.StringValue(m.status),
-		"frame":       sema.StringValue(strconv.Itoa(m.frame)),
 		"controlsTab": sema.BoolValue(m.tab == "controls"),
 		"dataTab":     sema.BoolValue(m.tab == "data"),
 		"mediaTab":    sema.BoolValue(m.tab == "media"),

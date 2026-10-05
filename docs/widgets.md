@@ -151,12 +151,31 @@ That arithmetic holds only while a row is a line. A cell too wide for its column
 | --- | --- | --- |
 | `Rule` | `orientation`, `char`, `title`, `color` | A divider, with an optional label breaking it. |
 | `ProgressBar` | `value`, `max`, `filled`, `empty`, `color`, `trackColor`, `percent` | Clamps out-of-range values rather than drawing past its track. |
-| `Spinner` | `kind`, `frame`, `color` | `kind` is `arrow`, `bar`, `circle`, `dot`, `dots` or `line`. The frame is a tick count from the host and wraps here. |
+| `Spinner` | `kind`, `color` | `kind` is `arrow`, `bar`, `circle`, `dot`, `dots` or `line`. It animates itself; see [Animation](#animation). |
 | `Sparkline` | `values`, `max`, `color` | Plots against `max`, or against the series' own largest value. Keeps the most recent points when the space is short. |
 | `Badge` | `label` | A padded chip. |
 | `Image` | `src`, `alt`, `protocol` | See docs/images.md. |
 
-Nothing in the library holds state. Every one of them draws what its attributes say, which is why the host's model stays the only place anything is true. `examples/gallery` is all of them on one screen.
+Nothing in the library holds state of its own. Every one of them draws what its attributes say, which is why the host's model stays the only place anything is true. The element that moves is a `Spinner`. It moves because the engine counts its frame. `examples/gallery` is all of them on one screen.
+
+## Animation
+
+A `Spinner` changes without the host saying so. The engine keeps the frame counter, so no template passes one, and a widget that animates says so by implementing `widget.Animator`:
+
+```go
+// Animating reports whether the widget is still changing on its own.
+Animating() bool
+```
+
+The host steps the animation and asks whether anything moved:
+
+```go
+view.Advance()                                    // move every animation on one frame
+out, err := view.Render(props, width, height)     // draw the frame they arrived on
+if view.Animating() { /* keep the ticker */ }     // false means nothing on screen is moving
+```
+
+`Animating` is about what is on screen, not about what exists. An element carrying `state="hidden"` or `state="collapsed"` is not drawn. It counts as nothing animating, and a view whose only animation is hidden reports false. Hiding the element is therefore what stops the repainting, with no switch anywhere. The states are docs/language.md §Visibility.
 
 ## Writing your own
 

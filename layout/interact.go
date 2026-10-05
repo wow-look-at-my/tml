@@ -33,6 +33,8 @@ type pass struct {
 	e       *Engine
 	targets []*Box
 	ids     map[string]syntax.Pos
+	// paints says this pass is the frame, not a measurement of a tree that may never be drawn.
+	paints bool
 }
 
 // syncState tells every interactive widget how it is being interacted with, before anything is measured. A control

@@ -129,6 +129,12 @@ func (v *View) RenderFit(props Props, width, maxHeight int) (string, error) {
 	return v.paint(box, width, box.Rect.H), nil
 }
 
+// Advance moves the view's animations on to their next step.
+func (v *View) Advance() { v.engine.Advance() }
+
+// Animating reports whether the last layout left something animating on screen.
+func (v *View) Animating() bool { return v.engine.Animating() }
+
 func (v *View) paint(box *layout.Box, width, height int) string {
 	out := render.Render(box)
 	v.record(box, out, width, height)

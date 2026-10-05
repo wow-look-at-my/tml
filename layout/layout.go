@@ -37,6 +37,21 @@ const (
 	OverflowEllipsis Overflow = "ellipsis"
 )
 
+// Visibility is what an element does with the slot layout would give it, spelled by the `state` attribute.
+type Visibility uint8
+
+const (
+	// Visible takes its slot and draws into it.
+	Visible Visibility = iota
+	// Hidden keeps its slot and draws nothing, so the row it sits in stays the size it was.
+	Hidden
+	// Collapsed gives its slot back: the layout closes up as if the element were never written.
+	Collapsed
+)
+
+// stateAttr is the attribute that carries a Visibility.
+const stateAttr = "state"
+
 // Box is a laid-out node.
 type Box struct {
 	Name string
@@ -50,6 +65,8 @@ type Box struct {
 	Content Size
 	Style   style.Resolved
 	Text    string
+	// Visibility is what this element does with its slot: drawn, kept blank, or given back. It is the `state` attribute.
+	Visibility Visibility
 	// Overflow is what a Text does with more text than its width holds; empty on every other element.
 	Overflow Overflow
 	// Native is the widget behind this element, if any. Layout measures it and the renderer asks it to draw; TML never
@@ -102,6 +119,9 @@ type Options struct {
 type Engine struct {
 	sheet *style.Sheet
 	opts  Options
+	// phase is the animation step, and animating is whether the last layout put one on screen.
+	phase     int
+	animating bool
 }
 
 // New returns an engine that resolves named styles through sheet and widgets through opts.
@@ -112,12 +132,19 @@ func New(sheet *style.Sheet, opts Options) *Engine {
 // SetOverride installs the per-element attribute override. An inspector calls it as soon as when it attaches; passing nil
 func (e *Engine) SetOverride(fn func(id string) map[string]string) { e.opts.Override = fn }
 
+// Advance moves every animation on to its next frame. Nothing changes on screen until the next layout.
+func (e *Engine) Advance() { e.phase++ }
+
+// Animating reports whether the last layout left something animating on screen.
+func (e *Engine) Animating() bool { return e.animating }
+
 // layoutAttrs are consumed by the engine; every other attribute is styling, unless a widget claims it. Attached
 var layoutAttrs = set.Of(
 	"width", "height", "orientation", "gap", "style", "overflow",
 	"columns", "rows", "collapse", "id", "action",
 	"offset", "offsetX", "scrollbar",
 	"title", "titleAlign",
+	stateAttr,
 )
 
 func isLayoutAttr(name string) bool {
@@ -147,7 +174,9 @@ func (e *Engine) Height(node *sema.Node, width int) (int, error) {
 }
 
 func (e *Engine) layout(node *sema.Node, width, height int, fit bool) (*Box, error) {
-	p := &pass{e: e}
+	p := &pass{e: e, paints: true}
+	// A layout answers for the tree in front of it, so the last frame's answer must not outlive it.
+	e.animating = false
 	box, err := p.build(node)
 	if err != nil {
 		return nil, err
@@ -218,6 +247,9 @@ func (p *pass) build(node *sema.Node) (*Box, error) {
 		ID:     attrs["id"],
 		Action: attrs["action"],
 	}
+	if box.Visibility, err = visibilityAttr(node, attrs); err != nil {
+		return nil, err
+	}
 	if box.width, err = lengthAttr(node, attrs, "width"); err != nil {
 		return nil, err
 	}
@@ -242,6 +274,7 @@ func (p *pass) build(node *sema.Node) (*Box, error) {
 			Dir:     path.Dir(node.Pos.File),
 			Dark:    e.opts.Dark,
 			Measure: e.opts.Measure,
+			Frame:   e.phase,
 		})
 		if err != nil {
 			return nil, &syntax.Error{Pos: node.Pos, Message: err.Error()}
@@ -249,8 +282,15 @@ func (p *pass) build(node *sema.Node) (*Box, error) {
 		box.Native = native
 	}
 	if box.Native != nil {
-		if err := p.track(box); err != nil {
-			return nil, err
+		// An animating widget in a painted frame is the whole answer to "does the host still have to paint".
+		if animator, ok := box.Native.(widget.Animator); ok && p.paints && box.Visibility == Visible && animator.Animating() {
+			e.animating = true
+		}
+		// A widget nothing drew takes no input: the pointer cannot land on a slot that was kept blank or given back.
+		if box.Visibility == Visible {
+			if err := p.track(box); err != nil {
+				return nil, err
+			}
 		}
 		// A composer keeps its children: they are laid out inside whatever space it insets for itself, and handed back to it
 		if _, wraps := box.Native.(widget.Composer); !wraps {
@@ -325,6 +365,26 @@ func overflowAttr(node *sema.Node, attrs map[string]string) (Overflow, error) {
 	default:
 		return "", &syntax.Error{Pos: node.Pos, Message: fmt.Sprintf(
 			"<Text> overflow: %q is not wrap, clip or ellipsis", raw)}
+	}
+}
+
+// visibilityAttr reads what the element does with its slot. An element that writes no state is visible. A state that is
+// not one of the names is refused by name, rather than guessed at.
+func visibilityAttr(node *sema.Node, attrs map[string]string) (Visibility, error) {
+	raw, ok := attrs[stateAttr]
+	if !ok {
+		return Visible, nil
+	}
+	switch raw {
+	case "visible":
+		return Visible, nil
+	case "hidden":
+		return Hidden, nil
+	case "collapsed":
+		return Collapsed, nil
+	default:
+		return Visible, &syntax.Error{Pos: node.Pos, Message: fmt.Sprintf(
+			"<%s> state: %q is not visible, hidden or collapsed", node.Name, raw)}
 	}
 }
 
