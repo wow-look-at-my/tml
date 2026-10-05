@@ -8,6 +8,11 @@ import (
 
 // arrange assigns a final rect to a box and places its children inside it.
 func (e *Engine) arrange(box *Box, rect Rect) {
+	// A collapsed box was measured to nothing, so its parent handed it no space. Nothing is placed inside it either.
+	if box.Visibility == Collapsed {
+		box.Rect, box.Content = Rect{}, Size{}
+		return
+	}
 	box.Rect = rect
 
 	outerW, outerH := box.outer()

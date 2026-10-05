@@ -3,7 +3,6 @@
 	<Import src="./theme.tml"/>
 
 	<Property name="status" type="string" default="ready"/>
-	<Property name="frame" type="int" default="0"/>
 
 	<!-- Which section is showing. The host owns the choice; the template only
 	     reads it, because a conditional is all the language offers. -->
@@ -38,7 +37,7 @@
 				<Stack orientation="horizontal" gap="2">
 					<Text style="title">TML widget gallery</Text>
 					<Badge label="{status}" style="chip"/>
-					<Spinner kind="dots" frame="{frame}" color="{theme.accent}"/>
+					<Spinner kind="dots" color="{theme.accent}"/>
 					<Spacer width="*"/>
 					<Text style="muted">tab moves, enter or click activates, q quits</Text>
 				</Stack>

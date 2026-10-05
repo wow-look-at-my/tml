@@ -35,6 +35,17 @@ func renderTree(t *testing.T, node *sema.Node, w, h int) string {
 	return Render(box)
 }
 
+// fitTree renders a tree as tall as its content, the way RenderFit does. A viewport-filling layout hides the difference a
+// child that takes no space makes, so the state tests need this one.
+func fitTree(t *testing.T, node *sema.Node, w, h int) string {
+	t.Helper()
+	sheet, err := style.NewSheet(nil, nil)
+	require.NoError(t, err)
+	box, err := layout.New(sheet, layout.Options{}).Fit(node, w, h)
+	require.NoError(t, err)
+	return Render(box)
+}
+
 // Regression: a container whose composed content is wider than its box must be CLIPPED. Setting only Width makes
 func TestOverflowingContentIsClippedNotWrapped(t *testing.T) {
 	row := el("Stack", map[string]string{"orientation": "horizontal", "gap": "1"},
@@ -129,4 +140,42 @@ func TestBorderAndPaddingSurroundTheContent(t *testing.T) {
 	require.GreaterOrEqual(t, len(lines), 3)
 	assert.Contains(t, lines[0], "┌", "the border is drawn around the content")
 	assert.Contains(t, lines[1], "│ hi │", "padding sits inside the border")
+}
+
+// A hidden element keeps its row and draws nothing in it; a collapsed one leaves no row behind at all. The geometry half is
+// layout's test.
+func TestHiddenKeepsItsRowAndCollapsedDropsIt(t *testing.T) {
+	stack := func(state string) *sema.Node {
+		attrs := map[string]string{}
+		if state != "" {
+			attrs["state"] = state
+		}
+		return el("Stack", nil,
+			text("one"),
+			el("Text", attrs, &sema.Node{Kind: syntax.TextNode, Text: "two"}),
+			text("three"),
+		)
+	}
+
+	visible := strings.Split(fitTree(t, stack(""), 20, 8), "\n")
+	hidden := strings.Split(fitTree(t, stack("hidden"), 20, 8), "\n")
+	collapsed := strings.Split(fitTree(t, stack("collapsed"), 20, 8), "\n")
+
+	require.Len(t, visible, 3)
+	assert.Equal(t, []string{"one", "two", "three"}, trimmed(visible))
+
+	require.Len(t, hidden, 3, "a hidden element keeps its row")
+	assert.Equal(t, []string{"one", "", "three"}, trimmed(hidden), "and draws nothing in it")
+
+	require.Len(t, collapsed, 2, "a collapsed element leaves no row behind")
+	assert.Equal(t, []string{"one", "three"}, trimmed(collapsed))
+}
+
+// trimmed is a frame's lines with their padding removed, so a blank row reads as an empty string.
+func trimmed(lines []string) []string {
+	out := make([]string, len(lines))
+	for i, line := range lines {
+		out[i] = strings.TrimRight(line, " ")
+	}
+	return out
 }

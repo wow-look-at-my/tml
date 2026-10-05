@@ -252,6 +252,9 @@ func (m *liveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.closing {
 			return m, nil
 		}
+		// The region's interval is its clock, so a step of every animation rides on it: a widget that animates itself is
+		// drawn on a frame that has moved, and the host passes no frame counter of its own.
+		m.live.view.Advance()
 		return m, tea.Batch(m.tick(), m.repaint(), m.flush())
 	case livePrinted:
 		m.printing = false

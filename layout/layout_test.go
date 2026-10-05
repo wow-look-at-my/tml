@@ -152,3 +152,41 @@ func TestLayoutRejectsAnUnknownStyleAttribute(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), `unknown style attribute "colour"`)
 }
+
+// The states on a child of a Stack: what each does with the slot it would take. A hidden element keeps the shape of the
+// row; a collapsed one gives the space back, so what was below it moves up. The drawn half is render's.
+func TestVisibilityKeepsOrGivesBackTheSlot(t *testing.T) {
+	stack := func(state string) *Box {
+		attrs := map[string]string{}
+		if state != "" {
+			attrs["state"] = state
+		}
+		root := el("Stack", nil,
+			text("one"),
+			el("Text", attrs, &sema.Node{Kind: syntax.TextNode, Text: "two"}),
+			text("three"),
+		)
+		return layoutTree(t, root, 20, 10)
+	}
+
+	visible, hidden, collapsed := stack(""), stack("hidden"), stack("collapsed")
+
+	assert.Equal(t, Rect{X: 0, Y: 1, W: 3, H: 1}, visible.Children[1].Rect)
+	assert.Equal(t, Rect{X: 0, Y: 1, W: 3, H: 1}, hidden.Children[1].Rect,
+		"hidden keeps its slot, so the row below it does not move")
+	assert.Equal(t, 3, hidden.desired.H, "and the slot is still there to be filled later")
+
+	assert.Equal(t, Rect{}, collapsed.Children[1].Rect, "collapsed takes no space")
+	assert.Equal(t, 1, collapsed.Children[2].Rect.Y, "so what was below it moves up")
+	assert.Equal(t, 2, collapsed.desired.H, "and the stack is a row shorter")
+}
+
+// A state that is not one of the names is refused by name, at the element that wrote it, rather than guessed at.
+func TestLayoutRejectsAnUnknownState(t *testing.T) {
+	root := el("Stack", nil, el("Text", map[string]string{"state": "hiden"},
+		&sema.Node{Kind: syntax.TextNode, Text: "x"}))
+
+	_, err := engine(t).Layout(root, 20, 5)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `state: "hiden" is not visible, hidden or collapsed`)
+}

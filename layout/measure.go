@@ -8,6 +8,11 @@ import (
 
 // measure computes each box's desired outer size within the given constraints.
 func (e *Engine) measure(box *Box, c Constraints) Size {
+	// A collapsed element gives its slot back before anything is measured, so its parent lays out without it.
+	if box.Visibility == Collapsed {
+		box.desired = Size{}
+		return box.desired
+	}
 	outerW, outerH := box.outer()
 	inner := Constraints{MaxW: max(0, c.MaxW-outerW), MaxH: max(0, c.MaxH-outerH)}
 

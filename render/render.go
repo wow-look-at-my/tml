@@ -19,6 +19,10 @@ func Render(box *layout.Box) string {
 	if box.Name == "#text" {
 		return box.Text
 	}
+	if box.Visibility == layout.Hidden {
+		// A hidden element keeps the space it was given and paints none of it, border and fill included.
+		return blank(box.Rect.W, box.Rect.H)
+	}
 
 	content := box.Text
 	switch {
@@ -81,6 +85,7 @@ func renderChildren(box *layout.Box) string {
 		return ""
 	}
 
+	// A collapsed child contributes no area, so the joins below drop it while parts stay aligned with box.Children.
 	parts := make([]string, 0, len(box.Children))
 	for _, child := range box.Children {
 		parts = append(parts, Render(child))
@@ -90,6 +95,9 @@ func renderChildren(box *layout.Box) string {
 		// The widget draws itself around its children, which reach it grouped by the slot they were written into.
 		slots := widget.Slots{}
 		for i, child := range box.Children {
+			if child.Visibility == layout.Collapsed {
+				continue
+			}
 			slots[child.Slot()] = append(slots[child.Slot()], parts[i])
 		}
 		return composer.Compose(slots, box.Content.W, box.Content.H)
@@ -103,8 +111,15 @@ func renderChildren(box *layout.Box) string {
 	case "Canvas":
 		return canvas(box, parts)
 	default:
-		// A decorator holds a single child in practice.
-		return lipgloss.JoinVertical(lipgloss.Left, parts...)
+		// A decorator holds a single child; a collapsed one would otherwise join in as a blank line of its own.
+		held := parts[:0:0]
+		for i, child := range box.Children {
+			if child.Visibility == layout.Collapsed {
+				continue
+			}
+			held = append(held, parts[i])
+		}
+		return lipgloss.JoinVertical(lipgloss.Left, held...)
 	}
 }
 

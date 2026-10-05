@@ -4,7 +4,7 @@ import (
 	"github.com/wow-look-at-my/tml/widget"
 )
 
-var spinnerAttrs = []string{"frame", "kind", "color"}
+var spinnerAttrs = []string{"kind", "color"}
 
 // spinners are the frame sets, keyed by the name a template asks for.
 var spinners = map[string][]string{
@@ -19,7 +19,7 @@ var spinners = map[string][]string{
 // spinnerKinds is sorted so the diagnostic listing them is stable.
 var spinnerKinds = []string{"arrow", "bar", "circle", "dot", "dots", "line"}
 
-// spinner shows a single frame of an animation. Which frame is the host's business: TML has no clock.
+// spinner draws the frame its animation is on: the engine counts frames and decides what is on screen.
 type spinner struct {
 	frames  []string
 	frame   int
@@ -32,13 +32,9 @@ func newSpinner(ctx widget.Context) (widget.Native, error) {
 	if err != nil {
 		return nil, err
 	}
-	frame, err := ctx.Attrs.Int("frame", 0)
-	if err != nil {
-		return nil, err
-	}
 	frames := spinners[kind]
-	// A frame counter is normally a tick count that only goes up.
-	frame = ((frame % len(frames)) + len(frames)) % len(frames)
+	// A frame counter only goes up, so the walk through this kind's frames has to wrap here.
+	frame := ((ctx.Frame % len(frames)) + len(frames)) % len(frames)
 	return &spinner{
 		frames:  frames,
 		frame:   frame,
@@ -46,6 +42,9 @@ func newSpinner(ctx widget.Context) (widget.Native, error) {
 		measure: ctx.Measure,
 	}, nil
 }
+
+// Animating reports that a spinner keeps moving for as long as it is visible.
+func (s *spinner) Animating() bool { return true }
 
 func (s *spinner) Measure(_, _ int) (int, int) {
 	return s.measure.Width(s.frames[s.frame]), 1

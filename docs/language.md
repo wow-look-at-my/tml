@@ -116,6 +116,20 @@ There is no arithmetic and there are no calls. Every reference is therefore chec
 
 `<For>` itself renders nothing. Its children repeat. The loop variable and index are visible only inside it.
 
+## Visibility
+
+`state` is an attribute on any element and takes one of three words.
+
+| `state` | What the element does with its slot |
+| --- | --- |
+| `visible` | Takes it and draws into it. |
+| `hidden` | Keeps it and draws nothing, so the row it sits in stays the size it was. |
+| `collapsed` | Gives it back, so the layout closes up as if the element were never written. |
+
+An element that writes no `state` is visible. A word that is not one of the three is refused at render time, by name, at the element that wrote it.
+
+Hiding is not the same as `if`. An `if` that is false drops the element before layout, so nothing is measured and the space goes. A hidden element is still built and still measured: its slot keeps its size and the layout around it does not move, which is what makes a place for something to appear in later. Neither a hidden nor a collapsed element is drawn, so neither is in the focus ring and the pointer cannot land on one.
+
 ## Items controls
 
 `<For>` repeats markup the document already wrote. An items control repeats a TEMPLATE over items the PROGRAM supplies. What a row looks like is the document's business. What a row contains is the host's.
