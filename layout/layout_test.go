@@ -181,6 +181,19 @@ func TestVisibilityKeepsOrGivesBackTheSlot(t *testing.T) {
 	assert.Equal(t, 2, collapsed.desired.H, "and the stack is a row shorter")
 }
 
+// A collapsed child reclaims its gap as well as its row, so the sibling after it does not move down an extra blank cell.
+func TestACollapsedChildTakesNoGap(t *testing.T) {
+	root := el("Stack", map[string]string{"gap": "1"},
+		text("a"),
+		el("Text", map[string]string{"state": "collapsed"}, &sema.Node{Kind: syntax.TextNode, Text: "b"}),
+		text("c"),
+	)
+	box := layoutTree(t, root, 20, 10)
+
+	assert.Equal(t, 3, box.desired.H, "a, the one gap, and c")
+	assert.Equal(t, 2, box.Children[2].Rect.Y, "so c sits under that gap, not under a gap of its own")
+}
+
 // A state that is not one of the names is refused by name, at the element that wrote it, rather than guessed at.
 func TestLayoutRejectsAnUnknownState(t *testing.T) {
 	root := el("Stack", nil, el("Text", map[string]string{"state": "hiden"},
