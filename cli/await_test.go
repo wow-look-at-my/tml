@@ -20,7 +20,7 @@ const awaitView = `<?xml version="1.1" encoding="UTF-8"?>
 </Component>`
 
 // renderAwait paints a single frame of awaitView through the same path a program uses, so the inspector answers about a
-// real frame. The inspector belongs to the process, so this takes the serial barrier: any test that paints at the same
+// real frame. The inspector belongs to the process. This takes the serial barrier: any test that paints at the same
 // time replaces the frame this test waits on.
 func renderAwait(t *testing.T, body string) *tml.View {
 	t.Helper()

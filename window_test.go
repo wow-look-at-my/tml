@@ -119,7 +119,7 @@ func row(i int) map[string]sema.Value {
 	}
 }
 
-// The height of an item is the rows the engine draws for it: a blank line is a row, and a nested scrolling region is as
+// The height of an item is the rows the engine draws for it. A blank line is a row, and a nested scrolling region is as
 // tall as its content.
 func TestItemHeightCountsTheRowsTheEngineDraws(t *testing.T) {
 	view, err := tml.Load(fstest.MapFS{"list.tml": &fstest.MapFile{Data: []byte(windowedList)}}, "list.tml", tml.Options{})
@@ -158,8 +158,8 @@ func drawWindow(t *testing.T, list measured, s tml.Slice, height int) []string {
 	return strings.Split(ansi.Strip(out), "\n")
 }
 
-// A window and a Scrollbox agree on every row: the newest line sits on the bottom row, and the top of the list fills
-// the screen.
+// A window and a Scrollbox agree on every row: the newest line sits on the bottom row. The top of the list fills the
+// screen.
 func TestAWindowDrawsFullScreensAtBothEnds(t *testing.T) {
 	view, err := tml.Load(fstest.MapFS{"list.tml": &fstest.MapFile{Data: []byte(windowedList)}}, "list.tml", tml.Options{})
 	require.NoError(t, err)

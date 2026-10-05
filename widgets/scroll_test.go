@@ -150,7 +150,7 @@ func TestScrollboxFadesBothEdges(t *testing.T) {
 	assert.Equal(t, faded(167, "c")+"\nd\n"+faded(167, "e"), box.Compose(content(lines(8)...), 1, 3))
 }
 
-// A tall region has room for a band deeper than one row, and its rows are faded by different amounts: the edge is a
+// A tall region has room for a band deeper than one row. Its rows are faded by different amounts: the edge is a
 // gradient rather than one flat line.
 func TestScrollboxStepsTheBandOnATallRegion(t *testing.T) {
 	box := composer(t, "Scrollbox", map[string]string{"offset": "4", "scrollbar": "never", "fade": "true"})
@@ -170,7 +170,7 @@ func TestScrollboxFadesNothingWhenTheEndIsInView(t *testing.T) {
 	assert.Equal(t, "a\nb\nc", box.Compose(content(lines(3)...), 1, 3))
 }
 
-// A host that hands over a window it cut itself knows which edges have content beyond them, and says so rather than
+// A host that hands over a window it cut itself knows which edges have content beyond them. It says so, rather than
 // handing over a total it never laid out.
 func TestScrollboxFadesTheEdgeAHostNames(t *testing.T) {
 	above := composer(t, "Scrollbox", map[string]string{"scrollbar": "never", "fade": "true", "moreAbove": "true"})

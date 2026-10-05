@@ -264,7 +264,7 @@ func (m *liveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // repaint reads the host's props and lays the view out again. A frame that fails to render ends the region with that
-// error, because a region that keeps its last good frame looks like progress that stopped.
+// error. This is because a region that keeps its last good frame looks like progress that stopped.
 func (m *liveModel) repaint() tea.Cmd {
 	if m.closing {
 		return nil

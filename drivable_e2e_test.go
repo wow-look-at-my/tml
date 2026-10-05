@@ -18,7 +18,7 @@ import (
 )
 
 // goCommand is the go command that built this test. A toolchain that runs from one packed binary reports a GOROOT
-// with no bin/go inside it, and then the go on PATH is the one to use.
+// with no bin/go inside it. Then the go on PATH is the one to use.
 func goCommand(t *testing.T) string {
 	t.Helper()
 	if bin := filepath.Join(runtime.GOROOT(), "bin", "go"); isFile(bin) {
@@ -35,8 +35,9 @@ func isFile(path string) bool {
 }
 
 // buildUndrivable builds the fixture program. The child keeps only the module flags of the build that runs this
-// test, because the org pins in go.mod are placeholders that only those flags resolve. It never prompts for git
-// credentials, and a build that does not finish fails the test with its output instead of hanging the run.
+// test. This is because the org pins in go.mod are placeholders that only those flags resolve. It never prompts
+// for git credentials, and a build that does not finish fails the test with its output instead of hanging the
+// run.
 func buildUndrivable(t *testing.T) string {
 	t.Helper()
 	bin := filepath.Join(t.TempDir(), "undrivable")

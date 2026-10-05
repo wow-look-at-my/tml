@@ -77,8 +77,8 @@ func takeCapture(args []string, dark bool, width, height int, props []string, so
 	})
 }
 
-// writeCapture sends the page to stdout, or to a file and its path to stdout. The path is what a caller opens next, and
-// a page written down a pipe with a note above it is not an HTML file any more.
+// writeCapture sends the page to stdout, or to a file and its path to stdout. The path is what a caller opens next. A
+// page written down a pipe with a note above it is not an HTML file any more.
 func writeCapture(cmd *cobra.Command, capture inspect.Capture, out string) error {
 	if out == "" {
 		return inspect.WriteCapture(cmd.OutOrStdout(), capture)

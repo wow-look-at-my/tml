@@ -18,7 +18,6 @@ permissions:
   pull-requests: write
 
 jobs:
-  # Every XML document in the tree, for well-formedness and XML 1.1, and every component against the grammar.
   validate-xml:
     runs-on: ubuntu-latest
     steps:
@@ -37,6 +36,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The prose gate, at the top of the job. A finding is about the checkout, so it fails here rather than after the build.
+      - uses: wow-look-at-my/actions@ste-lint#latest
+
       # inspect/ui/inspector.js is compiled from inspect/ui/src, and committed because go:embed reads the module's tree.
       - uses: extractions/setup-just@v2
       - name: Compile the inspector page
@@ -44,7 +46,7 @@ jobs:
       - name: Check the committed page is what its source compiles to
         run: git diff --exit-code -- inspect/ui/inspector.js
 
-      # dats/schema.dats drives xml-validator itself, and its sandbox only sees a system path, so this installs the package rather than a binary under the runner's temp.
+      # dats/schema.dats drives xml-validator itself, and its sandbox only sees a system path. This installs the package rather than a binary under the runner's temp.
       - name: Install xml-validator
         run: curl -fsSL https://apt.pazer.build/xml-validator/install.sh | sudo sh && sudo apt-get install -y xml-validator
 

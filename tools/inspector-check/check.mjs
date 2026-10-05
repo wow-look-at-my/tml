@@ -52,7 +52,7 @@ async function settled(read) {
 	}
 }
 
-// A pty is not optional: bubbletea opens /dev/tty and the layout is sized from
+// A pty is not optional: bubbletea opens /dev/tty. The layout is sized from
 // the window, so without one there is no frame to inspect.
 function startAgent() {
 	// No -inspect flag: the socket is TML_INSPECT_SOCKET, which Load reads. The
@@ -67,8 +67,8 @@ function startAgent() {
 }
 
 // waitFor retries fn, because most of what this checks is a program catching
-// up. abort is the exception: it names a state no amount of waiting fixes, and
-// it is reported the round it happens rather than at the deadline.
+// up. abort is the exception: it names a state no amount of waiting fixes. It
+// is reported the round it happens rather than at the deadline.
 async function waitFor(what, fn, abort = () => null, ms = 15000) {
 	const until = Date.now() + ms;
 	for (;;) {

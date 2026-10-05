@@ -21,7 +21,7 @@ interface Style {
 }
 
 // xterm256 is the 256-colour cube plus the grey ramp, computed rather than
-// tabulated: the formula is the definition, and a table would be many
+// tabulated. The formula is the definition, and a table would be many
 // lines that can drift from it.
 function xterm256(n: number): string {
 	if (n < 16) return BASE[n];

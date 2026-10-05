@@ -269,7 +269,7 @@ func (b *Box) visibleColumns(available int) []bool {
 	return shown
 }
 
-// solveTracks turns the shown tracks into cell counts: a fixed track takes what it asked for, an auto track what it
+// solveTracks turns the shown tracks into cell counts. A fixed track takes what it asked for, an auto track what it
 // measured, and the star tracks share the rest by weight. A hidden track is zero wide.
 func solveTracks(tracks []track, measured []int, shown []bool, available, gap int) []int {
 	sizes := make([]int, len(tracks))

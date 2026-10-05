@@ -70,7 +70,7 @@ func TestTableMeasuresWhatItDraws(t *testing.T) {
 
 // A cell too wide for its column wraps, so the height a table reports has to be the height at the width it was
 // offered. Measured at its natural width instead, the wrapped lines are clipped off by whatever placed it, and rows
-// disappear off the bottom of a table that had room for them.
+// disappear off the bottom of a table. That table had room for them.
 func TestTableMeasuresTheHeightItWrapsTo(t *testing.T) {
 	table := build(t, "Table", map[string]string{
 		"columns": "path",
@@ -85,8 +85,8 @@ func TestTableMeasuresTheHeightItWrapsTo(t *testing.T) {
 	assert.Contains(t, table.Render(narrow, 0), "another", "both rows are drawn")
 }
 
-// wrap="false" keeps a row to a single line, which is what makes a row index a line index: a host that maps a click
-// or a scroll offset onto a row cannot do that arithmetic when a long cell silently takes another line as well.
+// wrap="false" keeps a row to a single line, which is what makes a row index a line index. A host that maps a click or
+// a scroll offset onto a row needs that arithmetic to hold. It breaks once a long cell takes another line too.
 func TestATableCanKeepEveryRowToOneLine(t *testing.T) {
 	rows := map[string]string{
 		"columns": "path",
@@ -110,7 +110,7 @@ func TestTableRejectsANonBooleanBorder(t *testing.T) {
 	assert.Contains(t, err.Error(), "expected true or false")
 }
 
-// The marked row is drawn differently from the rest, which is what makes a table something to pick a row out of rather
+// The marked row is drawn differently from the rest. That is what makes a table something to pick a row out of, rather
 // than only something to read.
 func TestTableMarksTheSelectedRow(t *testing.T) {
 	rows := map[string]string{"columns": "Name", "rows": "a,b,c", "border": "false"}
