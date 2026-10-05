@@ -194,7 +194,7 @@ func TestACollapsedChildTakesNoGap(t *testing.T) {
 	assert.Equal(t, 2, box.Children[2].Rect.Y, "so c sits under that gap, not under a gap of its own")
 }
 
-// A collapsed child reclaims its star size too: a height="*" middle child leaves the siblings where they were, rather than
+// A collapsed child reclaims its star size too. A height="*" middle child leaves the siblings where they were, rather than
 // disappearing from the drawing while still taking a row and a gap.
 func TestACollapsedStarChildIsNotPlaced(t *testing.T) {
 	root := el("Stack", map[string]string{"gap": "1"},
