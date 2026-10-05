@@ -59,8 +59,8 @@ async function rpc(body: Request): Promise<Response> {
 // layout the program has to run.
 //
 // Nothing here works anything out. A cell is resolved by looking up the answer
-// the program's own hit test already gave for it, because a rule restated here
-// is a rule free to disagree with the one in the engine.
+// the program's own hit test already gave for it. This is because a rule
+// restated here is a rule free to disagree with the one in the engine.
 function answerFromCapture(held: Capture, req: Request): Response {
 	switch (req.op) {
 		case "frame":
@@ -98,7 +98,7 @@ function saidWhy(err: unknown): string {
 // some font size.
 //
 // The row pitch is the LINE box, not the glyph box: a span reports the font's
-// own height, which is shorter than the line it sits on, and the difference
+// own height. This is shorter than the line it sits on, and the difference
 // compounds down the frame until the outline is a row above the element.
 function measureCell(): void {
 	const probe = document.createElement("span");
@@ -246,8 +246,8 @@ async function refresh(): Promise<void> {
 // selected element moves it. Holding shift resizes instead, which is the
 // gesture a terminal grid has room for.
 //
-// Which element a cell belongs to is the program's answer, never this page's:
-// the same op decides whether a press starts a drag and what a click selects.
+// Which element a cell belongs to is the program's answer, never this page's. The same op decides whether a press
+// starts a drag and what a click selects.
 preview.addEventListener("pointerdown", async (event: PointerEvent) => {
 	const at = cellAt(event);
 	try {

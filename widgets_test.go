@@ -142,8 +142,8 @@ type fixedView string
 
 func (f fixedView) View() string { return string(f) }
 
-// A Spinner's frame belongs to the engine, so the host passes none: showing the element is what animates it, and hiding it
-// is what stops the repainting.
+// A Spinner's frame belongs to the engine. The host passes none: showing the element is what animates it, and hiding it is
+// what stops the repainting.
 func TestASpinnerAnimatesOnlyWhileItIsVisible(t *testing.T) {
 	loaded, err := view(t, `<Component xmlns="urn:tml:v1" name="App">
 		<Property name="state" type="string" default="visible"/>

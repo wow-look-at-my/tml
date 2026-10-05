@@ -252,8 +252,7 @@ func (m *liveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.closing {
 			return m, nil
 		}
-		// The region's interval is its clock, so a step of every animation rides on it: a widget that animates itself is
-		// drawn on a frame that has moved, and the host passes no frame counter of its own.
+		// The region's interval is its clock, so a step of every animation rides on it. A widget that animates itself is drawn on a frame that has moved.
 		m.live.view.Advance()
 		return m, tea.Batch(m.tick(), m.repaint(), m.flush())
 	case livePrinted:
@@ -267,7 +266,7 @@ func (m *liveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // repaint reads the host's props and lays the view out again. A frame that fails to render ends the region with that
-// error, because a region that keeps its last good frame looks like progress that stopped.
+// error. This is because a region that keeps its last good frame looks like progress that stopped.
 func (m *liveModel) repaint() tea.Cmd {
 	if m.closing {
 		return nil

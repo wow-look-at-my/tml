@@ -348,8 +348,8 @@ func textOf(node *sema.Node) string {
 }
 
 // overflowAttr reads what a Text does with more text than its width holds. Wrapping is the default, because that loses
-// nothing. A line the reader scans rather than reads -- a log tail in a card -- says clip instead, and then the box is
-// as tall as the text has lines however narrow it gets.
+// nothing. A line the reader scans rather than reads -- a log tail in a card -- says clip instead. The box is then as
+// tall as the text has lines, however narrow it gets.
 func overflowAttr(node *sema.Node, attrs map[string]string) (Overflow, error) {
 	raw, ok := attrs["overflow"]
 	if !ok {
@@ -368,8 +368,8 @@ func overflowAttr(node *sema.Node, attrs map[string]string) (Overflow, error) {
 	}
 }
 
-// visibilityAttr reads what the element does with its slot. An element that writes no state is visible, and a state that is
-// not one of the names is refused by name rather than guessed at.
+// visibilityAttr reads what the element does with its slot. An element that writes no state is visible. A state that is
+// not one of the names is refused by name, rather than guessed at.
 func visibilityAttr(node *sema.Node, attrs map[string]string) (Visibility, error) {
 	raw, ok := attrs[stateAttr]
 	if !ok {

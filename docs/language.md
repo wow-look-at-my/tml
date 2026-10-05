@@ -128,7 +128,7 @@ There is no arithmetic and there are no calls. Every reference is therefore chec
 
 An element that writes no `state` is visible. A word that is not one of the three is refused at render time, by name, at the element that wrote it.
 
-Hiding is not the same as `if`. An `if` that is false drops the element before layout, so nothing is measured and the space goes. A hidden element is still built and still measured: its slot keeps its size and the layout around it does not move, which is what makes a place for something to appear in later. Neither a hidden nor a collapsed element is drawn, so neither is in the focus ring and the pointer cannot land on one.
+Hiding is not the same as `if`. An `if` that is false drops the element before layout, so nothing is measured and the space goes. A hidden element is still built and still measured. Its slot keeps its size and the layout around it does not move, which is what makes a place for something to appear in later. Neither a hidden nor a collapsed element is drawn, so neither is in the focus ring and the pointer cannot land on one.
 
 ## Items controls
 

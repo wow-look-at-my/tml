@@ -294,8 +294,9 @@ func (s *Server) at(req Request) Response {
 	return Response{Hit: id, Found: id != ""}
 }
 
-// hits answers at for every cell in a single response. A reader with no way to call back -- a written page -- resolves
-// a cell by looking it up here, rather than carrying its own copy of what covers what and drifting from this.
+// hits answers at for every cell in a single response. Consider a reader with no way to call back -- a written page
+// --. That reader resolves a cell by looking it up here, rather than carrying its own copy of what covers what and
+// drifting from this.
 func (s *Server) hits() Response {
 	f, err := s.current()
 	if err != nil {

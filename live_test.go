@@ -120,8 +120,8 @@ func waitDrawn(t *testing.T, out *syncBuffer, want string) {
 		5*time.Second, 5*time.Millisecond, "the region never drew %q", want)
 }
 
-// The region is live while it runs. Every line printed goes above it one time and in order, and Stop takes the region
-// off the screen, so what is left is the log alone.
+// The region is live while it runs. Every line printed goes above it one time and in order. Stop takes the region off
+// the screen, so what is left is the log alone.
 func TestLivePrintsAboveTheRegionAndLeavesOnlyTheLog(t *testing.T) {
 	t.Serial()
 	exclusive(t)

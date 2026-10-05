@@ -129,12 +129,10 @@ func (v *View) RenderFit(props Props, width, maxHeight int) (string, error) {
 	return v.paint(box, width, box.Rect.H), nil
 }
 
-// Advance moves the view's animations on to their next step. A host calls it on its own tick and renders again; a view
-// that reports Animating false has nothing to advance.
+// Advance moves the view's animations on to their next step.
 func (v *View) Advance() { v.engine.Advance() }
 
-// Animating reports whether the last layout left something animating on screen. A host asks after rendering and keeps its
-// ticker only while the answer is yes, so hiding the element that animates is what stops the repaints.
+// Animating reports whether the last layout left something animating on screen.
 func (v *View) Animating() bool { return v.engine.Animating() }
 
 func (v *View) paint(box *layout.Box, width, height int) string {

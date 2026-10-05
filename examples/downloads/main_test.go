@@ -29,7 +29,7 @@ func frameAt(t *testing.T, width int) string {
 }
 
 // The block at widths. A wide terminal shows every column. Narrower ones drop the bar first, then the speed, the ETA
-// and the sizes, and every row drops the same ones, so the columns stay in line.
+// and the sizes. Every row drops the same ones, so the columns stay in line.
 func TestTheBlockDropsColumnsAsTheTerminalNarrows(t *testing.T) {
 	for _, width := range []int{110, 72, 40} {
 		t.Run(strconv.Itoa(width), func(t *testing.T) {

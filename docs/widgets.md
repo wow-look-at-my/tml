@@ -156,7 +156,7 @@ That arithmetic holds only while a row is a line. A cell too wide for its column
 | `Badge` | `label` | A padded chip. |
 | `Image` | `src`, `alt`, `protocol` | See docs/images.md. |
 
-Nothing in the library holds state of its own. Every one of them draws what its attributes say, which is why the host's model stays the only place anything is true. The one element that moves is a `Spinner`, and it moves because the engine counts its frame. `examples/gallery` is all of them on one screen.
+Nothing in the library holds state of its own. Every one of them draws what its attributes say, which is why the host's model stays the only place anything is true. The element that moves is a `Spinner`. It moves because the engine counts its frame. `examples/gallery` is all of them on one screen.
 
 ## Animation
 
@@ -175,7 +175,7 @@ out, err := view.Render(props, width, height)     // draw the frame they arrived
 if view.Animating() { /* keep the ticker */ }     // false means nothing on screen is moving
 ```
 
-`Animating` is about what is on screen, not about what exists. An element carrying `state="hidden"` or `state="collapsed"` is not drawn, so it counts as nothing animating, and a view whose only animation is hidden reports false. Hiding the element is therefore what stops the repainting, with no switch anywhere. The states are docs/language.md §Visibility.
+`Animating` is about what is on screen, not about what exists. An element carrying `state="hidden"` or `state="collapsed"` is not drawn. It counts as nothing animating, and a view whose only animation is hidden reports false. Hiding the element is therefore what stops the repainting, with no switch anywhere. The states are docs/language.md §Visibility.
 
 ## Writing your own
 

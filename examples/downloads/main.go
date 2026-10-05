@@ -1,4 +1,4 @@
-// Command downloads is a mock download manager whose progress display is a tml.Live region: a block pinned below the
+// Command downloads is a mock download manager whose progress display is a tml.Live region. A block pinned below the
 // log, repainted in place, with finished transfers printed above it.
 package main
 

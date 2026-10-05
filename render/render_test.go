@@ -35,8 +35,9 @@ func renderTree(t *testing.T, node *sema.Node, w, h int) string {
 	return Render(box)
 }
 
-// fitTree renders a tree as tall as its content, the way RenderFit does. A viewport-filling layout hides the difference a
-// child that takes no space makes, so the state tests need this one.
+// fitTree renders a tree as tall as its content, the way RenderFit does. A
+// viewport-filling layout hides the difference a child that takes no space
+// makes, so the state tests need this.
 func fitTree(t *testing.T, node *sema.Node, w, h int) string {
 	t.Helper()
 	sheet, err := style.NewSheet(nil, nil)
