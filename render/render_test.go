@@ -180,6 +180,28 @@ func TestAStackWithOnlyEmptyChildrenDrawsNothing(t *testing.T) {
 	assert.Equal(t, "", strings.TrimRight(fitTree(t, stack, 10, 4), " \n"))
 }
 
+// A collapsed element draws nothing at all: its own text is not a thing it can leave behind.
+func TestACollapsedElementDrawsNothing(t *testing.T) {
+	box := el("Text", map[string]string{"state": "collapsed"}, &sema.Node{Kind: syntax.TextNode, Text: "GONE"})
+	sheet, err := style.NewSheet(nil, nil)
+	require.NoError(t, err)
+	laid, err := layout.New(sheet, layout.Options{}).Fit(box, 10, 3)
+	require.NoError(t, err)
+
+	assert.Equal(t, "", Render(laid))
+}
+
+// A collapsed child of a Canvas is not a layer, so it cannot cover the sibling it was written after.
+func TestACollapsedCanvasChildCoversNothing(t *testing.T) {
+	under := el("Text", nil, &sema.Node{Kind: syntax.TextNode, Text: "UNDER"})
+	gone := el("Text", map[string]string{"state": "collapsed"}, &sema.Node{Kind: syntax.TextNode, Text: "GONE"})
+	root := el("Canvas", map[string]string{"width": "8", "height": "1"}, under, gone)
+
+	out := renderTree(t, root, 8, 1)
+	assert.Contains(t, out, "UNDER")
+	assert.NotContains(t, out, "GONE")
+}
+
 // trimmed is a frame's lines with their padding removed, so a blank row reads as an empty string.
 func trimmed(lines []string) []string {
 	out := make([]string, len(lines))

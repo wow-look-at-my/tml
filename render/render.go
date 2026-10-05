@@ -16,6 +16,10 @@ var marginZero sema.Thickness
 
 // Render composes a laid-out tree into terminal output. Composition is bottom-up.
 func Render(box *layout.Box) string {
+	if box.Visibility == layout.Collapsed {
+		// A collapsed element gave its slot back at measure time, so it draws nothing at all: not its text, not a border.
+		return ""
+	}
 	if box.Name == "#text" {
 		return box.Text
 	}

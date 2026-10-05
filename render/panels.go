@@ -14,6 +14,10 @@ func canvas(box *layout.Box, parts []string) string {
 	// A backdrop of the full size keeps the compositor's canvas at the size layout settled on.
 	layers = append(layers, lipgloss.NewLayer(blank(box.Content.W, box.Content.H)).X(0).Y(0).Z(0))
 	for i, child := range box.Children {
+		if child.Visibility == layout.Collapsed {
+			// A collapsed child gave its slot back, so it is not a layer that could cover the sibling behind it.
+			continue
+		}
 		layers = append(layers, lipgloss.NewLayer(parts[i]).
 			X(child.Rect.X).
 			Y(child.Rect.Y).

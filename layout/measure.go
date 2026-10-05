@@ -106,8 +106,28 @@ func (e *Engine) measureChildren(box *Box, inner Constraints) Size {
 }
 
 // fillForStars propagates a star size up the tree. A star child fills the space its parent gives it.
+// stackPlaces reports whether a child occupies the stacking axis, so a collapsed or empty one takes no gap.
+func stackPlaces(child *Box, vertical bool) bool {
+	if child.Visibility == Collapsed {
+		// A collapsed element gave its slot back, star size and leftover share included.
+		return false
+	}
+	length := child.width
+	size := child.desired.W
+	if vertical {
+		length, size = child.height, child.desired.H
+	}
+	if length.Kind == sema.LengthStar {
+		return true
+	}
+	return size > 0
+}
+
 func fillForStars(box *Box, content Size, inner Constraints) Size {
 	for _, child := range box.Children {
+		if child.Visibility == Collapsed {
+			continue
+		}
 		if child.width.Kind == sema.LengthStar {
 			content.W = max(content.W, inner.MaxW)
 		}
@@ -123,20 +143,26 @@ func (e *Engine) measureStack(box *Box, inner Constraints) Size {
 	gap := box.gap()
 
 	var content Size
-	for i, child := range box.Children {
+	placed := false
+	for _, child := range box.Children {
 		size := e.measure(child, inner)
+		if !stackPlaces(child, vertical) {
+			continue
+		}
+		if placed {
+			if vertical {
+				content.H += gap
+			} else {
+				content.W += gap
+			}
+		}
+		placed = true
 		if vertical {
 			content.H += size.H
 			content.W = max(content.W, size.W)
-			if i > 0 {
-				content.H += gap
-			}
 		} else {
 			content.W += size.W
 			content.H = max(content.H, size.H)
-			if i > 0 {
-				content.W += gap
-			}
 		}
 	}
 	return fillForStars(box, content, inner)
