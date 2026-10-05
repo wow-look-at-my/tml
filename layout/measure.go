@@ -108,6 +108,10 @@ func (e *Engine) measureChildren(box *Box, inner Constraints) Size {
 // fillForStars propagates a star size up the tree. A star child fills the space its parent gives it.
 // stackPlaces reports whether a child occupies the stacking axis, so a collapsed or empty one takes no gap.
 func stackPlaces(child *Box, vertical bool) bool {
+	if child.Visibility == Collapsed {
+		// A collapsed element gave its slot back, star size and leftover share included.
+		return false
+	}
 	length := child.width
 	size := child.desired.W
 	if vertical {

@@ -194,6 +194,33 @@ func TestACollapsedChildTakesNoGap(t *testing.T) {
 	assert.Equal(t, 2, box.Children[2].Rect.Y, "so c sits under that gap, not under a gap of its own")
 }
 
+// A collapsed child reclaims its star size too: a height="*" middle child leaves the siblings where they were, rather than
+// disappearing from the drawing while still taking a row and a gap.
+func TestACollapsedStarChildIsNotPlaced(t *testing.T) {
+	root := el("Stack", map[string]string{"gap": "1"},
+		text("a"),
+		el("Text", map[string]string{"height": "*", "state": "collapsed"}, &sema.Node{Kind: syntax.TextNode, Text: "b"}),
+		text("c"),
+	)
+	box := layoutTree(t, root, 20, 10)
+
+	assert.Equal(t, 3, box.desired.H, "a, the one gap, and c")
+	assert.Equal(t, 2, box.Children[2].Rect.Y, "so c sits under that gap, not under a row of its own")
+}
+
+// A star child that is visible still fills: the collapse is what removes it, not the star.
+func TestAVisibleStarChildStillFillsTheStack(t *testing.T) {
+	root := el("Stack", map[string]string{"gap": "1", "height": "6"},
+		text("a"),
+		el("Spacer", map[string]string{"height": "*"}),
+		text("c"),
+	)
+	box := layoutTree(t, root, 20, 10)
+
+	assert.Equal(t, 2, box.Children[1].Rect.H, "the spacer fills what the two texts leave of the six rows")
+	assert.Equal(t, 5, box.Children[2].Rect.Y, "so c sits on the last row")
+}
+
 // A state that is not one of the names is refused by name, at the element that wrote it, rather than guessed at.
 func TestLayoutRejectsAnUnknownState(t *testing.T) {
 	root := el("Stack", nil, el("Text", map[string]string{"state": "hiden"},
