@@ -14,7 +14,7 @@ require (
 	charm.land/bubbles/v2 v2.1.1
 	charm.land/bubbletea/v2 v2.0.8
 	github.com/charmbracelet/x/ansi v0.11.8
-	github.com/charmbracelet/x/vt v0.0.0-20260927004216-9c77d672503d
+	github.com/charmbracelet/x/vt v0.0.0-20261004011457-ad85c59fdf4e
 	github.com/spf13/cobra v1.10.2
 )
 
