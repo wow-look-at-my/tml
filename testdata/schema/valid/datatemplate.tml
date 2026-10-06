@@ -1,0 +1,20 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<!-- A data template is written like a component, and nests inside the one that repeats it. -->
+<Component xmlns="urn:tml:v1" name="Feed">
+	<Property name="messages" type="record[]" default=""/>
+
+	<DataTemplate name="Message">
+		<Property name="role" type="string" required="true"/>
+		<Property name="body" type="string[]" default=""/>
+		<Template>
+			<Stack>
+				<Text>{role}</Text>
+				<For each="{body}" as="line"><Text>{line}</Text></For>
+			</Stack>
+		</Template>
+	</DataTemplate>
+
+	<Template>
+		<Scrollbox itemsSource="{messages}" itemTemplate="Message"/>
+	</Template>
+</Component>

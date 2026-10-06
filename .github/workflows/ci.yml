@@ -46,10 +46,6 @@ jobs:
       - name: Check the committed page is what its source compiles to
         run: git diff --exit-code -- inspect/ui/inspector.js
 
-      # dats/schema.dats drives xml-validator itself, and its sandbox only sees a system path. This installs the package rather than a binary under the runner's temp.
-      - name: Install xml-validator
-        run: curl -fsSL https://apt.pazer.build/xml-validator/install.sh | sudo sh && sudo apt-get install -y xml-validator
-
       # cosmo-platforms names the hosts the one fat APE covers. The action dropped the os= and arch= inputs it used to take.
       - uses: wow-look-at-my/go-toolchain@master
         # A hung test fails with every goroutine's stack. The step's own limit kills it silently.

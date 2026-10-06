@@ -1,0 +1,25 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<!-- Every property type, in both the scalar and the list spelling, and both ways to declare one. -->
+<Component xmlns="urn:tml:v1" name="Properties">
+	<Import src="./minimal.tml"/>
+
+	<Property name="title" type="string" required="true"/>
+	<Property name="count" type="int" default="0"/>
+	<Property name="on" type="bool" default="false"/>
+	<Property name="tint" type="color" default="#e0af68"/>
+	<Property name="size" type="length" default="auto"/>
+	<Property name="pad" type="thickness" default="0 1"/>
+	<Property name="side" type="enum(left|center|right)" default="left"/>
+	<Property name="rows" type="record[]" default=""/>
+	<Property name="tags" type="string[]" default=""/>
+	<Property name="marks" type="enum(a|b)[]" default=""/>
+	<!-- required="false" is the ordinary property, so it keeps its default. -->
+	<Property name="note" type="string" required="false" default=""/>
+
+	<Template>
+		<Stack gap="1">
+			<Text>{title}</Text>
+			<Minimal/>
+		</Stack>
+	</Template>
+</Component>
