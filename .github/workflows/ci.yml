@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   validate-xml:
-    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ github.event.repository.visibility == 'public' && 'ubuntu-latest' || vars.CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v4
       - uses: wow-look-at-my/xml-validator@master
@@ -32,7 +32,7 @@ jobs:
           files: 'examples/**/*.tml testdata/dashboard/*.tml testdata/grid/*.tml testdata/inspect/*.tml testdata/schema/valid/*.tml'
 
   test:
-    runs-on: ${{ vars.CI_RUNNER_DIND || 'ubuntu-latest' }}
+    runs-on: ${{ github.event.repository.visibility == 'public' && 'ubuntu-latest' || vars.CI_RUNNER_DIND || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v4
 
