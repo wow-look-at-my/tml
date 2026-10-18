@@ -129,7 +129,7 @@ A button's label is sugar for its `Content` slot, so anything can go inside one:
 | Element | Attributes | Notes |
 | --- | --- | --- |
 | `List` | `items`, `selected`, `cursor`, `disabled` | A cursor beside the selected row. |
-| `Table` | `columns`, `rows`, `separator`, `border`, `selected`, `disabled`, `wrap` | Rows are `separator`-joined cells. Columns size to their widest. |
+| `Table` | `columns`, `rows`, `separator`, `border`, `rule`, `spacing`, `selected`, `disabled`, `wrap`, `collapse` | Rows are `separator`-joined cells. Columns size to their widest. `collapse` lists the column indices that give way, in order, while the table is wider than its space. `rule="false"` drops the line under a borderless header. `spacing` is the gap between borderless columns. |
 
 Both take focus, and both leave the selection to the host. `selected` is a row index the model owns. Nothing in the widget can therefore disagree with what the program thinks is picked. A `Table` marks its row in place, as a reversed bar across every column, bold while the table focus. It uses no cursor gutter, because a row of columns has no single place to put one. The bar draws whether or not the table focus.
 

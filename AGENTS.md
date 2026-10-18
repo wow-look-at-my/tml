@@ -125,6 +125,8 @@ A test waits on the screen rather than sleeping. `query --await REGEX` and `--aw
 
 `tml.Live` (`live.go`) is an inline Bubble Tea program with no input. It pins a view below the log and repaints it from a props function on an interval. `Println`/`Printf`/`Write` queue lines above it. At most one print is in flight, and `tea.Sequence` orders it, so lines keep their order. SIGINT becomes an orderly close through a program filter. `View.RenderFit` lays a view out as tall as its content.
 
+`View.Print` (`print.go`) writes a view to a stream as a document: plain on a pipe, and outside the drivable guard. See docs/live.md.
+
 See docs/live.md.
 
 ## Hot reload
