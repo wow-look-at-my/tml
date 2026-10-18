@@ -18,7 +18,7 @@ It covers the declarations. That means which children each root takes, in any or
 
 **The `<Template>` body is not checked, and cannot be.** It names components the file imported and widgets the host bound. A schema knows neither. xml-validator allows only `processContents="strict"`, which demands a declaration for every element it matches. A schema that checked the body therefore rejects every document that imports anything. `sema/analyze.go` checks the body. It is the authority on the whole file at load time.
 
-Smaller rules are also out of reach. A root element in the wrong namespace is accepted, because the validator falls back to a local-name match at the root. `syntax.Parse` catches it. A style attribute whose value is a `{theme.token}` takes the token's word for the vocabulary. What the token holds is known only when the sheet resolves.
+Smaller rules are also out of reach. A root element in the incorrect namespace is accepted, because the validator falls back to a local-name match at the root. `syntax.Parse` catches it. A style attribute whose value is a `{theme.token}` takes the token's word for the vocabulary. What the token holds is known only when the sheet resolves.
 
 CI runs `xml-validator` over every document in the tree, and again with `--schema tml.schema.xsd` over every component. The schema can therefore never grow stricter than the documents this repository ships. `testdata/schema/valid` is the corpus that carries a declaration of each kind. A job that only validates cannot prove the schema refuses anything. That half lives with the validator that does the refusing, in `xml-validator`'s `cli/dats/schema-rejections.dats`. The suite runs the same schema over its own `dats/schema/invalid` corpus and names the error each fixture must produce.
 
@@ -209,7 +209,9 @@ An auto track sizes to the widest child confined to it. A child spanning several
 
 Placing a child past the last declared track widens the grid with auto tracks rather than dropping the child.
 
-An auto or a star track can carry a range: `*[8..32]`, `auto[..20]`, `*[4..]`. Either end can be left out. A star track that reaches its maximum stops there, and the other star tracks share what it did not take. A lone capped star therefore leaves the rest of the row empty. That keeps a label column near the numbers beside it on a wide terminal. A track below its minimum keeps the minimum, and the grid overflows. A fixed track has no range.
+An auto or a star track can carry a range: `*[8..32]`, `auto[..20]`, `*[4..]`. Either end can be left out. A star track that reaches its maximum stops there, and the other star tracks share what it did not take. A lone capped star therefore leaves the rest of the row empty. That keeps a label column near the numbers beside it on a wide terminal. A track below its minimum keeps the minimum, and the grid overflows.
+
+A fixed track has no range.
 
 `collapse` lists column indices in the order they give way when the grid is too narrow:
 
@@ -217,13 +219,15 @@ An auto or a star track can carry a range: `*[8..32]`, `auto[..20]`, `*[4..]`. E
 <Grid columns="*[8..32],16,4,24,11,9" gap="2" collapse="1,4,5,3">
 ```
 
-While the shown columns do not fit, the next column in the list is hidden. A star column counts its minimum for this. A hidden column takes no width and no gap. A child confined to hidden columns draws nothing. A spanning child keeps the shown part of its span. A column the list does not name never goes. An auto column counts what its content measured. With only fixed and star columns, the decision depends on the width alone. Rows that repeat such a grid then hide the same columns and stay in line.
+While the shown columns do not fit, the next column in the list is hidden. A star column counts its minimum for this. A hidden column takes no width and no gap. A child confined to hidden columns draws nothing. A spanning child keeps the shown part of its span. A column the list does not name never goes.
+
+An auto column counts what its content measured. With only fixed and star columns, the decision depends on the width alone. Rows that repeat such a grid then hide the same columns and stay in line.
 
 A grid child fills the cell it is placed in. A `1*` track is therefore how you say "as wide as there is room for". A `Stack` is the other way round. A child keeps its own size across the stack, and `align`/`valign` place it, unless it asks for `width="*"`. The difference is that a grid's tracks were declared by the author and a stack's cross axis was not.
 
 An attached property written on a child of anything other than a `Grid` is an error, as is an unknown one such as `Grid.depth`. To ignore them leaves a layout that quietly disregards what was written.
 
-Grid children sit at coordinates rather than in a line, so the renderer composites them through lipgloss layers instead of joining. Each layer gets a distinct, increasing z in document order. See docs/lipgloss-contract.md for why equal z values are unsafe.
+Grid children sit at coordinates rather than in a line, so the renderer composites them through lipgloss layers instead of joining. Each layer gets a distinct, increasing z in document order. See docs/lipgloss-contract.md for why equal z values are dangerous.
 
 Layout attributes are not forwarded through a component instance: every attribute on `<Card .../>` is a property. A component that wants to be sized declares a `length` property and puts it on its own root, which is what `Card.tml` in `testdata/dashboard` does.
 
@@ -246,11 +250,11 @@ Style attributes: `fg`, `bg`, `bold`, `italic`, `underline`, `strikethrough`, `f
 
 An element picks a named style with `style="card"` and overrides individual attributes inline.
 
-`extends` is resolved in TML's own attribute model, not by `lipgloss.Style.Inherit`, because Inherit deliberately drops padding and margin. See docs/lipgloss-contract.md.
+`lipgloss.Style.Inherit` resolves `extends`, because Inherit deliberately drops padding and margin. See docs/lipgloss-contract.md.
 
 ## Widgets
 
-Everything that is not a panel is a widget. The library in `widgets/` holds buttons, fields, frames, popups, scrolling regions, images and the rest. It is registered by default. `id` and `action` on any element wire it to the host's `Update`. See docs/widgets.md for the reference and for writing your own.
+Everything that is not a panel is a widget. The library in `widgets/` holds buttons, fields, frames, popups, scrolling regions, images and the rest. Default registers it. `id` and `action` on any element wire it to the host's `Update`. See docs/widgets.md for the reference and for writing your own.
 
 A host binds its own elements the same way, and TML measures, places and draws them without touching their state:
 

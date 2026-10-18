@@ -44,7 +44,9 @@ The region is for a terminal. When stdout is a pipe or a file, a host prints pla
 
 ## The worked example
 
-`examples/downloads` is a mock download manager. Its block has a header, an optional status line, one row per active transfer and a TOTAL row. The rows are a `Grid` with fixed columns, so they line up. On a narrow terminal, `collapse` drops the bar first, then the speed, the ETA and the sizes. See `docs/language.md` for `collapse` and for track ranges. `./build/downloads` runs it. `./build/downloads -frame -width 60` prints one frame without a terminal.
+`examples/downloads` is a mock download manager. Its block has a header, an optional status line, one row per active transfer and a TOTAL row. The rows are a `Grid` with fixed columns, so they line up. On a narrow terminal, `collapse` drops the bar first, then the speed, the ETA and the sizes. See `docs/language.md` for `collapse` and for track ranges. `./build/downloads` runs it.
+
+`./build/downloads -frame -width 60` prints one frame without a terminal.
 
 ## Driving and inspection
 

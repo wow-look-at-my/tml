@@ -8,7 +8,7 @@ Target is `charm.land/lipgloss/v2` v2.0.6. The v2 modules moved off the `github.
 
 `lipgloss.Width`, `Height` and `Size` count display cells and ignore ANSI, and account for wide runes (`世` is cells). This is the whole leaf measure pass — TML never counts bytes or runes itself.
 
-`Style.Width(n)` wraps text and pads every line to `n`. It does not truncate. This is what renders a text leaf once layout has assigned it a rect.
+`Style.Width(n)` wraps text and pads every line to `n`. It does not truncate. This is what renders a text leaf once layout assigned it a rect.
 
 ## The cascade does NOT come from Style.Inherit
 
@@ -20,7 +20,7 @@ TML resolves the cascade in its own style model and emits one fully-resolved `li
 
 `Canvas` is the low-level cell buffer: `NewCanvas(width, height int)`, `SetCell`, `Compose`, `Render`. It has no hit testing.
 
-`Compositor` is the layer engine TML targets:
+`Compositor` is the targets of the layer engine TML:
 
 - `NewCompositor(layers ...*Layer)` flattens eagerly. `AddLayers` and `Refresh` re-flatten.
 - `Hit(x, y) LayerHit` returns the topmost layer at a point, which is how a mouse event routes back to a TML element.
@@ -30,7 +30,7 @@ TML resolves the cascade in its own style model and emits one fully-resolved `li
 
 **Layer coordinates are parent-relative.** `flattenRecursive` accumulates `absX := layer.x + parentX`. Arrange can emit parent-relative rects and never track absolute screen coordinates.
 
-**But z-index is NOT parent-scoped, and equal z is unordered.** `flatten` sorts with `slices.SortFunc(..., a.layer.z - b.layer.z)` — each layer's own `z`, not an accumulated one. A parent's z creates no stacking context: a nested layer with a high z paints above an unrelated top-level layer with a lower z. And `slices.SortFunc` is not stable, so layers sharing a z have unspecified paint order.
+**But z-index is NOT parent-scoped, and equal z is unordered.** `flatten` sorts with `slices.SortFunc(..., a.layer.z - b.layer.z)` — each layer's own `z`, not an accumulated one. A parent's z creates no stacking context: a nested layer with a high z paints above an unrelated top-level layer with a lower z. And `slices.SortFunc` is not stable, so layers sharing a z unspecified paint order.
 
 Consequence: the renderer allocates z from a single tree-wide counter in document order, so every layer gets a distinct, increasing z. Sibling order is never left to the sort. `Overlay` raises the counter into a higher band for its children.
 
@@ -40,7 +40,7 @@ A layer has no width/height setter — `Width()`/`Height()` derive from the cont
 
 ## Colour and golden files
 
-`Style.Render` emits ANSI for any colour that is set, regardless of TTY. Downsampling happens later at the writer. So golden files either avoid colour entirely or compare after stripping ANSI. An unstyled `Render` returns plain text, which is why layout goldens are colourless.
+`Style.Render` emits ANSI for any colour that is set, regardless of TTY. Downsampling happens later at the writer. So golden files either avoid colour fully or compare after stripping ANSI. An unstyled `Render` returns plain text, which is why layout goldens are colourless.
 
 ## Reverse is dropped on blanks
 

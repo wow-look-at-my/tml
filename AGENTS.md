@@ -48,7 +48,7 @@ A `Grid` track takes a range (`*[8..32]`), and `collapse` names the columns that
 
 ## Widgets
 
-Panels solve constraints. Widgets draw. `widgets/` is the library: Border, Popup, Scrollbox, Button, Textbox, Checkbox, Radio, List, Table, Image, Rule, ProgressBar, Spinner, Sparkline, Badge. Each one is registered by default, dropped by `Options.Bare`, and overridable by name. Nothing in it holds state.
+Panels solve constraints. Widgets draw. `widgets/` is the library: Border, Popup, Scrollbox, Button, Textbox, Checkbox, Radio, List, Table, Image, Rule, ProgressBar, Spinner, Sparkline, Badge. Default registers each one, dropped by `Options.Bare`, and overridable by name. Nothing in it holds state.
 
 Containers go through the public `widget.Composer`/`Arranger` seam, not through the engine, so a widget written outside the language is not a second-class one. Do not special-case a library widget inside `layout/`.
 
@@ -57,7 +57,7 @@ Containers go through the public `widget.Composer`/`Arranger` seam, not through 
 
 ## Interaction
 
-Any element takes an `id` and an `action`. `view.UI().Update(msg)` turns a Bubble Tea message into an `Activated`, `FocusMoved` or `Scrolled` event that carries that id and action. Layout asks the UI for each element's state before it measures. It then publishes where everything landed. A click therefore resolves against the frame the user is looking at.
+Any element takes an `id` and an `action`. `view.UI().Update(msg)` turns a Bubble Tea message into an `Activated`, `FocusMoved` or `Scrolled` event that carries that id and action. Layout asks the UI for each element's state before it measures. It then publishes where everything landed. A click therefore resolves against the frame the user looks at.
 
 The focus ring is the widgets that take focus. The pointer also reaches anything else with an id, which is what lets the wheel find a `Scrollbox`. A widget that implements `Focusable` and refuses is disabled and reachable by neither.
 
@@ -73,7 +73,7 @@ A list of data-template items too long to lay out scrolls through `tml.Window` (
 
 Delegated to `github.com/wow-look-at-my/xml-validator`: strict XML 1.1, namespace validation, UTF-8/BOM rejection, and line and column positions on elements and attributes alike. An attribute-scoped diagnostic therefore points at the attribute, not at the element several columns to its left. TML contains no XML parser.
 
-`tml.schema.xsd` is the grammar of a file's DECLARATIONS — `<Component>`, `<Property>`, `<Import>`, `<DataTemplate>`, `<Theme>`, `<Token>`, `<Style>` — for an editor, and gated by the `validate-xml` job. The `<Template>` body is deliberately unchecked. It names components the file imported and widgets the host bound. This validator allows only `processContents="strict"`, which demands a global declaration for every element it matches. `sema/` is the authority on the whole file. Other rules the schema cannot reach: a root in the wrong namespace, and a style attribute's vocabulary when a `{theme.token}` supplies the value.
+`tml.schema.xsd` is the grammar of a file's DECLARATIONS — `<Component>`, `<Property>`, `<Import>`, `<DataTemplate>`, `<Theme>`, `<Token>`, `<Style>` — for an editor, and gated by the `validate-xml` job. The `<Template>` body is deliberately unchecked. It names components the file imported and widgets the host bound. This validator allows only `processContents="strict"`, which demands a global declaration for every element it matches. `sema/` is the authority on the whole file. Other rules the schema cannot reach: a root in the incorrect namespace, and a style attribute's vocabulary when a `{theme.token}` supplies the value.
 
 ## Gotchas that decide the design
 
@@ -107,9 +107,15 @@ The root is the importable package, so a Bubble Tea app imports `github.com/wow-
 
 ## Inspection
 
-Answers questions about the frame `Render` painted, one element at a time: rectangle, content size, clip, scroll, focus, and drawn text by id. **There is nothing to wire and nothing to turn on.** Every `Load` adopts its view into the process's inspector, and opens a socket. That socket is `$XDG_RUNTIME_DIR/tml/<pid>.sock`, in a 0700 directory, with no variable set and no flag passed. `TML_INSPECT_SOCKET` overrides the path and `TML_INSPECT_DIR` the directory. Neither is a switch. A view that cannot be served fails `Load` rather than running unreachable. `tml query` finds the program by dialling what is in that directory (`tml list` names them all).
+Answers questions about the frame `Render` painted, one element at a time: rectangle, content size, clip, scroll, focus, and drawn text by id. **There is nothing to wire and nothing to turn on.** Every `Load` adopts its view into the process's inspector, and opens a socket. That socket is `$XDG_RUNTIME_DIR/tml/<pid>.sock`, in a 0700 directory, with no variable set and no flag passed. `TML_INSPECT_SOCKET` overrides the path and `TML_INSPECT_DIR` the directory. Neither is a switch.
 
-`tml.NewProgram` is the thing a host does. Driving needs a running `*tea.Program`, which cannot exist before the host builds it. A program built with `tea.NewProgram` is readable and not drivable. `drivable.go` takes such a program down after `DriveGrace`, rather than leave the debugger half working. `testdata/undrivable` is the program that proves the guard still fires. A model that caches its frame must invalidate on `tml.RepaintMsg`. That is the one line a host writes. A restyle fails by name when it is missing. `tml serve` opens a browser inspector on the same protocol. There a click selects, and a drag rewrites the element's attributes as a real layout override. `tml capture` writes that same page over a frozen frame as one self-contained HTML file. The frame comes from a running program, or from a document laid out at a given size. `inspect.Snapshot` asks the questions the page asks on load. A capture cannot report what the inspector does not. The driving controls are absent there, because a keystroke and a restyle both need the program. See docs/inspector.md.
+A view that cannot be served fails `Load` rather than running unreachable. `tml query` finds the program by dialling what is in that directory (`tml list` names them all).
+
+`tml.NewProgram` is the thing a host does. Driving needs a running `*tea.Program`, which cannot exist before the host builds it. A program built with `tea.NewProgram` is readable and not drivable. `drivable.go` takes such a program down after `DriveGrace`, rather than leave the debugger half working. `testdata/undrivable` is the program that proves the guard still fires. A model that caches its frame must invalidate on `tml.RepaintMsg`.
+
+That is the one line a host writes. A restyle fails by name when it is missing. `tml serve` opens a browser inspector on the same protocol. There a click selects, and a drag rewrites the element's attributes as a real layout override. `tml capture` writes that same page over a frozen frame as one self-contained HTML file. The frame comes from a running program, or from a document laid out at a given size.
+
+`inspect.Snapshot` asks the questions the page asks on load. A capture cannot report what the inspector does not. The driving controls are absent there, because a keystroke and a restyle both need the program. See docs/inspector.md.
 
 The page decides NOTHING about layout. Which element covers a cell is `op=hits`, `inspect.At`'s answer for every cell in one response. A capture therefore resolves a click by lookup, not by a second hit test of its own. Its scripts are TypeScript under `inspect/ui/src`. [ts0](https://github.com/wow-look-at-my/ts0) (`pnpm build`) compiles them into the committed `inspect/ui/inspector.js` that `go:embed` reads. CI recompiles that file and fails on a diff.
 
@@ -117,11 +123,15 @@ A test waits on the screen rather than sleeping. `query --await REGEX` and `--aw
 
 ## Live regions
 
-`tml.Live` (`live.go`) is an inline Bubble Tea program with no input. It pins a view below the log and repaints it from a props function on an interval. `Println`/`Printf`/`Write` queue lines above it. At most one print is in flight, and `tea.Sequence` orders it, so lines keep their order. SIGINT becomes an orderly close through a program filter. `View.RenderFit` lays a view out as tall as its content. See docs/live.md.
+`tml.Live` (`live.go`) is an inline Bubble Tea program with no input. It pins a view below the log and repaints it from a props function on an interval. `Println`/`Printf`/`Write` queue lines above it. At most one print is in flight, and `tea.Sequence` orders it, so lines keep their order. SIGINT becomes an orderly close through a program filter. `View.RenderFit` lays a view out as tall as its content.
+
+See docs/live.md.
 
 ## Hot reload
 
-`tml.Watch(ctx, dir, entry, opts, onChange)` reloads on change. It polls modification times rather than subscribes to filesystem events. Editors save by write-then-rename, which replaces the inode an event watcher holds, and drops the change that mattered. A failed reload reaches `onChange` as an error. The previous view stays. To show that error is the caller's job. To hide it defeats the point.
+`tml.Watch(ctx, dir, entry, opts, onChange)` reloads on change. It polls modification times rather than subscribes to filesystem events. Editors save by write-then-rename, which replaces the inode an event watcher holds, and drops the change that mattered. A failed reload reaches `onChange` as an error. The previous view stays. To show that error is the caller's job.
+
+To hide it defeats the point.
 
 ## Testing
 
