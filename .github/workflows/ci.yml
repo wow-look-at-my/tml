@@ -46,6 +46,11 @@ jobs:
       - name: Check the committed page is what its source compiles to
         run: git diff --exit-code -- inspect/ui/inspector.js
 
+      # Go fetches the private org modules through git, which needs the vended token.
+      - uses: wow-look-at-my/actions@secret-server#latest
+      - if: env.PRIVATE_ORG_REPO_READ != ''
+        run: git config --global credential.https://github.com.helper '!f() { echo username=x-access-token; echo password=$PRIVATE_ORG_REPO_READ; }; f'
+
       # cosmo-platforms names the hosts the one fat APE covers. The action dropped the os= and arch= inputs it used to take.
       - uses: wow-look-at-my/go-toolchain@lkgb
         # A hung test fails with every goroutine's stack. The step's own limit kills it silently.
