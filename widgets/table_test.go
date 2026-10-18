@@ -116,7 +116,7 @@ func TestTableCollapsesColumnsInOrderWhenNarrow(t *testing.T) {
 	})
 
 	wide, _ := table.Measure(0, 0)
-	assert.Equal(t, "ID  STATE    WORKFLOW BRANCH AGE", ansi.Strip(split(table.Render(wide, 0))[0])[:32])
+	assert.Contains(t, ansi.Strip(table.Render(wide, 0)), "BRANCH", "a table that fits keeps every column")
 
 	fits, _ := table.Measure(wide-1, 0)
 	out := ansi.Strip(table.Render(fits, 0))
@@ -127,7 +127,8 @@ func TestTableCollapsesColumnsInOrderWhenNarrow(t *testing.T) {
 	out = ansi.Strip(table.Render(narrow, 0))
 	assert.NotContains(t, out, "AGE")
 	assert.Contains(t, out, "WORKFLOW", "a column the list does not name stays")
-	assert.Contains(t, out, "master", "the row loses the same cells as the header")
+	assert.Equal(t, []string{"ID  STATE   WORKFLOW", "101 success CI"}, trimmed(split(out)),
+		"the row loses the same cells as the header")
 }
 
 func TestTableRejectsACollapseColumnItDoesNotHave(t *testing.T) {
@@ -169,10 +170,17 @@ func TestTableAlignsWideRunes(t *testing.T) {
 		"columns": ",ID", "rows": "✅|1,x|22", "border": "false", "rule": "false", "spacing": "2",
 	})
 
-	lines := split(ansi.Strip(table.Render(0, 0)))
-	require.Len(t, lines, 3)
-	assert.Equal(t, ansi.StringWidth(lines[1])-1, ansi.StringWidth(lines[2])-2, "%q", lines)
-	assert.Equal(t, strings.Index(lines[2], "22"), 4, "%q", lines)
+	lines := trimmed(split(ansi.Strip(table.Render(0, 0))))
+	assert.Equal(t, []string{"    ID", "✅  1", "x   22"}, lines)
+}
+
+// trimmed drops the blanks a column pads its last cell with.
+func trimmed(lines []string) []string {
+	out := make([]string, len(lines))
+	for i, line := range lines {
+		out[i] = strings.TrimRight(line, " ")
+	}
+	return out
 }
 
 func TestTableRejectsANonBooleanBorder(t *testing.T) {

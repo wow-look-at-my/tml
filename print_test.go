@@ -52,7 +52,7 @@ func TestPrintToAPipeNeverWrapsALongCell(t *testing.T) {
 	var out bytes.Buffer
 	require.NoError(t, loadListing(t).Print(&out, listingProps("✅\t1\t"+long), 0))
 
-	assert.Contains(t, out.String(), "1    "+long+"\n")
+	assert.Contains(t, out.String(), "\n✅  1   "+long+"\n")
 }
 
 // An explicit width is the space the document has. A table with no collapse list cuts or wraps inside it.

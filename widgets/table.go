@@ -15,10 +15,10 @@ var tableAttrs = []string{"columns", "rows", "separator", "border", "rule", "spa
 
 // dataTable is a grid of text with headers.
 type dataTable struct {
-	columns   []string
-	rows      [][]string
-	bordered  bool
-	rule      bool
+	columns  []string
+	rows     [][]string
+	bordered bool
+	rule     bool
 	// spacing is the blank cells between a pair of columns of a borderless table.
 	spacing   int
 	separator string
