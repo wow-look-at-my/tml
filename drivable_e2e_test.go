@@ -34,16 +34,22 @@ func isFile(path string) bool {
 	return err == nil && info.Mode().IsRegular()
 }
 
-// buildUndrivable builds the fixture program. The child keeps only the module flags of the build that runs this
+// buildUndrivable builds the program the guard exists to stop.
+func buildUndrivable(t *testing.T) string {
+	t.Helper()
+	return buildFixture(t, "undrivable")
+}
+
+// buildFixture builds the program in testdata/<name>. The child keeps only the module flags of the build that runs this
 // test. This is because the org pins in go.mod are placeholders that only those flags resolve. It never prompts
 // for git credentials, and a build that does not finish fails the test with its output instead of hanging the
 // run.
-func buildUndrivable(t *testing.T) string {
+func buildFixture(t *testing.T, name string) string {
 	t.Helper()
-	bin := filepath.Join(t.TempDir(), "undrivable")
+	bin := filepath.Join(t.TempDir(), name)
 	ctx, cancel := context.WithTimeout(t.Context(), 3*time.Minute)
 	defer cancel()
-	build := exec.CommandContext(ctx, goCommand(t), "build", "-o", bin, "./testdata/undrivable")
+	build := exec.CommandContext(ctx, goCommand(t), "build", "-o", bin, "./testdata/"+name)
 	var flags []string
 	for _, flag := range strings.Fields(os.Getenv("GOFLAGS")) {
 		if strings.HasPrefix(flag, "-mod=") || strings.HasPrefix(flag, "-modfile=") {
@@ -83,6 +89,20 @@ func TestARealUndrivableProgramDoesNotStayUp(t *testing.T) {
 	assert.Contains(t, said, "the inspector cannot drive it", "the program said why it stopped")
 	assert.Contains(t, said, "tml.NewProgram", "the program named the fix")
 	assert.Contains(t, said, "tea.NewProgram", "the program named what it did instead")
+}
+
+// A program that prints a document and keeps going is not a screen nothing can drive. It stays up past the grace.
+func TestAProgramThatPrintsOutlivesTheGrace(t *testing.T) {
+	bin := buildFixture(t, "printer")
+
+	run := exec.Command(bin)
+	run.Env = append(os.Environ(), tml.DirEnv+"="+t.TempDir())
+	var stdout, stderr bytes.Buffer
+	run.Stdout, run.Stderr = &stdout, &stderr
+
+	require.NoError(t, run.Run(), "stderr: %s", stderr.String())
+	assert.Equal(t, "printed\nstill up\n", stdout.String())
+	assert.NotContains(t, stderr.String(), "cannot drive")
 }
 
 // The same program is readable for the whole of its short life. Reading is not what the guard is about, and a guard

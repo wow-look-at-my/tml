@@ -17,7 +17,9 @@ There is no one way to put a picture in a terminal. `Image` takes the best one a
 
 `protocol="kitty|iterm|mosaic|link|auto"` picks one. `auto` is the default. It reads the environment.
 
-Nothing is auto-detected by asking the terminal. A query writes to the terminal and waits for the reply. A renderer that does that blocks on a pipe. So detection is what `TERM`, `TERM_PROGRAM`, `KITTY_WINDOW_ID` and their neighbours say. `protocol` is the override for when they are wrong. Half-blocks are what is left when nothing claims to do better. The answer is never a blank space.
+Nothing is auto-detected by asking the terminal. A query writes to the terminal and waits for the reply. A renderer that does that blocks on a pipe. So detection is what `TERM`, `TERM_PROGRAM`, `KITTY_WINDOW_ID` and their neighbours say. `protocol` is the override for when they are incorrect. Half-blocks are what is left when nothing claims to do better.
+
+The answer is never a blank space.
 
 `protocol="link"` never reads the file at all, which makes it the fallback that always works. It is also the right choice for an image that is not on this machine.
 
@@ -29,4 +31,4 @@ Both graphics protocols are asked not to move the cursor. The escape then pairs 
 
 ## Transparency
 
-A transparent pixel is blended onto the theme's own background, since the terminal's real one is not something anything reports portably. `Options.Dark` is what decides. That is the right answer whenever the terminal and the theme agree. To make them agree is what the theme is for.
+A transparent pixel is blended onto the theme's own background, since the terminal's real one is not something anything reports portably. `Options.Dark` is what decides. That is the right answer when the terminal and the theme agree. To make them agree is what the theme is for.

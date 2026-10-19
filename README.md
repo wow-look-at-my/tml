@@ -85,7 +85,7 @@ go tml.Watch(ctx, "ui", "app.tml", opts, func(v *tml.View, err error) {
 })
 ```
 
-Edits show up without a restart. A reload that fails hands you the error instead of quietly keeping the last good view.
+Edits show up without a start. A reload that fails hands you the error instead of quietly keeping the last good view.
 
 ## CLI
 

@@ -7,7 +7,6 @@ import { chromium } from 'playwright';
 
 const root = process.env.TML_ROOT ?? process.cwd();
 
-// go-toolchain names a local build build/agent and a cross-compiled one build/agent_linux_amd64.
 const goos = { linux: 'linux', darwin: 'darwin', win32: 'windows' }[process.platform] ?? process.platform;
 const goarch = { x64: 'amd64', arm64: 'arm64' }[process.arch] ?? process.arch;
 

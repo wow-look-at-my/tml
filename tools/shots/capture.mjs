@@ -34,7 +34,6 @@ function browserPath() {
 	return found;
 }
 
-// The binary a shot runs. go-toolchain names a local build build/gallery and a cross-compiled one build/gallery_linux_amd64.
 const goos = { linux: "linux", darwin: "darwin", win32: "windows" }[process.platform] ?? process.platform;
 const goarch = { x64: "amd64", arm64: "arm64" }[process.arch] ?? process.arch;
 

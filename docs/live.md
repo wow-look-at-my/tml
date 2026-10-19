@@ -42,9 +42,15 @@ A styled row usually picks its style from its data. A named style takes an expre
 
 The region is for a terminal. When stdout is a pipe or a file, a host prints plain lines instead and does not start a region. The region cannot decide this, because only the host knows what the plain form of its display is.
 
+`View.Print` is how a host prints those lines, or any other document. It lays the view out as wide and as tall as its content. It drops the blanks after each line. It writes through a colour profile, so a pipe, a file and `TERM=dumb` get plain text, and `NO_COLOR` keeps bold. A width of zero is the terminal's width, or no limit on a pipe. A printed frame is not a screen.
+
+It does not need `tml.NewProgram`. A host can print and then keep working past `DriveGrace`.
+
 ## The worked example
 
-`examples/downloads` is a mock download manager. Its block has a header, an optional status line, one row per active transfer and a TOTAL row. The rows are a `Grid` with fixed columns, so they line up. On a narrow terminal, `collapse` drops the bar first, then the speed, the ETA and the sizes. See `docs/language.md` for `collapse` and for track ranges. `./build/downloads` runs it. `./build/downloads -frame -width 60` prints one frame without a terminal.
+`examples/downloads` is a mock download manager. Its block has a header, an optional status line, one row per active transfer and a TOTAL row. The rows are a `Grid` with fixed columns, so they line up. On a narrow terminal, `collapse` drops the bar first, then the speed, the ETA and the sizes. See `docs/language.md` for `collapse` and for track ranges. `./build/downloads` runs it.
+
+`./build/downloads -frame -width 60` prints one frame without a terminal.
 
 ## Driving and inspection
 

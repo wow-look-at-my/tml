@@ -1,6 +1,6 @@
 # Widgets
 
-TML's language is layout: `Stack`, `Grid`, `Canvas`, `Box`, `Text`, `Spacer`. Everything else on screen is a widget, and widgets come from a registry. The library in `widgets/` is registered by default. A template can therefore use `<Button>` with no setup. A host that binds its own `Button` wins the name, and `Options{Bare: true}` drops the library entirely.
+TML's language is layout: `Stack`, `Grid`, `Canvas`, `Box`, `Text`, `Spacer`. Everything else on screen is a widget, and widgets come from a registry. Default registers the library in `widgets/`. A template can therefore use `<Button>` with no setup. A host that binds its own `Button` wins the name, and `Options{Bare: true}` drops the library fully.
 
 The split is that **widgets draw and panels solve constraints**. A widget is handed a size and returns a string. That is the whole contract, and every widget below goes through it -- including the ones that wrap children.
 
@@ -36,7 +36,7 @@ A control is reachable ways. The two are not the same set:
 - the **focus ring** is the widgets that take focus. Tab steps through them, in document order.
 - the **pointer** reaches those plus anything else carrying an id, which is how the wheel finds a `Scrollbox` that is not a tab stop.
 
-A disabled control is in neither. The frame's geometry leaves it out entirely. A click where it is drawn does nothing at all.
+A disabled control is in neither. The frame's geometry leaves it out fully. A click where it is drawn does nothing at all.
 
 One widget can draw many things — a list's rows, a table's columns — and the ring still sees one element. A pointer event carries `X` and `Y` in cells from that element's own corner, which is how the host tells them apart. Both are `-1` when the keyboard did it.
 
@@ -82,7 +82,9 @@ Every widget also takes the style attributes (`fg`, `bg`, `bold`, `padding`, `bo
 <Scrollbox id="transcript" offset="{scroll}" contentHeight="{lines}">
 ```
 
-The same measurement windowed is **7.2 ms and flat**: 7.1 at many rows, 7.2 at 1 000, 7.5 at 10 000. The cost is now the viewport rather than the content. In this mode the children draw from the top, because the host already cut at the offset. `offset` remains the position. Both the scrollbar and the maximum reported through `UI().Target` describe the whole content, which is the only reason to be told its size. The slice is the host's. It owns the content, so only it can say which rows the offset selects.
+The same measurement windowed is **7.2 ms and flat**: 7.1 at many rows, 7.2 at 1 000, 7.5 at 10 000. The cost is now the viewport rather than the content. In this mode the children draw from the top, because the host already cut at the offset. `offset` remains the position. Both the scrollbar and the maximum reported through `UI().Target` describe the whole content, which is the only reason to be told its size. The slice is the host's.
+
+It owns the content, so only it can say which rows the offset selects.
 
 **A list of items windows through `tml.Window`, not through a count of the host's own.** A conversation is a list of messages, each a data template, and the host does not know how many rows the engine draws one in. `View.ItemHeight(template, item, width)` asks the engine: it measures one item and publishes nothing. A `Window` keeps the scroll position as an item and a row in it, the bottom row on screen. Its `Slice` names the items on screen and the offset that hides the rows above the window. The host hands those items over whole, with no `contentHeight`:
 
@@ -127,11 +129,13 @@ A button's label is sugar for its `Content` slot, so anything can go inside one:
 | Element | Attributes | Notes |
 | --- | --- | --- |
 | `List` | `items`, `selected`, `cursor`, `disabled` | A cursor beside the selected row. |
-| `Table` | `columns`, `rows`, `separator`, `border`, `selected`, `disabled`, `wrap` | Rows are `separator`-joined cells. Columns size to their widest. |
+| `Table` | `columns`, `rows`, `separator`, `border`, `rule`, `spacing`, `selected`, `disabled`, `wrap`, `collapse` | Rows are `separator`-joined cells. Columns size to their widest. `collapse` lists the column indices that give way, in order, while the table is wider than its space. `rule="false"` drops the line under a borderless header. `spacing` is the gap between borderless columns. |
 
-Both take focus, and both leave the selection to the host. `selected` is a row index the model owns. Nothing in the widget can therefore disagree with what the program thinks is picked. A `Table` marks its row in place, as a reversed bar across every column, bold while the table has focus. It uses no cursor gutter, because a row of columns has no single place to put one. The bar draws whether or not the table has focus. The row a keystroke acts on is the host's state. It stays picked while a filter box holds the ring. The header is not a row anyone can select, and `selected="-1"` marks nothing.
+Both take focus, and both leave the selection to the host. `selected` is a row index the model owns. Nothing in the widget can therefore disagree with what the program thinks is picked. A `Table` marks its row in place, as a reversed bar across every column, bold while the table focus. It uses no cursor gutter, because a row of columns has no single place to put one. The bar draws whether or not the table focus.
 
-Which row a click landed on arrives the same way a `List`'s does, in the event's own coordinates. A table draws its header first, so its rows begin a line below:
+The row a keystroke acts on is the host's state. It stays picked while a filter box holds the ring. The header is not a row anyone can select, and `selected="-1"` marks nothing.
+
+Which row a click landed on arrives the same way a `List`'s does, in the event's own coordinates. A table draws its header first, so its rows start a line below:
 
 ```go
 if event.ID == "steps" && event.Y >= 0 {
@@ -198,7 +202,9 @@ widget.NewRegistry().Bind("Clock", &clock{at: now})
 widget.NewRegistry().BindFactory("Clock", myFactory)
 ```
 
-A factory declares the attributes it reads. Anything else on the element still reaches the stylesheet. The factory gets a `widget.Context`. That holds the evaluated attributes, the view's filesystem, the element's own directory, and whether the theme is dark. Attribute accessors take a fallback and report a failure rather than substitute one. A value nobody can parse is a mistake in the template. A plausible substitute hides it.
+A factory declares the attributes it reads. Anything else on the element still reaches the stylesheet. The factory gets a `widget.Context`. That holds the evaluated attributes, the view's filesystem, the element's own directory, and whether the theme is dark. Attribute accessors take a fallback and report a failure rather than substitute one. A value nobody can parse is a mistake in the template.
+
+A plausible substitute hides it.
 
 Then opt into whatever else applies:
 
