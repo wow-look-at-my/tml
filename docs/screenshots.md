@@ -12,9 +12,11 @@ The tool needs `ttyd` and a Chromium on the machine. It looks for the browser in
 
 ## Why a terminal and not a frame
 
-Both examples already render one frame to stdout with `-frame`, and `testdata/*.golden` pins that text. That is the mechanical check. It stays the one CI fails on. But a frame is a string. It proves nothing about whether the program draws in a terminal, answers a key press from a keyboard, or picks colours a terminal can show. The image fallback is the clearest case. `<Image>` asks the terminal what it is, then chooses between the kitty protocol, half-blocks and a link. In a golden the result is text either way.
+Both examples already render one frame to stdout with `-frame`, and `testdata/*.golden` pins that text. That is the mechanical check. It stays the one CI fails on. But a frame is a string. It proves nothing about whether the program draws in a terminal, answers a key press from a keyboard, or picks colours a terminal can show. The image fallback is the clearest case.
 
-So the screenshots cover what the goldens cannot, and one of them is driven entirely by typed keys (`keys` in the shot list) to keep the input path honest.
+`<Image>` asks the terminal what it is, then chooses between the kitty protocol, half-blocks and a link. In a golden the result is text either way.
+
+So the screenshots cover what the goldens cannot, and typed keys drive one of them (`keys` in the shot list) to keep the input path honest.
 
 ## What a shot declares
 
@@ -32,7 +34,7 @@ CI captures on every push and publishes `build/shots/` to a buildhost site, per 
 - `https://sites.pazer.build/tml/` -- master
 - `https://sites.pazer.build/tml/@<branch>/` -- any other branch
 
-Until master has published once, the bare project URL falls back to whichever branch does have a site. The README's pictures therefore work before the first merge, and switch to master's afterwards.
+Until master published once, the bare project URL falls back to whichever branch does have a site. The README's pictures therefore work before the first merge, and switch to master's afterwards.
 
 The project is the repository's name, because that is what buildhost's OIDC trust covers. A token minted for `repo:wow-look-at-my/tml` writes project `tml` and anything namespaced beneath it. Any other name answers `404 project not found` rather than creates the project.
 

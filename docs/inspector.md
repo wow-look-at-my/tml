@@ -20,11 +20,15 @@ Neither command names a socket. The program serves on `$XDG_RUNTIME_DIR/tml/<pid
 - The directory is 0700. The socket carries the right to drive the program, so its boundary is the same one the user's own shell already has.
 - A view that cannot be served is not returned: `Load` fails, naming the path. Handing back a working View and a program nothing can reach is the state this exists to remove.
 
-That is deliberate. It is the whole design. To wire an inspector once took calls, in the right order. A host that made five of them got a program inspectable in principle and useless. Its tests then went back to pane captures, which cannot tell a status line that moved from one that did not. An environment variable is the same failure with fewer steps. A capability every program has is worth more than one every program can have.
+That is deliberate. It is the whole design. To wire an inspector once took calls, in the right order. A host that made five of them got a program inspectable in principle and useless. Its tests then went back to pane captures, which cannot tell a status line that moved from one that did not. An environment variable is the same failure with fewer steps.
+
+A capability every program has is worth more than one every program can have.
 
 `tml.NewProgram` is the other half, and the thing a host does. It builds the Bubble Tea program. As a result, the protocol has something to type into and the program can be driven as well as read. It returns the program, because a host that kills it from a worker or sends to it needs the handle. `tml.Run` is the same plus running it, for a host with nothing to say in between.
 
-It cannot be automatic. The inspector delivers a keystroke as a message to a running `*tea.Program`. That program does not exist when this package initialises, and Go offers no way to intercept another package's constructor. A guard enforces it instead. A view still painting `DriveGrace` after its first frame, with nothing able to drive it, takes the program down and names this function. A program the debugger only half works against is not one this library keeps running. See `drivable.go`, and `testdata/undrivable` for the program that proves the guard still fires.
+It cannot be automatic. The inspector delivers a keystroke as a message to a running `*tea.Program`. That program does not exist when this package initialises, and Go offers no way to intercept another package's constructor. A guard enforces it instead. A view still painting `DriveGrace` after its first frame, with nothing able to drive it, takes the program down and names this function. A program the debugger only half works against is not one this library keeps running.
+
+See `drivable.go`, and `testdata/undrivable` for the program that proves the guard still fires.
 
 ```go
 program, err := tml.NewProgram(model, tea.WithContext(ctx))
@@ -33,7 +37,9 @@ if err != nil { ... }
 
 `tea.NewProgram` builds a program this library cannot reach. One started that way still answers every question about its frames. It refuses every keystroke by name. That answer is true and unhelpful. One way to start avoids it.
 
-Reloading is nothing either. `Load` bakes in which half of every theme token resolves, and how a width is measured. A host that learns either one late loads again and renders through a new `View`. A terminal that answers OSC 11, or mode 2027, is such a late answer. The inspector follows. The new view records, the old one stops, and the overrides carry over. Frame numbers continue upward, so the new view's first paint never answers a caller that waits for a newer frame.
+Reloading is nothing either. `Load` bakes in which half of every theme token resolves, and how a width is measured. A host that learns either one late loads again and renders through a new `View`. A terminal that answers OSC 11, or mode 2027, is such a late answer. The inspector follows. The new view records, the old one stops, and the overrides carry over.
+
+Frame numbers continue upward, so the new view's first paint never answers a caller that waits for a newer frame.
 
 ### The one thing a host writes
 
@@ -45,7 +51,7 @@ The protocol catches that rather than lets it pass. `Restyle` and `Reset` drive 
 
 ## One protocol, two transports
 
-`inspect.Server.Handle(Request) Response` is the whole protocol. A unix socket carries one JSON request per line, which is what `tml query` and the other live commands speak. HTTP posts the identical objects to `/rpc`, and streams frames on `/events`. There is one place a protocol bug can be.
+`inspect.Server.Handle(Request) Response` is the whole protocol. A unix socket carries one JSON request per line, which is what `tml query` and the other live commands speak. HTTP posts the same objects to `/rpc`, and streams frames on `/events`. There is one place a protocol bug can be.
 
 | op | answers |
 | --- | --- |
@@ -83,7 +89,7 @@ $ tml restyle --id send --set width=20
 
 ### Waiting for the screen
 
-A test asserts about a screen that is still changing, so its real question is "has it happened yet". A sleep answers that with a guess at how fast the machine is. The guess is wrong on somebody else's machine.
+A test asserts about a screen that is still changing, so its real question is "has it happened yet". A sleep answers that with a guess at how fast the machine is. The guess is incorrect on somebody else's machine.
 
 ```
 $ tml query --id status --field text --await 'turn [0-9]+'

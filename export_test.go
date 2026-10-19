@@ -18,6 +18,9 @@ func Inspect() *Inspector {
 	return inspection.insp
 }
 
+// SweepStale is the stale-socket sweep, reached directly. Test-only.
+func SweepStale(dir, own string) { sweepStale(dir, own) }
+
 // ResetDrivable forgets what the drivable guard has seen. Test-only, and it is how a test drives the guard's own clock
 func ResetDrivable() { drives.reset() }
 

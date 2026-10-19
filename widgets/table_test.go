@@ -1,6 +1,7 @@
 package widgets
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/charmbracelet/x/ansi"
@@ -102,6 +103,84 @@ func TestATableCanKeepEveryRowToOneLine(t *testing.T) {
 	assert.Greater(t, len(split(wrapped.Render(narrow, 0))), len(split(cut.Render(narrow, 0))))
 	assert.Len(t, split(cut.Render(narrow, 0)), 4, "a header, the rule under it, and a line for each row")
 	assert.Contains(t, cut.Render(narrow, 0), "…", "a cut cell says it was cut")
+}
+
+// A listing that does not fit drops whole columns in the order collapse names, rather than wrapping every cell.
+func TestTableCollapsesColumnsInOrderWhenNarrow(t *testing.T) {
+	table := build(t, "Table", map[string]string{
+		"columns":  "ID,STATE,WORKFLOW,BRANCH,AGE",
+		"rows":     "101|success|CI|master|2m ago",
+		"border":   "false",
+		"rule":     "false",
+		"collapse": "3,4",
+	})
+
+	wide, _ := table.Measure(0, 0)
+	assert.Contains(t, ansi.Strip(table.Render(wide, 0)), "BRANCH", "a table that fits keeps every column")
+
+	fits, _ := table.Measure(wide-1, 0)
+	out := ansi.Strip(table.Render(fits, 0))
+	assert.NotContains(t, out, "BRANCH", "the first column in the list goes first")
+	assert.Contains(t, out, "AGE", "a column goes only while the table does not fit")
+
+	narrow, _ := table.Measure(20, 0)
+	out = ansi.Strip(table.Render(narrow, 0))
+	assert.NotContains(t, out, "AGE")
+	assert.Contains(t, out, "WORKFLOW", "a column the list does not name stays")
+	assert.Equal(t, []string{"ID  STATE   WORKFLOW", "101 success CI"}, trimmed(split(out)),
+		"the row loses the same cells as the header")
+}
+
+func TestTableRejectsACollapseColumnItDoesNotHave(t *testing.T) {
+	_, err := tryBuild("Table", map[string]string{"columns": "A,B", "collapse": "2"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "is not a column")
+
+	_, err = tryBuild("Table", map[string]string{"columns": "A,B", "collapse": "1,1"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "named twice")
+}
+
+// rule="false" makes the header one more line of the listing. A tool whose output an agent reads wants no blank line under it.
+func TestABorderlessTableCanDropTheRuleUnderItsHeader(t *testing.T) {
+	rows := map[string]string{"columns": "A,B", "rows": "1|2", "border": "false"}
+	ruled := build(t, "Table", rows)
+	rows["rule"] = "false"
+	bare := build(t, "Table", rows)
+
+	assert.Len(t, split(ruled.Render(0, 0)), 3)
+	assert.Len(t, split(bare.Render(0, 0)), 2)
+}
+
+// spacing is the gap between a pair of columns. The last column carries none, so a row ends at its last cell.
+func TestABorderlessTableTakesItsColumnSpacing(t *testing.T) {
+	table := build(t, "Table", map[string]string{
+		"columns": "A,B", "rows": "1|2", "border": "false", "rule": "false", "spacing": "3",
+	})
+
+	assert.Equal(t, []string{"A   B", "1   2"}, split(ansi.Strip(table.Render(0, 0))))
+
+	_, err := tryBuild("Table", map[string]string{"columns": "A", "spacing": "-1"})
+	require.Error(t, err)
+}
+
+// An emoji takes cells, and a column of them lines up with the column beside it.
+func TestTableAlignsWideRunes(t *testing.T) {
+	table := build(t, "Table", map[string]string{
+		"columns": ",ID", "rows": "✅|1,x|22", "border": "false", "rule": "false", "spacing": "2",
+	})
+
+	lines := trimmed(split(ansi.Strip(table.Render(0, 0))))
+	assert.Equal(t, []string{"    ID", "✅  1", "x   22"}, lines)
+}
+
+// trimmed drops the blanks a column pads its last cell with.
+func trimmed(lines []string) []string {
+	out := make([]string, len(lines))
+	for i, line := range lines {
+		out[i] = strings.TrimRight(line, " ")
+	}
+	return out
 }
 
 func TestTableRejectsANonBooleanBorder(t *testing.T) {
