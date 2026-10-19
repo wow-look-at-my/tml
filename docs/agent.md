@@ -8,7 +8,7 @@ go-toolchain && ./build/agent            # interactive
 ./build/agent -frame -steps 6 -answer deny
 ```
 
-Space steps the script, tab moves, enter activates, the wheel scrolls the session, and typing at the prompt reaches the prompt. The permission beat stops the script until somebody answers it. A harness that ran the command and then asked is lying about the ask.
+Space steps the script, tab moves, enter activates, the wheel scrolls the session, and typing at the prompt reaches the prompt. The permission beat stops the script until somebody answers it. A harness that ran the command and then asked lies about the ask.
 
 ## What it loads onto the language
 
@@ -25,7 +25,7 @@ Every item here is a change the example forced, not a note about one:
 - `sema.ListValue`. A host list went in as a comma-joined string and came back split on the commas inside its own values.
 - `List` truncates a row rather than wrapping it. A wrapped row took a couple of lines and pushed the geometry out of step with what was drawn.
 - Scrolling clamps to the content, in the widget and in the geometry alike, and the frame reports where it landed (`UI().Target(id).Scroll`). Following a growing transcript is otherwise not expressible: only the frame knows how far the wrapped content runs.
-- A borderless `Table` keeps the gap between its columns. Full cells were running together into one word.
+- A borderless `Table` keeps the gap between its columns. Full cells run together into one word.
 
 ## What it could not do
 

@@ -153,14 +153,29 @@ func isLayoutAttr(name string) bool {
 
 // Layout measures and arranges the tree inside a viewport.
 func (e *Engine) Layout(node *sema.Node, width, height int) (*Box, error) {
-	return e.layout(node, width, height, false)
+	return e.layout(node, width, height, fitNone)
 }
 
 // Fit lays the tree out at the given width, as tall as its content asks, up
 // to maxHeight.
 func (e *Engine) Fit(node *sema.Node, width, maxHeight int) (*Box, error) {
-	return e.layout(node, width, maxHeight, true)
+	return e.layout(node, width, maxHeight, fitHeight)
 }
+
+// Shrink lays the tree out as wide and as tall as its content asks, up to
+// width and maxHeight.
+func (e *Engine) Shrink(node *sema.Node, width, maxHeight int) (*Box, error) {
+	return e.layout(node, width, maxHeight, fitBoth)
+}
+
+// fitMode is which axes of the root take the content's size rather than the viewport's.
+type fitMode int
+
+const (
+	fitNone fitMode = iota
+	fitHeight
+	fitBoth
+)
 
 // Height is how many rows node takes at width, however tall that is.
 func (e *Engine) Height(node *sema.Node, width int) (int, error) {
@@ -173,7 +188,8 @@ func (e *Engine) Height(node *sema.Node, width int) (int, error) {
 	return e.measure(box, Constraints{MaxW: width}).H, nil
 }
 
-func (e *Engine) layout(node *sema.Node, width, height int, fit bool) (*Box, error) {
+func (e *Engine) layout(node *sema.Node, width, height int, mode fitMode) (*Box, error) {
+	fit := mode != fitNone
 	p := &pass{e: e, paints: true}
 	// A layout answers for the tree in front of it, so the last frame's answer must not outlive it.
 	e.animating = false
@@ -187,7 +203,7 @@ func (e *Engine) layout(node *sema.Node, width, height int, fit bool) (*Box, err
 
 	// The root fills the viewport unless it asked for a specific size. Filling is what a view wants by default.
 	rect := Rect{W: width, H: height}
-	if box.width.Kind == sema.LengthCells {
+	if box.width.Kind == sema.LengthCells || mode == fitBoth {
 		rect.W = min(box.desired.W, width)
 	}
 	if box.height.Kind == sema.LengthCells || fit {
@@ -197,6 +213,9 @@ func (e *Engine) layout(node *sema.Node, width, height int, fit bool) (*Box, err
 	viewport := Rect{W: width, H: height}
 	if fit {
 		viewport.H = rect.H
+	}
+	if mode == fitBoth {
+		viewport.W = rect.W
 	}
 	setScreen(box, 0, 0, viewport)
 	p.publish()

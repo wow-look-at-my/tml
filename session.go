@@ -1,11 +1,45 @@
 package tml
 
 import (
+	"errors"
 	"fmt"
+	"net"
+	"os"
+	"path/filepath"
+	"regexp"
 	"sync"
+	"syscall"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 )
+
+// pidSocket is the name SocketPath gives a socket in the shared directory.
+var pidSocket = regexp.MustCompile(`^[0-9]+\.sock$`)
+
+// sweepStale removes the sockets in dir that no process listens on. A process that exits without Close leaves its
+// socket behind, and a command-line tool that loads a view. On every run would fill the directory. Only a socket
+// that refuses a connection goes. A socket that is slow to answer belongs to a live program and stays.
+func sweepStale(dir, own string) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return
+	}
+	for _, entry := range entries {
+		path := filepath.Join(dir, entry.Name())
+		if path == own || !pidSocket.MatchString(entry.Name()) || entry.Type()&os.ModeSocket == 0 {
+			continue
+		}
+		conn, err := net.DialTimeout("unix", path, 50*time.Millisecond)
+		if err == nil {
+			conn.Close()
+			continue
+		}
+		if errors.Is(err, syscall.ECONNREFUSED) {
+			_ = os.Remove(path)
+		}
+	}
+}
 
 // inspection is the process's own inspector. Every View that Load builds is adopted by it, so recording is not a mode
 var inspection = &session{}
@@ -44,6 +78,9 @@ func (s *session) adopt(v *View) error {
 		err = s.insp.ListenSocket(socket)
 	}
 	if err == nil {
+		if os.Getenv(SocketEnv) == "" {
+			sweepStale(filepath.Dir(socket), socket)
+		}
 		return nil
 	}
 	s.err = fmt.Errorf("tml: serve the inspection protocol on %s: %w", socket, err)
