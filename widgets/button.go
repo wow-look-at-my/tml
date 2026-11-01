@@ -1,3 +1,5 @@
+// buttonSlots is the region a button's content goes in.
+
 package widgets
 
 import (
@@ -55,6 +57,9 @@ func (b *button) SetState(state widget.State) { b.state = state }
 
 // Inset is the border plus a space either side of the content.
 func (b *button) Inset() (int, int) { return 4, 2 }
+
+// Origin is inside the left border and its space, and under the top border.
+func (b *button) Origin() (int, int) { return 2, 1 }
 
 func (b *button) Slots() []string { return buttonSlots }
 

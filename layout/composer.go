@@ -1,3 +1,5 @@
+// composer is the widget behind this box if it wraps children, and nil otherwise.
+
 package layout
 
 import (
@@ -87,6 +89,7 @@ func (e *Engine) measureComposer(box *Box, inner Constraints) Size {
 
 func (e *Engine) arrangeComposer(box *Box, composer widget.Composer) {
 	insetW, insetH := composer.Inset()
+	left, top := composer.Origin()
 	width := max(0, box.Content.W-insetW)
 	height := max(0, box.Content.H-insetH)
 	want := arrangement(box)
@@ -122,7 +125,7 @@ func (e *Engine) arrangeComposer(box *Box, composer widget.Composer) {
 		shiftX = 0
 	}
 
-	y := -shiftY
+	y := top - shiftY
 	for _, child := range box.Children {
 		w, h := child.desired.W, child.desired.H
 		if child.width.Kind == sema.LengthStar {
@@ -138,7 +141,7 @@ func (e *Engine) arrangeComposer(box *Box, composer widget.Composer) {
 		if !want.FreeH {
 			h = min(h, height)
 		}
-		e.arrange(child, Rect{X: -shiftX, Y: y, W: w, H: h})
+		e.arrange(child, Rect{X: left - shiftX, Y: y, W: w, H: h})
 		y += h
 	}
 }

@@ -1,3 +1,5 @@
+// Arrange is the whole point of a scrolling region: the content is measured against unlimited height.
+
 package widgets
 
 import (
@@ -71,6 +73,9 @@ func (s *scrollbox) Inset() (int, int) {
 	}
 	return 1, 0
 }
+
+// Origin is the corner: the scrollbar column is on the right.
+func (s *scrollbox) Origin() (int, int) { return 0, 0 }
 
 func (s *scrollbox) Measure(maxW, maxH int) (int, int) { return maxW, maxH }
 

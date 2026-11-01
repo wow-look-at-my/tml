@@ -48,6 +48,8 @@ type Composer interface {
 	Native
 	// Inset is the space the widget keeps for itself around its children.
 	Inset() (horizontal, vertical int)
+	// Origin is where the children start inside the widget: the part of the inset on the left and on the top.
+	Origin() (left, top int)
 	// Compose draws the widget at the size it was given, around its children.
 	Compose(slots Slots, w, h int) string
 }

@@ -1,3 +1,5 @@
+// borders are named rather than described, so a template never spells out box drawing characters.
+
 package widgets
 
 import (
@@ -73,6 +75,9 @@ func newFrame(dialog bool) builder {
 
 // Inset is the border on all several sides plus the horizontal padding.
 func (f *frame) Inset() (int, int) { return 2 + f.pad*2, 2 }
+
+// Origin is inside the left border and its padding, and under the top border.
+func (f *frame) Origin() (int, int) { return 1 + f.pad, 1 }
 
 // DefaultAnchor puts a dialog in the middle of a canvas. A frame is a decoration and stays where it was put.
 func (f *frame) DefaultAnchor() string {

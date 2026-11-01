@@ -28,6 +28,8 @@ type wrapper struct {
 
 func (w wrapper) Inset() (int, int) { return w.insetW, w.insetH }
 
+func (w wrapper) Origin() (int, int) { return w.insetW / 2, w.insetH / 2 }
+
 func (w wrapper) Compose(widget.Slots, int, int) string { return "" }
 
 func (w wrapper) Arrange() widget.Layout {
