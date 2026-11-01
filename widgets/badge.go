@@ -1,3 +1,5 @@
+// badge.go holds the badge code.
+
 package widgets
 
 import (

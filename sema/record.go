@@ -1,3 +1,5 @@
+// record.go holds the record code.
+
 package sema
 
 import (

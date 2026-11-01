@@ -1,0 +1,6 @@
+<Component xmlns="urn:tml:v1" name="App">
+	<Property name="rows" type="record[]" default=""/>
+	<Template>
+		<Stack itemsSource="{rows}" itemTemplate="Nope"/>
+	</Template>
+</Component>

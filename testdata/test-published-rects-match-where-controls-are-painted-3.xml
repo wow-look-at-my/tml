@@ -1,0 +1,4 @@
+<Stack orientation="horizontal" gap="3">
+			<Button id="a" label="Aaa"/>
+			<Button id="b" label="Bbb"/>
+		</Stack>

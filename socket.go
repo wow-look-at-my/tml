@@ -1,3 +1,5 @@
+// socket.go holds the socket code.
+
 package tml
 
 import (

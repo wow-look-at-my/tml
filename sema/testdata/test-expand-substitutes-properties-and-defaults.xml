@@ -1,0 +1,9 @@
+<Component xmlns="urn:tml:v1" name="App">
+	<Property name="title" type="string" required="true"/>
+	<Property name="gap" type="int" default="2"/>
+	<Template>
+		<Stack gap="{gap}">
+			<Text>{title}</Text>
+		</Stack>
+	</Template>
+</Component>

@@ -1,3 +1,5 @@
+// fade.go holds the fade code.
+
 package widgets
 
 import (

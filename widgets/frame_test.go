@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/wow-look-at-my/tml/sema"
 	"github.com/wow-look-at-my/tml/widget"
 )
 
@@ -27,15 +28,12 @@ func TestBorderDrawsAFrameAroundItsChildren(t *testing.T) {
 }
 
 func TestBorderInsetIsTheFrameItDraws(t *testing.T) {
-	w, h := composer(t, "Border", nil).Inset()
-	assert.Equal(t, 4, w, "a border either side plus the default padding")
-	assert.Equal(t, 2, h)
-
-	w, _ = composer(t, "Border", map[string]string{"pad": "2"}).Inset()
-	assert.Equal(t, 6, w, "padding is on both sides, inside the border")
-
-	w, _ = composer(t, "Border", map[string]string{"pad": "0"}).Inset()
-	assert.Equal(t, 2, w, "pad=0 is the tight frame")
+	assert.Equal(t, sema.Thickness{Top: 1, Right: 2, Bottom: 1, Left: 2}, composer(t, "Border", nil).Insets(),
+		"a border on every side, plus the default padding either side")
+	assert.Equal(t, sema.Thickness{Top: 1, Right: 3, Bottom: 1, Left: 3},
+		composer(t, "Border", map[string]string{"pad": "2"}).Insets(), "padding is on both sides, inside the border")
+	assert.Equal(t, sema.Thickness{Top: 1, Right: 1, Bottom: 1, Left: 1},
+		composer(t, "Border", map[string]string{"pad": "0"}).Insets(), "pad=0 is the tight frame")
 }
 
 func TestBorderTakesATitleInItsTopEdge(t *testing.T) {
@@ -89,8 +87,7 @@ func TestPopupIsADialogShapedFrame(t *testing.T) {
 	require.True(t, ok)
 	assert.Equal(t, "center", anchored.DefaultAnchor())
 
-	w, _ := popup.Inset()
-	assert.Equal(t, 4, w, "a dialog is padded inside its border")
+	assert.Equal(t, 4, popup.Insets().Horizontal(), "a dialog is padded inside its border")
 }
 
 func TestBorderStaysWhereItIsPut(t *testing.T) {

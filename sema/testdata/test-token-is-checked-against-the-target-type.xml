@@ -1,0 +1,5 @@
+<Component xmlns="urn:tml:v1" name="App">
+	<Import src="./theme.tml"/>
+	<Property name="accent" type="color" default="{theme.spacing}"/>
+	<Template><Box/></Template>
+</Component>

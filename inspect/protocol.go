@@ -1,3 +1,5 @@
+// protocol.go holds the protocol code.
+
 package inspect
 
 import (

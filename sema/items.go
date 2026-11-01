@@ -1,3 +1,5 @@
+// items.go holds the items code.
+
 package sema
 
 import (

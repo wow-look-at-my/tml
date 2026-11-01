@@ -1,0 +1,6 @@
+<Scrollbox offset="4" height="2" width="20">
+		<Stack>
+			<Button id="top" action="top" label="Top"/>
+			<Button id="bottom" action="bottom" label="Bottom"/>
+		</Stack>
+	</Scrollbox>

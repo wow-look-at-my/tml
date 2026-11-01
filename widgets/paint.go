@@ -1,3 +1,5 @@
+// paint.go holds the paint code.
+
 package widgets
 
 import (

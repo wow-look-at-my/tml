@@ -1,0 +1,5 @@
+
+<Theme xmlns="urn:tml:v1" name="slh">
+	<Token name="accent" light="#000" dark="#fff"/>
+	<Style name="card" fg="{theme.accent}"/>
+</Theme>

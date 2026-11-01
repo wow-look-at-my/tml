@@ -1,3 +1,5 @@
+// textbox.go holds the textbox code.
+
 package widgets
 
 import (

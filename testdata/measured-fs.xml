@@ -1,0 +1,8 @@
+<Component xmlns="urn:tml:v1" name="App">
+	<Template>
+		<Stack>
+			<Text>abcd</Text>
+			<Badge label="abcd"/>
+		</Stack>
+	</Template>
+</Component>

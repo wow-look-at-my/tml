@@ -1,5 +1,7 @@
 package tml_test
 
+import _ "embed"
+
 import (
 	"fmt"
 	"strings"
@@ -83,34 +85,8 @@ func TestAnEmptyListHasNothingOnScreen(t *testing.T) {
 	assert.Equal(t, tml.Slice{First: -1, Last: -1}, w.Slice(heights{0, 0}, 4))
 }
 
-const windowedList = `<?xml version="1.1" encoding="UTF-8"?>
-<Component xmlns="urn:tml:v1" name="List">
-	<DataTemplate name="Row">
-		<Property name="title" type="string" default=""/>
-		<Property name="lines" type="string[]" default=""/>
-		<Template>
-			<Stack width="*">
-				<Text>{title}</Text>
-				<Scrollbox scrollbar="never">
-					<Stack width="*">
-						<For each="{lines}" as="line">
-							<Text>{line}</Text>
-						</For>
-					</Stack>
-				</Scrollbox>
-			</Stack>
-		</Template>
-	</DataTemplate>
-
-	<Property name="rows" type="record[]" default=""/>
-	<Property name="offset" type="int" default="0"/>
-	<Template>
-		<Scrollbox scrollbar="never" offset="{offset}">
-			<Stack itemsSource="{rows}" itemTemplate="Row" width="*"/>
-		</Scrollbox>
-	</Template>
-</Component>
-`
+//go:embed testdata/windowed-list.xml
+var windowedList string
 
 func row(i int) map[string]sema.Value {
 	return map[string]sema.Value{

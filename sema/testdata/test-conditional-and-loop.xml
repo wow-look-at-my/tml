@@ -1,0 +1,13 @@
+<Component xmlns="urn:tml:v1" name="App">
+	<Property name="tags" type="string[]" default=""/>
+	<Property name="note" type="string" default=""/>
+	<Template>
+		<Stack>
+			<Text if="{note}">{note}</Text>
+			<Text if="{not note}">no note</Text>
+			<For each="{tags}" as="tag" index="i">
+				<Text>{i}:{tag}</Text>
+			</For>
+		</Stack>
+	</Template>
+</Component>

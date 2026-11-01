@@ -1,5 +1,7 @@
 package tml_test
 
+import _ "embed"
+
 import (
 	"bytes"
 	"io"
@@ -22,18 +24,8 @@ import (
 	"github.com/wow-look-at-my/tml/sema"
 )
 
-const liveBlock = `<?xml version="1.1" encoding="UTF-8"?>
-<Component xmlns="urn:tml:v1" name="Block">
-	<Property name="head" type="string" required="true"/>
-	<Property name="rows" type="string[]" default=""/>
-	<Template>
-		<Stack>
-			<Text fg="#ff0000" bold="true">{head}</Text>
-			<For each="{rows}" as="row"><Text>  {row}</Text></For>
-		</Stack>
-	</Template>
-</Component>
-`
+//go:embed testdata/live-block.xml
+var liveBlock string
 
 // syncBuffer is the terminal a region writes to. The program and the region's own goroutine both write to it.
 type syncBuffer struct {

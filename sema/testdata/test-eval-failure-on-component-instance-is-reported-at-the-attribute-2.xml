@@ -1,0 +1,7 @@
+<Component xmlns="urn:tml:v1" name="Card">
+	<Property name="tone" type="string" default=""/>
+	<Property name="label" type="string" default=""/>
+	<Template>
+		<Text>{label}</Text>
+	</Template>
+</Component>

@@ -1,0 +1,11 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<Component xmlns="urn:tml:v1" name="Block">
+	<Property name="head" type="string" required="true"/>
+	<Property name="rows" type="string[]" default=""/>
+	<Template>
+		<Stack>
+			<Text fg="#ff0000" bold="true">{head}</Text>
+			<For each="{rows}" as="row"><Text>  {row}</Text></For>
+		</Stack>
+	</Template>
+</Component>

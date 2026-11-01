@@ -1,3 +1,5 @@
+// analyze.go holds the analyze code.
+
 package sema
 
 import (

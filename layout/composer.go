@@ -1,3 +1,5 @@
+// composer is the widget behind this box if it wraps children, and nil otherwise.
+
 package layout
 
 import (
@@ -51,7 +53,8 @@ func childrenWidth(box *Box) int {
 
 // measureComposer sizes a wrapping widget: its children measured against what is left after its own inset, stacked
 func (e *Engine) measureComposer(box *Box, inner Constraints) Size {
-	insetW, insetH := box.composer().Inset()
+	insets := box.composer().Insets()
+	insetW, insetH := insets.Horizontal(), insets.Vertical()
 	want := arrangement(box)
 
 	child := Constraints{MaxW: max(0, inner.MaxW-insetW), MaxH: max(0, inner.MaxH-insetH)}
@@ -86,9 +89,10 @@ func (e *Engine) measureComposer(box *Box, inner Constraints) Size {
 }
 
 func (e *Engine) arrangeComposer(box *Box, composer widget.Composer) {
-	insetW, insetH := composer.Inset()
-	width := max(0, box.Content.W-insetW)
-	height := max(0, box.Content.H-insetH)
+	insets := composer.Insets()
+	left, top := insets.Left, insets.Top
+	width := max(0, box.Content.W-insets.Horizontal())
+	height := max(0, box.Content.H-insets.Vertical())
 	want := arrangement(box)
 
 	// A scrolling region cannot scroll past its own content: the widget draws the last screenful rather than blank space,
@@ -122,13 +126,16 @@ func (e *Engine) arrangeComposer(box *Box, composer widget.Composer) {
 		shiftX = 0
 	}
 
-	y := -shiftY
+	// A template's chrome is the widget's whole face, so it takes whatever size the widget was given.
+	_, templated := composer.(widget.Templated)
+
+	y := top - shiftY
 	for _, child := range box.Children {
 		w, h := child.desired.W, child.desired.H
-		if child.width.Kind == sema.LengthStar {
+		if child.width.Kind == sema.LengthStar || templated {
 			w = width
 		}
-		if child.height.Kind == sema.LengthStar {
+		if child.height.Kind == sema.LengthStar || templated {
 			h = height
 		}
 		// A child may only overflow on an axis the widget declared free. That is what a scrolling region is for; anywhere
@@ -138,7 +145,11 @@ func (e *Engine) arrangeComposer(box *Box, composer widget.Composer) {
 		if !want.FreeH {
 			h = min(h, height)
 		}
-		e.arrange(child, Rect{X: -shiftX, Y: y, W: w, H: h})
+		x := left - shiftX
+		if want.CenterX && !want.FreeW {
+			x += (width - w) / 2
+		}
+		e.arrange(child, Rect{X: x, Y: y, W: w, H: h})
 		y += h
 	}
 }

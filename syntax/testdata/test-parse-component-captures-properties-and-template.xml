@@ -1,0 +1,10 @@
+<Component xmlns="urn:tml:v1" name="Card">
+	<Import src="./Badge.tml"/>
+	<Property name="title" type="string" required="true"/>
+	<Property name="subtitle" type="string" default=""/>
+	<Template>
+		<Stack orientation="vertical" gap="1">
+			<Text>{title}</Text>
+		</Stack>
+	</Template>
+</Component>

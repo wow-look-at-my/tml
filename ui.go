@@ -1,3 +1,5 @@
+// ui.go holds the ui code.
+
 package tml
 
 import (

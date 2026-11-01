@@ -1,3 +1,5 @@
+// Arrange is the whole point of a scrolling region: the content is measured against unlimited height.
+
 package widgets
 
 import (
@@ -6,6 +8,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 
+	"github.com/wow-look-at-my/tml/sema"
 	"github.com/wow-look-at-my/tml/widget"
 )
 
@@ -64,12 +67,12 @@ func (s *scrollbox) Arrange() widget.Layout {
 	}
 }
 
-// Inset reserves the scrollbar column.
-func (s *scrollbox) Inset() (int, int) {
+// Insets reserves the scrollbar column, on the right.
+func (s *scrollbox) Insets() sema.Thickness {
 	if s.bar == "never" {
-		return 0, 0
+		return sema.Thickness{}
 	}
-	return 1, 0
+	return sema.Thickness{Right: 1}
 }
 
 func (s *scrollbox) Measure(maxW, maxH int) (int, int) { return maxW, maxH }
@@ -77,7 +80,7 @@ func (s *scrollbox) Measure(maxW, maxH int) (int, int) { return maxW, maxH }
 func (s *scrollbox) Render(w, h int) string { return s.Compose(nil, w, h) }
 
 func (s *scrollbox) Compose(slots widget.Slots, w, h int) string {
-	gutter, _ := s.Inset()
+	gutter := s.Insets().Right
 	viewW := max(0, w-gutter)
 
 	content := lipgloss.JoinVertical(lipgloss.Left, slots.Default()...)

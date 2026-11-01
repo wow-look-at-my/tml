@@ -1,0 +1,4 @@
+<Component xmlns="urn:tml:v1" name="App">
+	<DataTemplate name="Row"><Template/></DataTemplate>
+	<Template/>
+</Component>

@@ -1,3 +1,5 @@
+// inspector.go holds the inspector code.
+
 package tml
 
 import (

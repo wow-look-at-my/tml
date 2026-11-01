@@ -1,3 +1,5 @@
+// discover.go holds the discover code.
+
 package cli
 
 import (

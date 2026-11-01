@@ -1,0 +1,5 @@
+<Component xmlns="urn:tml:v1" name="App">
+	<Template>
+		<Dock side="top"/>
+	</Template>
+</Component>

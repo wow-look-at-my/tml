@@ -1,0 +1,3 @@
+<Theme xmlns="urn:tml:v1" name="default">
+	<Token name="spacing" value="wide"/>
+</Theme>

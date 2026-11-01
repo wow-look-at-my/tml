@@ -1,0 +1,12 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<Component xmlns="urn:tml:v1" name="Card">
+	<Property name="mode" type="string" default="wrap"/>
+	<Template>
+		<Box width="20">
+			<Stack orientation="vertical">
+				<Text overflow="{mode}">a line that is far too long for this box</Text>
+				<Text>after</Text>
+			</Stack>
+		</Box>
+	</Template>
+</Component>

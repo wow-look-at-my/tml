@@ -1,5 +1,7 @@
 package sema
 
+import _ "embed"
+
 import (
 	"fmt"
 	"strings"
@@ -12,12 +14,9 @@ import (
 )
 
 // The faulty attribute is never the leading on its element, so a diagnostic that still pointed at the element would
-const attrPosApp = `<Component xmlns="urn:tml:v1" name="App">
-	<Property name="count" type="int" default="1"/>
-	<Template>
-		<Text style="a" width="%s">hi</Text>
-	</Template>
-</Component>`
+//
+//go:embed testdata/attr-pos-app.xml
+var attrPosApp string
 
 const attrPosTextLine = 5
 
@@ -65,20 +64,8 @@ func TestEvalFailureOnNativeIsReportedAtTheAttribute(t *testing.T) {
 }
 
 func TestEvalFailureOnComponentInstanceIsReportedAtTheAttribute(t *testing.T) {
-	app := `<Component xmlns="urn:tml:v1" name="App">
-	<Import src="./card.tml"/>
-	<Property name="count" type="int" default="1"/>
-	<Template>
-		<Card tone="x" label="{not count}"/>
-	</Template>
-</Component>`
-	card := `<Component xmlns="urn:tml:v1" name="Card">
-	<Property name="tone" type="string" default=""/>
-	<Property name="label" type="string" default=""/>
-	<Template>
-		<Text>{label}</Text>
-	</Template>
-</Component>`
+	app := testEvalFailureOnComponentInstanceIsReportedAtTheAttributeXml
+	card := testEvalFailureOnComponentInstanceIsReportedAtTheAttributeXml2
 
 	_, err := expand(t, map[string]string{"app.tml": app, "card.tml": card}, nil)
 	require.Error(t, err)
@@ -88,11 +75,7 @@ func TestEvalFailureOnComponentInstanceIsReportedAtTheAttribute(t *testing.T) {
 
 // An element-scoped diagnostic must not drift onto an attribute: an unknown element is a problem with the element
 func TestUnknownElementStaysOnTheElement(t *testing.T) {
-	body := `<Component xmlns="urn:tml:v1" name="App">
-	<Template>
-		<Dock side="top"/>
-	</Template>
-</Component>`
+	body := testUnknownElementStaysOnTheElementXml
 	_, err := build(t, map[string]string{"app.tml": body})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unknown element <Dock>")
@@ -103,3 +86,12 @@ func TestUnknownElementStaysOnTheElement(t *testing.T) {
 	assert.Equal(t, 4, syntaxErr.Pos.Line)
 	assert.Equal(t, colOf(t, src, 4, `<Dock`), syntaxErr.Pos.Col)
 }
+
+//go:embed testdata/test-eval-failure-on-component-instance-is-reported-at-the-attribute.xml
+var testEvalFailureOnComponentInstanceIsReportedAtTheAttributeXml string
+
+//go:embed testdata/test-eval-failure-on-component-instance-is-reported-at-the-attribute-2.xml
+var testEvalFailureOnComponentInstanceIsReportedAtTheAttributeXml2 string
+
+//go:embed testdata/test-unknown-element-stays-on-the-element.xml
+var testUnknownElementStaysOnTheElementXml string

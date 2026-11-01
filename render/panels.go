@@ -1,3 +1,5 @@
+// panels.go holds the panels code.
+
 package render
 
 import (

@@ -1,3 +1,5 @@
+// attrs.go holds the attrs code.
+
 package widget
 
 import (

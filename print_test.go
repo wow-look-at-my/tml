@@ -1,5 +1,7 @@
 package tml_test
 
+import _ "embed"
+
 import (
 	"bytes"
 	"strings"
@@ -14,18 +16,8 @@ import (
 	"github.com/wow-look-at-my/tml/sema"
 )
 
-const listingDoc = `<?xml version="1.1" encoding="UTF-8"?>
-<Component xmlns="urn:tml:v1" name="Listing">
-	<Property name="title" type="string" required="true"/>
-	<Property name="rows" type="string[]" default=""/>
-	<Template>
-		<Stack>
-			<Text fg="#ff0000" bold="true">{title}</Text>
-			<Table columns=",ID,NAME" rows="{rows}" separator="&#9;" border="false" rule="false" spacing="2"/>
-		</Stack>
-	</Template>
-</Component>
-`
+//go:embed testdata/listing-doc.xml
+var listingDoc string
 
 func loadListing(t *testing.T) *tml.View {
 	t.Helper()

@@ -1,3 +1,5 @@
+// sparkline.go holds the sparkline code.
+
 package widgets
 
 import (

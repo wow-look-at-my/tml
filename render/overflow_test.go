@@ -1,5 +1,7 @@
 package render_test
 
+import _ "embed"
+
 import (
 	"io/fs"
 	"strings"
@@ -13,21 +15,10 @@ import (
 	"github.com/wow-look-at-my/tml/sema"
 )
 
-// A card holding a log is the case overflow exists for. The box is as tall as
-// the log has lines, and a long line neither wraps nor pushes the border down.
-const overflowDoc = `<?xml version="1.1" encoding="UTF-8"?>
-<Component xmlns="urn:tml:v1" name="Card">
-	<Property name="mode" type="string" default="wrap"/>
-	<Template>
-		<Box width="20">
-			<Stack orientation="vertical">
-				<Text overflow="{mode}">a line that is far too long for this box</Text>
-				<Text>after</Text>
-			</Stack>
-		</Box>
-	</Template>
-</Component>
-`
+// A card holding a log is the case overflow exists for.
+//
+//go:embed testdata/overflow-doc.xml
+var overflowDoc string
 
 func renderMode(t *testing.T, mode string) string {
 	t.Helper()

@@ -115,9 +115,14 @@ try {
 		if (!tree.includes(want)) fail('tree', tree, want);
 	}
 
-	// A cell resolves to the innermost element covering it.
-	if (tml('at', '--x', '25', '--y', '4') !== 'session') {
-		fail('hit test at 25,4', tml('at', '--x', '25', '--y', '4'), 'session');
+	// A cell resolves to the innermost element covering it. A later row is the Session frame's top edge; the region starts under it.
+	if (tml('at', '--x', '25', '--y', '5') !== 'session') {
+		fail('hit test at 25,5', tml('at', '--x', '25', '--y', '5'), 'session');
+	}
+	let edge = '';
+	try { edge = tml('at', '--x', '25', '--y', '4'); } catch { /* nothing with an id covers the frame edge */ }
+	if (edge === 'session') {
+		fail('hit test at 25,4', edge, 'the frame edge, not the region inside it');
 	}
 
 	// 3. A key reaches the program and changes what an element draws.

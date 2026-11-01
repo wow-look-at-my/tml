@@ -1,0 +1,7 @@
+<Component xmlns="urn:tml:v1" name="MessageHeader">
+	<Property name="role" type="string"/>
+	<Property name="model" type="string" default=""/>
+	<Template>
+		<Text>{role} {model}</Text>
+	</Template>
+</Component>

@@ -70,7 +70,7 @@ Every widget also takes the style attributes (`fg`, `bg`, `bold`, `padding`, `bo
 
 | Element | Attributes | Notes |
 | --- | --- | --- |
-| `Border` | `kind`, `title`, `titleAlign`, `color`, `pad` | A frame around its children. `kind` is a lipgloss border name. The title is spliced into the top edge. |
+| `Border` | `kind`, `title`, `titleAlign`, `color`, `pad`, `contentAlign` | A frame around its children. `kind` is a lipgloss border name. The title is spliced into the top edge. `contentAlign="center"` puts each child in the middle of the width, and publishes it there. |
 | `Popup` | as `Border` | A dialog. Defaults to a rounded border and centres itself on a `Canvas`. |
 | `Scrollbox` | `offset`, `offsetX`, `scrollbar`, `contentHeight`, `fade`, `moreAbove`, `moreBelow` | A viewport onto taller content. The host owns the offset. The wheel reports `Scrolled` and the host moves it. `scrollbar` is `auto`, `always` or `never`. `contentHeight` says the children are a window over content that long -- see below. `fade` blends the rows at an edge that has content beyond it toward the background, one step per row of the band, so the edge reads as a gradient; `moreAbove` and `moreBelow` name those edges for a host that cut the window itself and has no total to offer. |
 
@@ -106,7 +106,7 @@ The window stops at the first and the last screenful. It steps over an item of h
 
 | Element | Attributes | Notes |
 | --- | --- | --- |
-| `Button` | `label`, `variant`, `disabled` | `variant` is `default`, `primary` or `danger`. Focused, hovered and pressed each look different. |
+| `Button` | `label`, `variant`, `disabled` | `variant` is `default`, `primary` or `danger`. Focused, hovered and pressed each look different. In the tree a button is a `<Border>` around its content: the button takes the focus, and the border draws. |
 | `Textbox` | `value`, `placeholder`, `cursor`, `disabled`, `password` | Draws a field. It does not edit one. Editing is state, and state is the host's. |
 | `Checkbox` | `label`, `checked`, `disabled` | `[x]` / `[ ]`. |
 | `Radio` | `label`, `checked`, `disabled` | `(•)` / `( )`. The host owns which one is on. |
@@ -212,9 +212,10 @@ Then opt into whatever else applies:
 | --- | --- |
 | `Focusable` | Takes part in the focus ring. Returning false means disabled, and a disabled widget is unreachable by pointer too. |
 | `Stateful` | Told focus, hover and press before each measure. |
-| `Composer` | Wraps the children written inside it: declare the `Inset` you keep, get them back already drawn. |
+| `Composer` | Wraps the children written inside it: declare the `Insets` you keep on each side, get them back already drawn. The left and top insets are what put a child's published rect where the widget draws it. |
 | `Arranger` | Says how those children are measured and placed -- fill, free (overflowing), or offset. |
 | `Slotted` | Names the regions content can be written into, so a misspelt `<Button.Contnt>` fails when the view loads. |
+| `Templated` | Names another element the engine wraps the children in, the way a WPF control template is a Border around a ContentPresenter. `Bind` hands that element back, so the widget's state can steer how it draws. `Button` is a templated `Border`. |
 | `Anchored` | An opinion about where it sits on a `Canvas`. `Popup` says centre. |
 
 `Border`, `Popup` and `Scrollbox` are built on exactly these interfaces and nothing else, so a widget written outside. The language is not a second-class one.

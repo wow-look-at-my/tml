@@ -315,6 +315,14 @@ func (p *pass) build(node *sema.Node) (*Box, error) {
 		if _, wraps := box.Native.(widget.Composer); !wraps {
 			return box, nil
 		}
+		if templated, ok := box.Native.(widget.Templated); ok {
+			chrome, err := p.buildTemplate(node, templated)
+			if err != nil {
+				return nil, err
+			}
+			box.Children = []*Box{chrome}
+			return box, rejectAttachedProperties(box)
+		}
 	}
 	for _, child := range node.Children {
 		built, err := p.build(child)

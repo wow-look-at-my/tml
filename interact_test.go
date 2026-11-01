@@ -1,5 +1,7 @@
 package tml_test
 
+import _ "embed"
+
 import (
 	"strings"
 	"testing"
@@ -14,11 +16,9 @@ import (
 )
 
 // buttons is a row of several controls, the middle control disabled.
-const buttons = `<Stack orientation="horizontal" gap="1">
-	<Button id="save" action="save" label="Save"/>
-	<Button id="locked" label="Locked" disabled="true"/>
-	<Button id="quit" action="quit" label="Quit"/>
-</Stack>`
+//
+//go:embed testdata/buttons.xml
+var buttons string
 
 // interactive loads a view and renders a single frame, which is what publishes the geometry the UI resolves clicks against.
 func interactive(t *testing.T, template string, w, h int) *tml.View {
@@ -145,12 +145,7 @@ func TestHoverReachesTheFrame(t *testing.T) {
 // A control scrolled out of its viewport is not on the screen, so clicking
 // where it.
 func TestScrolledOutControlsCannotBeClicked(t *testing.T) {
-	loaded := interactive(t, `<Scrollbox offset="4" height="2" width="20">
-		<Stack>
-			<Button id="top" action="top" label="Top"/>
-			<Button id="bottom" action="bottom" label="Bottom"/>
-		</Stack>
-	</Scrollbox>`, 20, 2)
+	loaded := interactive(t, testScrolledOutControlsCannotBeClickedXml, 20, 2)
 
 	for _, target := range loaded.UI().Targets() {
 		assert.NotEqual(t, "top", target.ID, "the first button has been scrolled away")
@@ -159,14 +154,7 @@ func TestScrolledOutControlsCannotBeClicked(t *testing.T) {
 
 // Where a scrolling region stopped is a number only the frame knows.
 func TestTheFrameReportsWhereAScrollingRegionLanded(t *testing.T) {
-	loaded := interactive(t, `<Scrollbox id="log" offset="9999" height="2" width="20">
-		<Stack>
-			<Text>one</Text>
-			<Text>two</Text>
-			<Text>three</Text>
-			<Text>four</Text>
-		</Stack>
-	</Scrollbox>`, 20, 2)
+	loaded := interactive(t, testTheFrameReportsWhereAScrollingRegionLandedXml, 20, 2)
 
 	target, ok := loaded.UI().Target("log")
 	require.True(t, ok)
@@ -198,10 +186,7 @@ func TestAViewWithNoControlsHasNoRing(t *testing.T) {
 
 // A pair of controls answering to the same id would make focus ambiguous from a single frame to the next.
 func TestDuplicateIDsAreRejected(t *testing.T) {
-	loaded, err := view(t, app(`<Stack>
-		<Button id="go" label="One"/>
-		<Button id="go" label="Two"/>
-	</Stack>`), tml.Options{})
+	loaded, err := view(t, app(testDuplicateIDsAreRejectedXml), tml.Options{})
 	require.NoError(t, err)
 
 	_, err = loaded.Render(nil, 20, 6)
@@ -215,19 +200,14 @@ func TestPublishedRectsMatchWhereControlsArePainted(t *testing.T) {
 		name     string
 		template string
 	}{
-		{"grid", `<Grid columns="auto,1*" rows="auto,auto" gap="1">
-			<Button id="a" label="Aaa" Grid.row="0" Grid.column="0"/>
-			<Button id="b" label="Bbb" Grid.row="0" Grid.column="1"/>
-			<Button id="c" label="Ccc" Grid.row="1" Grid.column="1"/>
-		</Grid>`},
-		{"centered stack", `<Stack align="center" gap="1" width="40">
-			<Button id="a" label="Aaa"/>
-			<Button id="b" label="Bbbbbbbb"/>
-		</Stack>`},
-		{"horizontal stack", `<Stack orientation="horizontal" gap="3">
-			<Button id="a" label="Aaa"/>
-			<Button id="b" label="Bbb"/>
-		</Stack>`},
+		{"grid", testPublishedRectsMatchWhereControlsArePaintedXml},
+		{"centered stack", testPublishedRectsMatchWhereControlsArePaintedXml2},
+		{"horizontal stack", testPublishedRectsMatchWhereControlsArePaintedXml3},
+		{"border", `<Border><Stack><Button id="a" label="Aaa"/></Stack></Border>`},
+		{"padded border", `<Border pad="3"><Button id="a" label="Aaa"/></Border>`},
+		{"nested borders", testPublishedRectsMatchWhereControlsArePaintedXml4},
+		{"popup", `<Canvas><Popup title="Ask"><Button id="a" label="Aaa"/></Popup></Canvas>`},
+		{"scrollbox in a border", testPublishedRectsMatchWhereControlsArePaintedXml5},
 	} {
 		t.Run(panel.name, func(t *testing.T) {
 			loaded := interactive(t, panel.template, 40, 12)
@@ -280,3 +260,27 @@ func targetOf(t *testing.T, loaded *tml.View, id string) tml.Target {
 	t.Fatalf("no control with id %q in the ring", id)
 	return tml.Target{}
 }
+
+//go:embed testdata/test-scrolled-out-controls-cannot-be-clicked.xml
+var testScrolledOutControlsCannotBeClickedXml string
+
+//go:embed testdata/test-the-frame-reports-where-a-scrolling-region-landed.xml
+var testTheFrameReportsWhereAScrollingRegionLandedXml string
+
+//go:embed testdata/test-duplicate-i-ds-are-rejected.xml
+var testDuplicateIDsAreRejectedXml string
+
+//go:embed testdata/test-published-rects-match-where-controls-are-painted.xml
+var testPublishedRectsMatchWhereControlsArePaintedXml string
+
+//go:embed testdata/test-published-rects-match-where-controls-are-painted-2.xml
+var testPublishedRectsMatchWhereControlsArePaintedXml2 string
+
+//go:embed testdata/test-published-rects-match-where-controls-are-painted-3.xml
+var testPublishedRectsMatchWhereControlsArePaintedXml3 string
+
+//go:embed testdata/test-published-rects-match-where-controls-are-painted-4.xml
+var testPublishedRectsMatchWhereControlsArePaintedXml4 string
+
+//go:embed testdata/test-published-rects-match-where-controls-are-painted-5.xml
+var testPublishedRectsMatchWhereControlsArePaintedXml5 string

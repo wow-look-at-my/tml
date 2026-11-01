@@ -1,0 +1,5 @@
+
+<Theme xmlns="urn:tml:v1" name="slh">
+	<Style name="a" extends="b"/>
+	<Style name="b" extends="a"/>
+</Theme>

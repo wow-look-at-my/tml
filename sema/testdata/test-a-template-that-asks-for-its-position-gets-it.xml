@@ -1,0 +1,11 @@
+<Component xmlns="urn:tml:v1" name="App">
+	<Property name="lines" type="string[]" default=""/>
+	<DataTemplate name="Numbered">
+		<Property name="value" type="string" default=""/>
+		<Property name="index" type="int" default="0"/>
+		<Template><Text>{index}: {value}</Text></Template>
+	</DataTemplate>
+	<Template>
+		<Stack itemsSource="{lines}" itemTemplate="Numbered"/>
+	</Template>
+</Component>

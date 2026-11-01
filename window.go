@@ -1,3 +1,5 @@
+// window.go holds the window code.
+
 package tml
 
 // Heights is the list a Window scrolls over: how many items there are, and

@@ -1,3 +1,5 @@
+// watch.go holds the watch code.
+
 package tml
 
 import (

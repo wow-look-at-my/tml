@@ -1,0 +1,7 @@
+<Component xmlns="urn:tml:v1" name="App">
+	<Template>
+		<Text>
+			Hello {name}
+		</Text>
+	</Template>
+</Component>

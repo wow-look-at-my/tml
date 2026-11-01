@@ -26,7 +26,10 @@ type wrapper struct {
 	offsetX, offsetY int
 }
 
-func (w wrapper) Inset() (int, int) { return w.insetW, w.insetH }
+// Insets splits the inset evenly, and an odd cell goes on the right or the bottom.
+func (w wrapper) Insets() sema.Thickness {
+	return sema.Thickness{Left: w.insetW / 2, Right: w.insetW - w.insetW/2, Top: w.insetH / 2, Bottom: w.insetH - w.insetH/2}
+}
 
 func (w wrapper) Compose(widget.Slots, int, int) string { return "" }
 
@@ -147,7 +150,7 @@ func TestComposerChildrenGoInsideItsInset(t *testing.T) {
 	frame := child(root, 0)
 
 	assert.Equal(t, Size{W: 9, H: 3}, frame.Content, "five cells of text plus the frame")
-	assert.Equal(t, Rect{X: 0, Y: 0, W: 5, H: 1}, child(frame, 0).Rect)
+	assert.Equal(t, Rect{X: 2, Y: 1, W: 5, H: 1}, child(frame, 0).Rect, "the text starts at the frame's origin, not its corner")
 }
 
 func TestUnboundedComposerLetsChildrenOverflow(t *testing.T) {

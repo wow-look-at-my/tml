@@ -1,5 +1,7 @@
 package syntax
 
+import _ "embed"
+
 import (
 	"strings"
 	"testing"
@@ -29,12 +31,7 @@ func requirePos(t *testing.T, err error, src string, line int, attr, element str
 }
 
 func TestUnknownAttributeIsReportedAtTheAttribute(t *testing.T) {
-	src := header + `<Component xmlns="urn:tml:v1" name="Card">
-	<Property name="title" type="string" bogus="x"/>
-	<Template>
-		<Text>hi</Text>
-	</Template>
-</Component>`
+	src := header + testUnknownAttributeIsReportedAtTheAttributeXml
 
 	_, err := Parse("test.tml", []byte(src))
 	require.Error(t, err)
@@ -43,12 +40,7 @@ func TestUnknownAttributeIsReportedAtTheAttribute(t *testing.T) {
 }
 
 func TestBadBooleanIsReportedAtTheAttribute(t *testing.T) {
-	src := header + `<Component xmlns="urn:tml:v1" name="Card">
-	<Property name="title" type="string" required="maybe"/>
-	<Template>
-		<Text>hi</Text>
-	</Template>
-</Component>`
+	src := header + testBadBooleanIsReportedAtTheAttributeXml
 
 	_, err := Parse("test.tml", []byte(src))
 	require.Error(t, err)
@@ -58,11 +50,7 @@ func TestBadBooleanIsReportedAtTheAttribute(t *testing.T) {
 
 // Template and style attributes keep their own positions on the way through, so the later passes that report against
 func TestParsedAttributesCarryTheirOwnPositions(t *testing.T) {
-	src := header + `<Component xmlns="urn:tml:v1" name="Card">
-	<Template>
-		<Text style="a" width="2"/>
-	</Template>
-</Component>`
+	src := header + testParsedAttributesCarryTheirOwnPositionsXml
 
 	file, err := Parse("test.tml", []byte(src))
 	require.NoError(t, err)
@@ -78,9 +66,7 @@ func TestParsedAttributesCarryTheirOwnPositions(t *testing.T) {
 }
 
 func TestStyleAttributesCarryTheirOwnPositions(t *testing.T) {
-	src := header + `<Theme xmlns="urn:tml:v1" name="t">
-	<Style name="title" bold="true" foreground="#fff"/>
-</Theme>`
+	src := header + testStyleAttributesCarryTheirOwnPositionsXml
 
 	file, err := Parse("test.tml", []byte(src))
 	require.NoError(t, err)
@@ -92,3 +78,15 @@ func TestStyleAttributesCarryTheirOwnPositions(t *testing.T) {
 		assert.Equal(t, colOf(t, src, 3, attr.Name+`=`), attr.Pos.Col, "attribute %q", attr.Name)
 	}
 }
+
+//go:embed testdata/test-unknown-attribute-is-reported-at-the-attribute.xml
+var testUnknownAttributeIsReportedAtTheAttributeXml string
+
+//go:embed testdata/test-bad-boolean-is-reported-at-the-attribute.xml
+var testBadBooleanIsReportedAtTheAttributeXml string
+
+//go:embed testdata/test-parsed-attributes-carry-their-own-positions.xml
+var testParsedAttributesCarryTheirOwnPositionsXml string
+
+//go:embed testdata/test-style-attributes-carry-their-own-positions.xml
+var testStyleAttributesCarryTheirOwnPositionsXml string

@@ -1,0 +1,5 @@
+<Component xmlns="urn:tml:v1" name="Card">
+	<Template>
+		<Text style="a" width="2"/>
+	</Template>
+</Component>

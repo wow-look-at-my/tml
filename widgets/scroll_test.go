@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/wow-look-at-my/tml/sema"
 	"github.com/wow-look-at-my/tml/widget"
 )
 
@@ -70,12 +71,8 @@ func TestScrollbarIsBlankWhenEverythingFits(t *testing.T) {
 }
 
 func TestScrollboxGutter(t *testing.T) {
-	w, h := composer(t, "Scrollbox", nil).Inset()
-	assert.Equal(t, 1, w)
-	assert.Equal(t, 0, h)
-
-	w, _ = composer(t, "Scrollbox", map[string]string{"scrollbar": "never"}).Inset()
-	assert.Equal(t, 0, w)
+	assert.Equal(t, sema.Thickness{Right: 1}, composer(t, "Scrollbox", nil).Insets(), "the gutter is on the right only")
+	assert.Equal(t, sema.Thickness{}, composer(t, "Scrollbox", map[string]string{"scrollbar": "never"}).Insets())
 }
 
 // The content is measured against unlimited height -- that is the whole point -- the region itself takes the full

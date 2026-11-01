@@ -1,0 +1,7 @@
+<Component xmlns="urn:tml:v1" name="App">
+	<Import src="./card.tml"/>
+	<Property name="count" type="int" default="1"/>
+	<Template>
+		<Card tone="x" label="{not count}"/>
+	</Template>
+</Component>
