@@ -1,0 +1,4 @@
+<Canvas>
+		<Stack><Text>aaaaaaaaaaaaaaaaaaaa</Text><Text>bbbbbbbbbbbbbbbbbbbb</Text><Text>cccccccccccccccccccc</Text></Stack>
+		<Popup title="Hi"><Text>over</Text></Popup>
+	</Canvas>

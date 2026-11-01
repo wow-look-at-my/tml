@@ -1,3 +1,5 @@
+// arrange.go holds the arrange code.
+
 package layout
 
 import (

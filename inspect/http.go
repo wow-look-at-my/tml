@@ -1,3 +1,5 @@
+// http.go holds the http code.
+
 package inspect
 
 import (

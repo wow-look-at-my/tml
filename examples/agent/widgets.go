@@ -1,3 +1,5 @@
+// widgets.go holds the widgets code.
+
 package main
 
 import (

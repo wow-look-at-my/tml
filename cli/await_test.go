@@ -1,5 +1,7 @@
 package cli
 
+import _ "embed"
+
 import (
 	"testing"
 	"testing/fstest"
@@ -13,11 +15,8 @@ import (
 	"github.com/wow-look-at-my/tml/sema"
 )
 
-const awaitView = `<?xml version="1.1" encoding="UTF-8"?>
-<Component xmlns="urn:tml:v1" name="Awaited">
-	<Property name="body" type="string" default="waiting"/>
-	<Template><Stack id="app" width="20"><Text id="status">{body}</Text></Stack></Template>
-</Component>`
+//go:embed testdata/await-view.xml
+var awaitView string
 
 // renderAwait paints a single frame of awaitView through the same path a program uses, so the inspector answers about a
 // real frame. The inspector belongs to the process. This takes the serial barrier: any test that paints at the same

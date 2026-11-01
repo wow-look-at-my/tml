@@ -1,0 +1,3 @@
+<Theme xmlns="urn:tml:v1" name="default">
+	<Token name="accent" light="#5f5fd7" dark="#e0af68"/>
+</Theme>

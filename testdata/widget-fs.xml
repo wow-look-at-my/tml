@@ -1,0 +1,8 @@
+<Component xmlns="urn:tml:v1" name="App">
+	<Template>
+		<Stack orientation="horizontal" gap="1">
+			<Text>find</Text>
+			<Search width="*"/>
+		</Stack>
+	</Template>
+</Component>

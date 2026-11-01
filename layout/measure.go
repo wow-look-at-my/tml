@@ -1,3 +1,5 @@
+// measure.go holds the measure code.
+
 package layout
 
 import (

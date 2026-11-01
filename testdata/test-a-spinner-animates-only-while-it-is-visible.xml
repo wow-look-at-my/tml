@@ -1,0 +1,4 @@
+<Component xmlns="urn:tml:v1" name="App">
+		<Property name="state" type="string" default="visible"/>
+		<Template><Stack><Spinner kind="line" state="{state}"/></Stack></Template>
+	</Component>

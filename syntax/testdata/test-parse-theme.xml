@@ -1,0 +1,6 @@
+<Theme xmlns="urn:tml:v1" name="default">
+	<Token name="accent" light="#5f5fd7" dark="#e0af68"/>
+	<Token name="gutter" value="1"/>
+	<Style name="card" border="rounded" padding="1 2"/>
+	<Style name="card.title" extends="card" bold="true"/>
+</Theme>

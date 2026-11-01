@@ -1,0 +1,4 @@
+<Component xmlns="urn:tml:v1" name="App">
+	<Property name="on" type="bool" default="false"/>
+	<Template><Text if="{on}">{missing}</Text></Template>
+</Component>

@@ -1,0 +1,9 @@
+<Component xmlns="urn:tml:v1" name="App">
+	<Template>
+		<Card>
+			<Card.actions>
+				<Button Grid.row="1" Grid.column="2"/>
+			</Card.actions>
+		</Card>
+	</Template>
+</Component>

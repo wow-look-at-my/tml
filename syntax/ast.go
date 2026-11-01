@@ -1,3 +1,5 @@
+// ast.go holds the ast code.
+
 package syntax
 
 // File is a single parsed .tml source file. A file holds exactly a single definition: either a component or a theme.

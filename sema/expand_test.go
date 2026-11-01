@@ -1,5 +1,7 @@
 package sema
 
+import _ "embed"
+
 import (
 	"strings"
 	"testing"
@@ -39,15 +41,7 @@ func expand(t *testing.T, files map[string]string, args map[string]Value) (strin
 
 func TestExpandSubstitutesPropertiesAndDefaults(t *testing.T) {
 	got, err := expand(t, map[string]string{
-		"app.tml": `<Component xmlns="urn:tml:v1" name="App">
-	<Property name="title" type="string" required="true"/>
-	<Property name="gap" type="int" default="2"/>
-	<Template>
-		<Stack gap="{gap}">
-			<Text>{title}</Text>
-		</Stack>
-	</Template>
-</Component>`,
+		"app.tml": testExpandSubstitutesPropertiesAndDefaultsXml,
 	}, map[string]Value{"title": StringValue("Deploy")})
 	require.NoError(t, err)
 
@@ -61,28 +55,8 @@ App
 // Slot content is a closure over the call site: it sees the caller's properties, never the component it is passed into.
 func TestSlotContentEvaluatesInTheCallersScope(t *testing.T) {
 	got, err := expand(t, map[string]string{
-		"app.tml": `<Component xmlns="urn:tml:v1" name="App">
-	<Import src="./Card.tml"/>
-	<Property name="who" type="string" default="world"/>
-	<Template>
-		<Card label="outer">
-			<Text>hello {who}</Text>
-			<Card.actions>
-				<Text>ok</Text>
-			</Card.actions>
-		</Card>
-	</Template>
-</Component>`,
-		"Card.tml": `<Component xmlns="urn:tml:v1" name="Card">
-	<Property name="label" type="string" default=""/>
-	<Template>
-		<Box>
-			<Text>{label}</Text>
-			<Slot/>
-			<Slot name="actions"/>
-		</Box>
-	</Template>
-</Component>`,
+		"app.tml":  testSlotContentEvaluatesInTheCallersScopeXml,
+		"Card.tml": testSlotContentEvaluatesInTheCallersScopeXml2,
 	}, nil)
 	require.NoError(t, err)
 
@@ -99,17 +73,8 @@ App
 
 func TestSlotFallbackIsUsedWhenNothingIsPassed(t *testing.T) {
 	files := map[string]string{
-		"app.tml": `<Component xmlns="urn:tml:v1" name="App">
-	<Import src="./Card.tml"/>
-	<Template><Card/></Template>
-</Component>`,
-		"Card.tml": `<Component xmlns="urn:tml:v1" name="Card">
-	<Template>
-		<Slot name="actions">
-			<Text>none</Text>
-		</Slot>
-	</Template>
-</Component>`,
+		"app.tml":  testSlotFallbackIsUsedWhenNothingIsPassedXml,
+		"Card.tml": testSlotFallbackIsUsedWhenNothingIsPassedXml2,
 	}
 	got, err := expand(t, files, nil)
 	require.NoError(t, err)
@@ -118,19 +83,7 @@ func TestSlotFallbackIsUsedWhenNothingIsPassed(t *testing.T) {
 
 func TestConditionalAndLoop(t *testing.T) {
 	got, err := expand(t, map[string]string{
-		"app.tml": `<Component xmlns="urn:tml:v1" name="App">
-	<Property name="tags" type="string[]" default=""/>
-	<Property name="note" type="string" default=""/>
-	<Template>
-		<Stack>
-			<Text if="{note}">{note}</Text>
-			<Text if="{not note}">no note</Text>
-			<For each="{tags}" as="tag" index="i">
-				<Text>{i}:{tag}</Text>
-			</For>
-		</Stack>
-	</Template>
-</Component>`,
+		"app.tml": testConditionalAndLoopXml,
 	}, map[string]Value{"tags": mustValue(t, "string[]", "api,web")})
 	require.NoError(t, err)
 
@@ -156,14 +109,8 @@ func mustValue(t *testing.T, typeSrc, raw string) Value {
 
 func TestThemeTokensResolveAndFollowDarkMode(t *testing.T) {
 	files := map[string]string{
-		"app.tml": `<Component xmlns="urn:tml:v1" name="App">
-	<Import src="./theme.tml"/>
-	<Property name="accent" type="color" default="{theme.accent}"/>
-	<Template><Box fg="{accent}"/></Template>
-</Component>`,
-		"theme.tml": `<Theme xmlns="urn:tml:v1" name="default">
-	<Token name="accent" light="#5f5fd7" dark="#e0af68"/>
-</Theme>`,
+		"app.tml":   testThemeTokensResolveAndFollowDarkModeXml,
+		"theme.tml": testThemeTokensResolveAndFollowDarkModeXml2,
 	}
 
 	program, err := build(t, files)
@@ -181,14 +128,8 @@ func TestThemeTokensResolveAndFollowDarkMode(t *testing.T) {
 // A theme token is text until it reaches a typed property, where it is re-read as that type.
 func TestTokenIsCheckedAgainstTheTargetType(t *testing.T) {
 	_, err := expand(t, map[string]string{
-		"app.tml": `<Component xmlns="urn:tml:v1" name="App">
-	<Import src="./theme.tml"/>
-	<Property name="accent" type="color" default="{theme.spacing}"/>
-	<Template><Box/></Template>
-</Component>`,
-		"theme.tml": `<Theme xmlns="urn:tml:v1" name="default">
-	<Token name="spacing" value="wide"/>
-</Theme>`,
+		"app.tml":   testTokenIsCheckedAgainstTheTargetTypeXml,
+		"theme.tml": testTokenIsCheckedAgainstTheTargetTypeXml2,
 	}, nil)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "hex triplet")
@@ -201,78 +142,48 @@ func TestAnalyzeRejects(t *testing.T) {
 		wantErr string
 	}{
 		{
-			name: "unknown element",
-			files: map[string]string{"app.tml": `<Component xmlns="urn:tml:v1" name="App">
-	<Template><Stak/></Template>
-</Component>`},
+			name:    "unknown element",
+			files:   map[string]string{"app.tml": testAnalyzeRejectsXml},
 			wantErr: "unknown element <Stak>",
 		},
 		{
-			name: "unknown reference is caught without rendering",
-			files: map[string]string{"app.tml": `<Component xmlns="urn:tml:v1" name="App">
-	<Property name="title" type="string" default=""/>
-	<Template><Text>{titel}</Text></Template>
-</Component>`},
+			name:    "unknown reference is caught without rendering",
+			files:   map[string]string{"app.tml": testAnalyzeRejectsXml2},
 			wantErr: `unknown reference "titel"`,
 		},
 		{
-			name: "unknown reference inside a branch never taken",
-			files: map[string]string{"app.tml": `<Component xmlns="urn:tml:v1" name="App">
-	<Property name="on" type="bool" default="false"/>
-	<Template><Text if="{on}">{missing}</Text></Template>
-</Component>`},
+			name:    "unknown reference inside a branch never taken",
+			files:   map[string]string{"app.tml": testAnalyzeRejectsXml3},
 			wantErr: `unknown reference "missing"`,
 		},
 		{
-			name: "unknown theme token",
-			files: map[string]string{"app.tml": `<Component xmlns="urn:tml:v1" name="App">
-	<Template><Box fg="{theme.nope}"/></Template>
-</Component>`},
+			name:    "unknown theme token",
+			files:   map[string]string{"app.tml": testAnalyzeRejectsXml4},
 			wantErr: `unknown theme token "nope"`,
 		},
 		{
-			name: "duplicate property",
-			files: map[string]string{"app.tml": `<Component xmlns="urn:tml:v1" name="App">
-	<Property name="a" type="string" default=""/>
-	<Property name="a" type="int" default="0"/>
-	<Template><Box/></Template>
-</Component>`},
+			name:    "duplicate property",
+			files:   map[string]string{"app.tml": testAnalyzeRejectsXml5},
 			wantErr: `duplicate property "a"`,
 		},
 		{
-			name: "default must fit its declared type",
-			files: map[string]string{"app.tml": `<Component xmlns="urn:tml:v1" name="App">
-	<Property name="n" type="int" default="lots"/>
-	<Template><Box/></Template>
-</Component>`},
+			name:    "default must fit its declared type",
+			files:   map[string]string{"app.tml": testAnalyzeRejectsXml6},
 			wantErr: "expected a whole number",
 		},
 		{
-			name: "unknown type",
-			files: map[string]string{"app.tml": `<Component xmlns="urn:tml:v1" name="App">
-	<Property name="n" type="number" default="1"/>
-	<Template><Box/></Template>
-</Component>`},
+			name:    "unknown type",
+			files:   map[string]string{"app.tml": testAnalyzeRejectsXml7},
 			wantErr: `unknown type "number"`,
 		},
 		{
-			name: "a component cannot instantiate itself",
-			files: map[string]string{"app.tml": `<Component xmlns="urn:tml:v1" name="App">
-	<Template><App/></Template>
-</Component>`},
+			name:    "a component cannot instantiate itself",
+			files:   map[string]string{"app.tml": testAnalyzeRejectsXml8},
 			wantErr: "instantiates itself",
 		},
 		{
-			name: "a loop variable is not visible outside its loop",
-			files: map[string]string{"app.tml": `<Component xmlns="urn:tml:v1" name="App">
-	<Property name="tags" type="string[]" default=""/>
-	<Template>
-		<Stack>
-			<For each="{tags}" as="tag"><Text>{tag}</Text></For>
-			<Text>{tag}</Text>
-		</Stack>
-	</Template>
-</Component>`},
+			name:    "a loop variable is not visible outside its loop",
+			files:   map[string]string{"app.tml": testAnalyzeRejectsXml9},
 			wantErr: `unknown reference "tag"`,
 		},
 	}
@@ -292,10 +203,7 @@ func TestExpandRejects(t *testing.T) {
 	<Import src="./Card.tml"/>
 	<Template>` + template + `</Template>
 </Component>`,
-			"Card.tml": `<Component xmlns="urn:tml:v1" name="Card">
-	<Property name="label" type="string" required="true"/>
-	<Template><Box><Slot name="actions" required="true"/></Box></Template>
-</Component>`,
+			"Card.tml": testExpandRejectsXml,
 		}
 	}
 
@@ -338,3 +246,63 @@ func TestExpandRejects(t *testing.T) {
 		})
 	}
 }
+
+//go:embed testdata/test-expand-substitutes-properties-and-defaults.xml
+var testExpandSubstitutesPropertiesAndDefaultsXml string
+
+//go:embed testdata/test-slot-content-evaluates-in-the-callers-scope.xml
+var testSlotContentEvaluatesInTheCallersScopeXml string
+
+//go:embed testdata/test-slot-content-evaluates-in-the-callers-scope-2.xml
+var testSlotContentEvaluatesInTheCallersScopeXml2 string
+
+//go:embed testdata/test-slot-fallback-is-used-when-nothing-is-passed.xml
+var testSlotFallbackIsUsedWhenNothingIsPassedXml string
+
+//go:embed testdata/test-slot-fallback-is-used-when-nothing-is-passed-2.xml
+var testSlotFallbackIsUsedWhenNothingIsPassedXml2 string
+
+//go:embed testdata/test-conditional-and-loop.xml
+var testConditionalAndLoopXml string
+
+//go:embed testdata/test-theme-tokens-resolve-and-follow-dark-mode.xml
+var testThemeTokensResolveAndFollowDarkModeXml string
+
+//go:embed testdata/test-theme-tokens-resolve-and-follow-dark-mode-2.xml
+var testThemeTokensResolveAndFollowDarkModeXml2 string
+
+//go:embed testdata/test-token-is-checked-against-the-target-type.xml
+var testTokenIsCheckedAgainstTheTargetTypeXml string
+
+//go:embed testdata/test-token-is-checked-against-the-target-type-2.xml
+var testTokenIsCheckedAgainstTheTargetTypeXml2 string
+
+//go:embed testdata/test-analyze-rejects.xml
+var testAnalyzeRejectsXml string
+
+//go:embed testdata/test-analyze-rejects-2.xml
+var testAnalyzeRejectsXml2 string
+
+//go:embed testdata/test-analyze-rejects-3.xml
+var testAnalyzeRejectsXml3 string
+
+//go:embed testdata/test-analyze-rejects-4.xml
+var testAnalyzeRejectsXml4 string
+
+//go:embed testdata/test-analyze-rejects-5.xml
+var testAnalyzeRejectsXml5 string
+
+//go:embed testdata/test-analyze-rejects-6.xml
+var testAnalyzeRejectsXml6 string
+
+//go:embed testdata/test-analyze-rejects-7.xml
+var testAnalyzeRejectsXml7 string
+
+//go:embed testdata/test-analyze-rejects-8.xml
+var testAnalyzeRejectsXml8 string
+
+//go:embed testdata/test-analyze-rejects-9.xml
+var testAnalyzeRejectsXml9 string
+
+//go:embed testdata/test-expand-rejects.xml
+var testExpandRejectsXml string

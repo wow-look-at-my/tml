@@ -1,0 +1,9 @@
+<Component xmlns="urn:tml:v1" name="App">
+	<Property name="tags" type="string[]" default=""/>
+	<Template>
+		<Stack>
+			<For each="{tags}" as="tag"><Text>{tag}</Text></For>
+			<Text>{tag}</Text>
+		</Stack>
+	</Template>
+</Component>

@@ -1,5 +1,7 @@
 package sema
 
+import _ "embed"
+
 import (
 	"strings"
 	"testing"
@@ -9,36 +11,12 @@ import (
 )
 
 // transcript is the shape this whole mechanism exists for: a scrolling region whose items are widgets, not lines
-const transcript = `<Component xmlns="urn:tml:v1" name="App">
-	<Property name="messages" type="record[]" default=""/>
-	<Import src="./MessageHeader.tml"/>
+//
+//go:embed testdata/transcript.xml
+var transcript string
 
-	<DataTemplate name="Message">
-		<Property name="role" type="string" required="true"/>
-		<Property name="model" type="string" default=""/>
-		<Property name="body" type="string[]" default=""/>
-		<Template>
-			<Stack>
-				<MessageHeader role="{role}" model="{model}"/>
-				<For each="{body}" as="line">
-					<Text>{line}</Text>
-				</For>
-			</Stack>
-		</Template>
-	</DataTemplate>
-
-	<Template>
-		<Stack itemsSource="{messages}" itemTemplate="Message"/>
-	</Template>
-</Component>`
-
-const messageHeader = `<Component xmlns="urn:tml:v1" name="MessageHeader">
-	<Property name="role" type="string"/>
-	<Property name="model" type="string" default=""/>
-	<Template>
-		<Text>{role} {model}</Text>
-	</Template>
-</Component>`
+//go:embed testdata/message-header.xml
+var messageHeader string
 
 // transcriptFiles is the message fixture as files the loader sees.
 func transcriptFiles() map[string]string {
@@ -114,17 +92,8 @@ func TestAnItemMissingARequiredPropertyIsAnError(t *testing.T) {
 func TestAnItemTemplateMustBeADataTemplate(t *testing.T) {
 	// A component is a single per file, so "Row" lives in its own file. Using a component's name as an itemTemplate is still
 	_, err := expand(t, map[string]string{
-		"app.tml": `<Component xmlns="urn:tml:v1" name="App">
-	<Property name="rows" type="record[]" default=""/>
-	<Import src="./Row.tml"/>
-	<Template>
-		<Stack itemsSource="{rows}" itemTemplate="Row"/>
-	</Template>
-</Component>`,
-		"Row.tml": `<Component xmlns="urn:tml:v1" name="Row">
-	<Property name="text" type="string" default=""/>
-	<Template><Text>{text}</Text></Template>
-</Component>`,
+		"app.tml": testAnItemTemplateMustBeADataTemplateXml,
+		"Row.tml": testAnItemTemplateMustBeADataTemplateXml2,
 	}, map[string]Value{"rows": RecordListValue([]map[string]Value{{"text": StringValue("x")}})})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "<DataTemplate>")
@@ -132,12 +101,7 @@ func TestAnItemTemplateMustBeADataTemplate(t *testing.T) {
 
 func TestAnUnknownItemTemplateIsNamed(t *testing.T) {
 	_, err := expand(t, map[string]string{
-		"app.tml": `<Component xmlns="urn:tml:v1" name="App">
-	<Property name="rows" type="record[]" default=""/>
-	<Template>
-		<Stack itemsSource="{rows}" itemTemplate="Nope"/>
-	</Template>
-</Component>`,
+		"app.tml": testAnUnknownItemTemplateIsNamedXml,
 	}, map[string]Value{"rows": RecordListValue(nil)})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), `"Nope"`)
@@ -145,16 +109,7 @@ func TestAnUnknownItemTemplateIsNamed(t *testing.T) {
 
 func TestAnItemsSourceMustBeAList(t *testing.T) {
 	_, err := expand(t, map[string]string{
-		"app.tml": `<Component xmlns="urn:tml:v1" name="App">
-	<Property name="one" type="string" default=""/>
-	<DataTemplate name="Row">
-		<Property name="value" type="string" default=""/>
-		<Template><Text>{value}</Text></Template>
-	</DataTemplate>
-	<Template>
-		<Stack itemsSource="{one}" itemTemplate="Row"/>
-	</Template>
-</Component>`,
+		"app.tml": testAnItemsSourceMustBeAListXml,
 	}, map[string]Value{"one": StringValue("not a list")})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "needs a list")
@@ -164,16 +119,7 @@ func TestAnItemsSourceMustBeAList(t *testing.T) {
 // have to be wrapped in a record to be
 func TestAListOfStringsStillWorks(t *testing.T) {
 	got, err := expand(t, map[string]string{
-		"app.tml": `<Component xmlns="urn:tml:v1" name="App">
-	<Property name="lines" type="string[]" default=""/>
-	<DataTemplate name="Line">
-		<Property name="value" type="string" default=""/>
-		<Template><Text>{value}</Text></Template>
-	</DataTemplate>
-	<Template>
-		<Stack itemsSource="{lines}" itemTemplate="Line"/>
-	</Template>
-</Component>`,
+		"app.tml": testAListOfStringsStillWorksXml,
 	}, map[string]Value{"lines": ListValue([]string{"one", "two"})})
 	require.NoError(t, err)
 	assert.Contains(t, got, "Text\n      \"one\"")
@@ -183,19 +129,27 @@ func TestAListOfStringsStillWorks(t *testing.T) {
 // TestATemplateThatAsksForItsPositionGetsIt, and a template that does not is not handed a property it never declared.
 func TestATemplateThatAsksForItsPositionGetsIt(t *testing.T) {
 	got, err := expand(t, map[string]string{
-		"app.tml": `<Component xmlns="urn:tml:v1" name="App">
-	<Property name="lines" type="string[]" default=""/>
-	<DataTemplate name="Numbered">
-		<Property name="value" type="string" default=""/>
-		<Property name="index" type="int" default="0"/>
-		<Template><Text>{index}: {value}</Text></Template>
-	</DataTemplate>
-	<Template>
-		<Stack itemsSource="{lines}" itemTemplate="Numbered"/>
-	</Template>
-</Component>`,
+		"app.tml": testATemplateThatAsksForItsPositionGetsItXml,
 	}, map[string]Value{"lines": ListValue([]string{"one", "two"})})
 	require.NoError(t, err)
 	assert.Contains(t, got, "Text\n      \"0: one\"")
 	assert.Contains(t, got, "Text\n      \"1: two\"")
 }
+
+//go:embed testdata/test-an-item-template-must-be-a-data-template.xml
+var testAnItemTemplateMustBeADataTemplateXml string
+
+//go:embed testdata/test-an-item-template-must-be-a-data-template-2.xml
+var testAnItemTemplateMustBeADataTemplateXml2 string
+
+//go:embed testdata/test-an-unknown-item-template-is-named.xml
+var testAnUnknownItemTemplateIsNamedXml string
+
+//go:embed testdata/test-an-items-source-must-be-a-list.xml
+var testAnItemsSourceMustBeAListXml string
+
+//go:embed testdata/test-a-list-of-strings-still-works.xml
+var testAListOfStringsStillWorksXml string
+
+//go:embed testdata/test-a-template-that-asks-for-its-position-gets-it.xml
+var testATemplateThatAsksForItsPositionGetsItXml string

@@ -1,3 +1,5 @@
+// grid.go holds the grid code.
+
 package layout
 
 import (

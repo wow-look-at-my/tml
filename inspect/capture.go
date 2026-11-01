@@ -1,3 +1,5 @@
+// capture.go holds the capture code.
+
 package inspect
 
 import (

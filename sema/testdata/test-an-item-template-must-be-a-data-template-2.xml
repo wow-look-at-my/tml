@@ -1,0 +1,4 @@
+<Component xmlns="urn:tml:v1" name="Row">
+	<Property name="text" type="string" default=""/>
+	<Template><Text>{text}</Text></Template>
+</Component>

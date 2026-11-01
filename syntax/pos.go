@@ -1,3 +1,5 @@
+// pos.go holds the pos code.
+
 package syntax
 
 import "fmt"

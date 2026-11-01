@@ -1,3 +1,5 @@
+// spinner.go holds the spinner code.
+
 package widgets
 
 import (

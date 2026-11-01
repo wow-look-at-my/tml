@@ -1,0 +1,6 @@
+<Component xmlns="urn:tml:v1" name="App">
+	<Property name="count" type="int" default="1"/>
+	<Template>
+		<Text style="a" width="%s">hi</Text>
+	</Template>
+</Component>

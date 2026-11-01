@@ -1,3 +1,5 @@
+// rule.go holds the rule code.
+
 package widgets
 
 import (

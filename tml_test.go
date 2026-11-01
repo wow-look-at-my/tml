@@ -1,5 +1,7 @@
 package tml_test
 
+import _ "embed"
+
 import (
 	"flag"
 	"os"
@@ -117,14 +119,7 @@ func (f *fakeInput) SetWidth(w int) { f.width = w }
 func widgetFS() fstest.MapFS {
 	const header = "<?xml version=\"1.1\" encoding=\"UTF-8\"?>\n"
 	return fstest.MapFS{
-		"app.tml": {Data: []byte(header + `<Component xmlns="urn:tml:v1" name="App">
-	<Template>
-		<Stack orientation="horizontal" gap="1">
-			<Text>find</Text>
-			<Search width="*"/>
-		</Stack>
-	</Template>
-</Component>`)},
+		"app.tml": {Data: []byte(header + widgetFSXml)},
 	}
 }
 
@@ -160,14 +155,7 @@ func TestLoadReportsDiagnosticsWithPositions(t *testing.T) {
 func measuredFS() fstest.MapFS {
 	const header = "<?xml version=\"1.1\" encoding=\"UTF-8\"?>\n"
 	return fstest.MapFS{
-		"app.tml": {Data: []byte(header + `<Component xmlns="urn:tml:v1" name="App">
-	<Template>
-		<Stack>
-			<Text>abcd</Text>
-			<Badge label="abcd"/>
-		</Stack>
-	</Template>
-</Component>`)},
+		"app.tml": {Data: []byte(header + measuredFSXml)},
 	}
 }
 
@@ -190,3 +178,9 @@ func TestOptionsMeasureGovernsGeometry(t *testing.T) {
 	assert.Equal(t, 8, wideText, "the host's measurer reaches the language's own text")
 	assert.Equal(t, 12, wideBadge, "and reaches a widget, through its Context")
 }
+
+//go:embed testdata/widget-fs.xml
+var widgetFSXml string
+
+//go:embed testdata/measured-fs.xml
+var measuredFSXml string

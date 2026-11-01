@@ -1,3 +1,5 @@
+// expand.go holds the expand code.
+
 package sema
 
 import (

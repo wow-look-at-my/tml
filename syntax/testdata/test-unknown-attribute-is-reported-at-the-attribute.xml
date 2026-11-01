@@ -1,0 +1,6 @@
+<Component xmlns="urn:tml:v1" name="Card">
+	<Property name="title" type="string" bogus="x"/>
+	<Template>
+		<Text>hi</Text>
+	</Template>
+</Component>

@@ -1,0 +1,12 @@
+<Component xmlns="urn:tml:v1" name="App">
+	<Import src="./Card.tml"/>
+	<Property name="who" type="string" default="world"/>
+	<Template>
+		<Card label="outer">
+			<Text>hello {who}</Text>
+			<Card.actions>
+				<Text>ok</Text>
+			</Card.actions>
+		</Card>
+	</Template>
+</Component>

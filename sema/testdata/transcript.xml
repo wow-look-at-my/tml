@@ -1,0 +1,22 @@
+<Component xmlns="urn:tml:v1" name="App">
+	<Property name="messages" type="record[]" default=""/>
+	<Import src="./MessageHeader.tml"/>
+
+	<DataTemplate name="Message">
+		<Property name="role" type="string" required="true"/>
+		<Property name="model" type="string" default=""/>
+		<Property name="body" type="string[]" default=""/>
+		<Template>
+			<Stack>
+				<MessageHeader role="{role}" model="{model}"/>
+				<For each="{body}" as="line">
+					<Text>{line}</Text>
+				</For>
+			</Stack>
+		</Template>
+	</DataTemplate>
+
+	<Template>
+		<Stack itemsSource="{messages}" itemTemplate="Message"/>
+	</Template>
+</Component>

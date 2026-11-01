@@ -1,3 +1,5 @@
+// inspect.go holds the inspect code.
+
 package cli
 
 import (

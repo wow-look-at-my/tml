@@ -1,0 +1,10 @@
+<Component xmlns="urn:tml:v1" name="App">
+	<Property name="lines" type="string[]" default=""/>
+	<DataTemplate name="Line">
+		<Property name="value" type="string" default=""/>
+		<Template><Text>{value}</Text></Template>
+	</DataTemplate>
+	<Template>
+		<Stack itemsSource="{lines}" itemTemplate="Line"/>
+	</Template>
+</Component>

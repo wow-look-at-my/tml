@@ -1,3 +1,5 @@
+// interact.go holds the interact code.
+
 package layout
 
 import (

@@ -1,5 +1,7 @@
 package syntax
 
+import _ "embed"
+
 import (
 	"testing"
 
@@ -22,16 +24,7 @@ func mustParse(t *testing.T, body string) *File {
 }
 
 func TestParseComponentCapturesPropertiesAndTemplate(t *testing.T) {
-	file := mustParse(t, `<Component xmlns="urn:tml:v1" name="Card">
-	<Import src="./Badge.tml"/>
-	<Property name="title" type="string" required="true"/>
-	<Property name="subtitle" type="string" default=""/>
-	<Template>
-		<Stack orientation="vertical" gap="1">
-			<Text>{title}</Text>
-		</Stack>
-	</Template>
-</Component>`)
+	file := mustParse(t, testParseComponentCapturesPropertiesAndTemplateXml)
 
 	component := file.Component
 	require.NotNil(t, component)
@@ -57,15 +50,7 @@ func TestParseComponentCapturesPropertiesAndTemplate(t *testing.T) {
 
 // Dotted names carry the property-element slot syntax and attached layout properties. Syntax must pass them through
 func TestParsePreservesDottedNames(t *testing.T) {
-	file := mustParse(t, `<Component xmlns="urn:tml:v1" name="App">
-	<Template>
-		<Card>
-			<Card.actions>
-				<Button Grid.row="1" Grid.column="2"/>
-			</Card.actions>
-		</Card>
-	</Template>
-</Component>`)
+	file := mustParse(t, testParsePreservesDottedNamesXml)
 
 	card := file.Component.Template.Elements()[0]
 	slot := card.Elements()[0]
@@ -79,10 +64,7 @@ func TestParsePreservesDottedNames(t *testing.T) {
 
 // A file defines exactly a single component.
 func TestParseRefusesANestedComponent(t *testing.T) {
-	_, err := parseSource(t, `<Component xmlns="urn:tml:v1" name="App">
-	<Component name="Row"><Template/></Component>
-	<Template/>
-</Component>`)
+	_, err := parseSource(t, testParseRefusesANestedComponentXml)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "test.tml")
 	assert.Contains(t, err.Error(), `"App"`)
@@ -91,12 +73,7 @@ func TestParseRefusesANestedComponent(t *testing.T) {
 }
 
 func TestParseTheme(t *testing.T) {
-	file := mustParse(t, `<Theme xmlns="urn:tml:v1" name="default">
-	<Token name="accent" light="#5f5fd7" dark="#e0af68"/>
-	<Token name="gutter" value="1"/>
-	<Style name="card" border="rounded" padding="1 2"/>
-	<Style name="card.title" extends="card" bold="true"/>
-</Theme>`)
+	file := mustParse(t, testParseThemeXml)
 
 	theme := file.Theme
 	require.NotNil(t, theme)
@@ -136,13 +113,7 @@ func TestTextNormalization(t *testing.T) {
 }
 
 func TestParseTextContentIsNormalizedInTemplates(t *testing.T) {
-	file := mustParse(t, `<Component xmlns="urn:tml:v1" name="App">
-	<Template>
-		<Text>
-			Hello {name}
-		</Text>
-	</Template>
-</Component>`)
+	file := mustParse(t, testParseTextContentIsNormalizedInTemplatesXml)
 
 	body := file.Component.Template.Elements()
 	require.Len(t, body, 1, "indentation must not appear as extra children")
@@ -243,3 +214,18 @@ func TestXMLFailuresArePositionedAndAttributed(t *testing.T) {
 	require.ErrorAs(t, err, &syntaxErr)
 	assert.Positive(t, syntaxErr.Pos.Line, "the position points into the source")
 }
+
+//go:embed testdata/test-parse-component-captures-properties-and-template.xml
+var testParseComponentCapturesPropertiesAndTemplateXml string
+
+//go:embed testdata/test-parse-preserves-dotted-names.xml
+var testParsePreservesDottedNamesXml string
+
+//go:embed testdata/test-parse-refuses-a-nested-component.xml
+var testParseRefusesANestedComponentXml string
+
+//go:embed testdata/test-parse-theme.xml
+var testParseThemeXml string
+
+//go:embed testdata/test-parse-text-content-is-normalized-in-templates.xml
+var testParseTextContentIsNormalizedInTemplatesXml string

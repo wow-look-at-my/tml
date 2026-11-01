@@ -1,5 +1,7 @@
 package tml_test
 
+import _ "embed"
+
 import (
 	"encoding/json"
 	"net"
@@ -17,15 +19,9 @@ import (
 )
 
 // inspectorView is a small real view: a pair of ids, a single id inside the other, rendered through the same path a program uses.
-const inspectorView = `<?xml version="1.1" encoding="UTF-8"?>
-<Component xmlns="urn:tml:v1" name="Inspected">
-	<Template>
-		<Stack id="app" orientation="vertical" width="20">
-			<Text id="title">hello</Text>
-			<Text id="body">world</Text>
-		</Stack>
-	</Template>
-</Component>`
+//
+//go:embed testdata/inspector-view.xml
+var inspectorView string
 
 // Every test here owns the process's one inspector, so each takes the serial
 // barrier before it resets that state.

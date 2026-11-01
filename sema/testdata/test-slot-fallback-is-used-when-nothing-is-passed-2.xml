@@ -1,0 +1,7 @@
+<Component xmlns="urn:tml:v1" name="Card">
+	<Template>
+		<Slot name="actions">
+			<Text>none</Text>
+		</Slot>
+	</Template>
+</Component>

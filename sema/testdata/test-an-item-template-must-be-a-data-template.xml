@@ -1,0 +1,7 @@
+<Component xmlns="urn:tml:v1" name="App">
+	<Property name="rows" type="record[]" default=""/>
+	<Import src="./Row.tml"/>
+	<Template>
+		<Stack itemsSource="{rows}" itemTemplate="Row"/>
+	</Template>
+</Component>

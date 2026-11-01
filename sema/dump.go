@@ -1,3 +1,5 @@
+// dump.go holds the dump code.
+
 package sema
 
 import (

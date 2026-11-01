@@ -1,0 +1,4 @@
+<Component xmlns="urn:tml:v1" name="Card">
+	<Property name="label" type="string" required="true"/>
+	<Template><Box><Slot name="actions" required="true"/></Box></Template>
+</Component>

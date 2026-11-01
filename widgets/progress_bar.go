@@ -1,3 +1,5 @@
+// progress_bar.go holds the progress bar code.
+
 package widgets
 
 import (

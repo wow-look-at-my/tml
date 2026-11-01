@@ -1,3 +1,5 @@
+// render.go holds the render code.
+
 package render
 
 import (

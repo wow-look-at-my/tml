@@ -1,3 +1,5 @@
+// load.go holds the load code.
+
 package syntax
 
 import (

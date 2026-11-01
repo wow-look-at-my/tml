@@ -1,0 +1,5 @@
+<Component xmlns="urn:tml:v1" name="App">
+	<Property name="a" type="string" default=""/>
+	<Property name="a" type="int" default="0"/>
+	<Template><Box/></Template>
+</Component>

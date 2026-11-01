@@ -1,0 +1,4 @@
+<Component xmlns="urn:tml:v1" name="App">
+	<Import src="./Card.tml"/>
+	<Template><Card/></Template>
+</Component>

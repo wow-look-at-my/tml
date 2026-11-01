@@ -1,5 +1,7 @@
 package syntax
 
+import _ "embed"
+
 import (
 	"os"
 	"testing"
@@ -37,10 +39,7 @@ func TestLoadResolvesImportsRelativeToTheImporter(t *testing.T) {
 
 func TestLoadPutsHelpersAndSelfInScope(t *testing.T) {
 	fsys := fstest.MapFS{
-		"app.tml": {Data: []byte(header + `<Component xmlns="urn:tml:v1" name="App">
-	<DataTemplate name="Row"><Template/></DataTemplate>
-	<Template/>
-</Component>`)},
+		"app.tml": {Data: []byte(header + testLoadPutsHelpersAndSelfInScopeXml)},
 	}
 
 	unit, err := Load(fsys, "app.tml")
@@ -83,10 +82,8 @@ func TestLoadTerminatesOnAnImportCycle(t *testing.T) {
 
 func TestLoadCollectsThemes(t *testing.T) {
 	fsys := fstest.MapFS{
-		"app.tml": {Data: []byte(component("App", `<Import src="./theme.tml"/>`))},
-		"theme.tml": {Data: []byte(header + `<Theme xmlns="urn:tml:v1" name="default">
-	<Token name="accent" value="#f00"/>
-</Theme>`)},
+		"app.tml":   {Data: []byte(component("App", `<Import src="./theme.tml"/>`))},
+		"theme.tml": {Data: []byte(header + testLoadCollectsThemesXml)},
 	}
 
 	unit, err := Load(fsys, "app.tml")
@@ -131,3 +128,9 @@ func TestLoadRejects(t *testing.T) {
 		assert.Contains(t, err.Error(), `component "Card" is already in scope`)
 	})
 }
+
+//go:embed testdata/test-load-puts-helpers-and-self-in-scope.xml
+var testLoadPutsHelpersAndSelfInScopeXml string
+
+//go:embed testdata/test-load-collects-themes.xml
+var testLoadCollectsThemesXml string

@@ -1,5 +1,7 @@
 package tml_test
 
+import _ "embed"
+
 import (
 	"strings"
 	"testing"
@@ -66,9 +68,7 @@ func TestHostBindingsBeatTheLibrary(t *testing.T) {
 
 // A component may legitimately be called Table. Resolving its expanded root as the Table WIDGET would silently replace
 func TestAComponentMayShareAWidgetsName(t *testing.T) {
-	out := draw(t, `<Component xmlns="urn:tml:v1" name="Table"><Template>
-		<Text>not a widget</Text>
-	</Template></Component>`, 20, 2)
+	out := draw(t, testAComponentMayShareAWidgetsNameXml, 20, 2)
 
 	assert.Contains(t, out, "not a widget")
 }
@@ -125,10 +125,7 @@ func TestUnknownWidgetAttributeIsRejectedAsStyling(t *testing.T) {
 
 // A popup written last on a canvas covers the view it interrupts, which is the whole reason a canvas exists.
 func TestPopupCoversTheViewOnACanvas(t *testing.T) {
-	out := draw(t, app(`<Canvas>
-		<Stack><Text>aaaaaaaaaaaaaaaaaaaa</Text><Text>bbbbbbbbbbbbbbbbbbbb</Text><Text>cccccccccccccccccccc</Text></Stack>
-		<Popup title="Hi"><Text>over</Text></Popup>
-	</Canvas>`), 20, 5)
+	out := draw(t, app(testPopupCoversTheViewOnACanvasXml), 20, 5)
 
 	assert.Contains(t, out, "over")
 	assert.Contains(t, out, "a", "the view underneath is still there around the edges")
@@ -145,10 +142,7 @@ func (f fixedView) View() string { return string(f) }
 // A Spinner's frame belongs to the engine. The host passes none: showing the element is what animates it, and hiding it is
 // what stops the repainting.
 func TestASpinnerAnimatesOnlyWhileItIsVisible(t *testing.T) {
-	loaded, err := view(t, `<Component xmlns="urn:tml:v1" name="App">
-		<Property name="state" type="string" default="visible"/>
-		<Template><Stack><Spinner kind="line" state="{state}"/></Stack></Template>
-	</Component>`, tml.Options{})
+	loaded, err := view(t, testASpinnerAnimatesOnlyWhileItIsVisibleXml, tml.Options{})
 	require.NoError(t, err)
 
 	hidden := tml.Props{"state": sema.StringValue("hidden")}
@@ -182,3 +176,12 @@ func TestASpinnerAnimatesOnlyWhileItIsVisible(t *testing.T) {
 	assert.Equal(t, blank, firstRow(hidden), "hiding it again passes no frame at all")
 	assert.False(t, loaded.Animating())
 }
+
+//go:embed testdata/test-a-component-may-share-a-widgets-name.xml
+var testAComponentMayShareAWidgetsNameXml string
+
+//go:embed testdata/test-popup-covers-the-view-on-a-canvas.xml
+var testPopupCoversTheViewOnACanvasXml string
+
+//go:embed testdata/test-a-spinner-animates-only-while-it-is-visible.xml
+var testASpinnerAnimatesOnlyWhileItIsVisibleXml string

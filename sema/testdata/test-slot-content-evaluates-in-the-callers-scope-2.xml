@@ -1,0 +1,10 @@
+<Component xmlns="urn:tml:v1" name="Card">
+	<Property name="label" type="string" default=""/>
+	<Template>
+		<Box>
+			<Text>{label}</Text>
+			<Slot/>
+			<Slot name="actions"/>
+		</Box>
+	</Template>
+</Component>
