@@ -126,13 +126,16 @@ func (e *Engine) arrangeComposer(box *Box, composer widget.Composer) {
 		shiftX = 0
 	}
 
+	// A template's chrome is the widget's whole face, so it takes whatever size the widget was given.
+	_, templated := composer.(widget.Templated)
+
 	y := top - shiftY
 	for _, child := range box.Children {
 		w, h := child.desired.W, child.desired.H
-		if child.width.Kind == sema.LengthStar {
+		if child.width.Kind == sema.LengthStar || templated {
 			w = width
 		}
-		if child.height.Kind == sema.LengthStar {
+		if child.height.Kind == sema.LengthStar || templated {
 			h = height
 		}
 		// A child may only overflow on an axis the widget declared free. That is what a scrolling region is for; anywhere
@@ -142,7 +145,11 @@ func (e *Engine) arrangeComposer(box *Box, composer widget.Composer) {
 		if !want.FreeH {
 			h = min(h, height)
 		}
-		e.arrange(child, Rect{X: left - shiftX, Y: y, W: w, H: h})
+		x := left - shiftX
+		if want.CenterX && !want.FreeW {
+			x += (width - w) / 2
+		}
+		e.arrange(child, Rect{X: x, Y: y, W: w, H: h})
 		y += h
 	}
 }

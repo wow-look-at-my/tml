@@ -64,6 +64,18 @@ type Layout struct {
 	OffsetX, OffsetY int
 	// ContentW and ContentH are the size of the whole content when the children are only a window over it.
 	ContentW, ContentH int
+	// CenterX puts each child in the middle of the width rather than at the left. The widget must draw it there too.
+	CenterX bool
+}
+
+// Templated is a composer whose look is another element wrapped around its
+// children, the way a WPF button is a Border around its content.
+type Templated interface {
+	Composer
+	// Template names the element the engine wraps the children in, with its attributes.
+	Template() (element string, attrs map[string]string, fallback string)
+	// Bind hands the widget the element the engine built, so its own state can steer how that element draws.
+	Bind(chrome Native) error
 }
 
 // Arranger is the optional half of a composer whose children need measuring or placing differently from the default.
