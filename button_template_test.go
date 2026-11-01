@@ -56,6 +56,27 @@ func TestButtonIsABorderAroundItsContent(t *testing.T) {
 	}
 }
 
+// The label and what is written inside are the same thing, so anything written inside wins.
+func TestButtonContentReplacesItsLabel(t *testing.T) {
+	out := draw(t, app(`<Button label="Save"><Button.Content><Text>[3]</Text></Button.Content></Button>`), 12, 3)
+
+	assert.Contains(t, out, "[3]")
+	assert.NotContains(t, out, "Save")
+}
+
+func TestButtonIsAsBigAsItsLabelPlusItsBorder(t *testing.T) {
+	loaded := interactive(t, `<Stack><Button id="go" label="Save"/></Stack>`, 30, 6)
+	button, ok := loaded.UI().Target("go")
+	require.True(t, ok)
+	assert.Equal(t, 8, button.Rect.W, "four cells of label, a border and a space either side")
+	assert.Equal(t, 3, button.Rect.H)
+
+	narrow := interactive(t, `<Stack><Button id="go" label="Save"/></Stack>`, 5, 6)
+	button, ok = narrow.UI().Target("go")
+	require.True(t, ok)
+	assert.LessOrEqual(t, button.Rect.W, 5, "a button never takes more than it was offered")
+}
+
 // Content inside a button is published where it is drawn, because its geometry is the border's.
 func TestButtonContentIsPublishedWhereItIsDrawn(t *testing.T) {
 	loaded := interactive(t, `<Stack><Text>head</Text><Button id="go"><Badge id="count" label="7"/></Button></Stack>`, 30, 8)

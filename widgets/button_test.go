@@ -1,44 +1,51 @@
 package widgets
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/wow-look-at-my/tml/sema"
 	"github.com/wow-look-at-my/tml/widget"
 )
 
-func stateful(t *testing.T, native widget.Native, state widget.State) widget.Composer {
+// face binds a button to a real Border, the way the engine does, puts the button in state, and draws the border around body.
+func face(t *testing.T, attrs map[string]string, state widget.State, body string, w int) string {
 	t.Helper()
-	set, ok := native.(widget.Stateful)
-	require.True(t, ok)
-	set.SetState(state)
-	wrapper, ok := native.(widget.Composer)
-	require.True(t, ok)
-	return wrapper
+	button, ok := build(t, "Button", attrs).(widget.Templated)
+	require.True(t, ok, "a button is templated")
+	element, chrome, _ := button.Template()
+	border := build(t, element, chrome)
+	require.NoError(t, button.Bind(border))
+	button.(widget.Stateful).SetState(state)
+	return border.(widget.Composer).Compose(content(body), w, 3)
+}
+
+func TestButtonIsDrawnAsABorder(t *testing.T) {
+	button := build(t, "Button", map[string]string{"label": "Save"}).(widget.Templated)
+
+	element, attrs, fallback := button.Template()
+	assert.Equal(t, "Border", element)
+	assert.Equal(t, map[string]string{"kind": "rounded", "pad": "1", "contentAlign": "center"}, attrs)
+	assert.Equal(t, "Save", fallback, "the label is the content when nothing was written inside")
+	assert.Equal(t, sema.Thickness{}, button.Insets(), "the border keeps the insets, not the button")
 }
 
 func TestButtonLabelIsSugarForItsContent(t *testing.T) {
-	button := composer(t, "Button", map[string]string{"label": "Save"})
-
-	assert.Equal(t, "╭──────╮\n│ Save │\n╰──────╯", button.Compose(nil, 8, 3))
+	assert.Equal(t, "╭──────╮\n│ Save │\n╰──────╯", face(t, map[string]string{"label": "Save"}, widget.State{}, "Save", 8))
 }
 
-// The label and the slot are the same thing seen a pair of times, so anything written inside wins: that is what makes rich
-func TestButtonContentSlotBeatsTheLabel(t *testing.T) {
-	button := composer(t, "Button", map[string]string{"label": "Save"})
-
-	out := button.Compose(widget.Slots{"Content": {"[3]"}}, 8, 3)
-	assert.Contains(t, out, "[3]")
-	assert.NotContains(t, out, "Save")
+func TestButtonCentresItsContent(t *testing.T) {
+	assert.Equal(t, "╭──────────╮\n│    Go    │\n╰──────────╯", face(t, nil, widget.State{}, "Go", 12))
 }
 
-func TestButtonTakesDefaultSlotContentToo(t *testing.T) {
-	button := composer(t, "Button", nil)
+func TestButtonBindsOnlyTheLibraryBorder(t *testing.T) {
+	button := build(t, "Button", nil).(widget.Templated)
 
-	assert.Contains(t, button.Compose(content("Quit"), 8, 3), "Quit")
+	err := button.Bind(build(t, "Badge", map[string]string{"label": "x"}))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "a button is drawn as the library's Border")
 }
 
 func TestButtonDeclaresItsSlot(t *testing.T) {
@@ -51,21 +58,17 @@ func TestButtonDeclaresItsSlot(t *testing.T) {
 
 // The focused control has to be obvious without relying on colour alone, so the border thickens rather than only
 func TestFocusedButtonChangesItsBorder(t *testing.T) {
-	resting := composer(t, "Button", map[string]string{"label": "Go"}).Compose(nil, 6, 3)
-	focused := stateful(t, build(t, "Button", map[string]string{"label": "Go"}),
-		widget.State{Focused: true}).Compose(nil, 6, 3)
+	resting := face(t, nil, widget.State{}, "Go", 6)
+	focused := face(t, nil, widget.State{Focused: true}, "Go", 6)
 
 	assert.Contains(t, resting, "╭")
 	assert.Contains(t, focused, "╔")
 }
 
 func TestPressedAndHoveredButtonsLookDifferent(t *testing.T) {
-	base := composer(t, "Button", map[string]string{"label": "Go"}).Compose(nil, 6, 3)
-
-	pressed := stateful(t, build(t, "Button", map[string]string{"label": "Go"}),
-		widget.State{Pressed: true}).Compose(nil, 6, 3)
-	hovered := stateful(t, build(t, "Button", map[string]string{"label": "Go"}),
-		widget.State{Hovered: true}).Compose(nil, 6, 3)
+	base := face(t, nil, widget.State{}, "Go", 6)
+	pressed := face(t, nil, widget.State{Pressed: true}, "Go", 6)
+	hovered := face(t, nil, widget.State{Hovered: true}, "Go", 6)
 
 	assert.NotEqual(t, base, pressed)
 	assert.NotEqual(t, base, hovered)
@@ -83,35 +86,17 @@ func TestDisabledButtonRefusesFocus(t *testing.T) {
 
 // A disabled control still looks disabled when focus happens to be reported on it, which is what a stale frame would
 func TestDisabledButtonIgnoresFocusStyling(t *testing.T) {
-	disabled := stateful(t, build(t, "Button", map[string]string{"label": "Go", "disabled": "true"}),
-		widget.State{Focused: true}).Compose(nil, 6, 3)
+	disabled := face(t, map[string]string{"disabled": "true"}, widget.State{Focused: true}, "Go", 6)
 
 	assert.Contains(t, disabled, "╭", "the border stays the resting one")
 }
 
 func TestButtonVariants(t *testing.T) {
-	plain := composer(t, "Button", map[string]string{"label": "Go"}).Compose(nil, 6, 3)
-	danger := composer(t, "Button", map[string]string{"label": "Go", "variant": "danger"}).Compose(nil, 6, 3)
+	plain := face(t, nil, widget.State{}, "Go", 6)
+	danger := face(t, map[string]string{"variant": "danger"}, widget.State{}, "Go", 6)
 	assert.NotEqual(t, plain, danger)
 
 	_, err := tryBuild("Button", map[string]string{"variant": "loud"})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "expected one of danger, default, primary")
-}
-
-func TestButtonMeasuresItsLabelPlusItsFrame(t *testing.T) {
-	button := build(t, "Button", map[string]string{"label": "Save"})
-
-	w, h := button.Measure(0, 0)
-	assert.Equal(t, 8, w, "four cells of label plus a border and a space either side")
-	assert.Equal(t, 3, h)
-
-	w, _ = button.Measure(5, 0)
-	assert.Equal(t, 5, w, "a button never asks for more than it was offered")
-}
-
-func TestButtonRendersWithoutChildren(t *testing.T) {
-	button := build(t, "Button", map[string]string{"label": "Ok"})
-
-	assert.Equal(t, 3, len(strings.Split(button.Render(6, 3), "\n")))
 }
