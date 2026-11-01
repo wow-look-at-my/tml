@@ -6,6 +6,8 @@ import (
 	"sort"
 
 	"charm.land/lipgloss/v2"
+
+	"github.com/wow-look-at-my/tml/sema"
 )
 
 // Native is an element supplied by something other than the language itself.
@@ -46,10 +48,8 @@ type Animator interface {
 // Composer is a widget that wraps the children written inside it rather than replacing them: a frame, a dialog.
 type Composer interface {
 	Native
-	// Inset is the space the widget keeps for itself around its children.
-	Inset() (horizontal, vertical int)
-	// Origin is where the children start inside the widget: the part of the inset on the left and on the top.
-	Origin() (left, top int)
+	// Insets is the space the widget keeps for itself on each side of its children.
+	Insets() sema.Thickness
 	// Compose draws the widget at the size it was given, around its children.
 	Compose(slots Slots, w, h int) string
 }

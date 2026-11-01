@@ -53,7 +53,8 @@ func childrenWidth(box *Box) int {
 
 // measureComposer sizes a wrapping widget: its children measured against what is left after its own inset, stacked
 func (e *Engine) measureComposer(box *Box, inner Constraints) Size {
-	insetW, insetH := box.composer().Inset()
+	insets := box.composer().Insets()
+	insetW, insetH := insets.Horizontal(), insets.Vertical()
 	want := arrangement(box)
 
 	child := Constraints{MaxW: max(0, inner.MaxW-insetW), MaxH: max(0, inner.MaxH-insetH)}
@@ -88,10 +89,10 @@ func (e *Engine) measureComposer(box *Box, inner Constraints) Size {
 }
 
 func (e *Engine) arrangeComposer(box *Box, composer widget.Composer) {
-	insetW, insetH := composer.Inset()
-	left, top := composer.Origin()
-	width := max(0, box.Content.W-insetW)
-	height := max(0, box.Content.H-insetH)
+	insets := composer.Insets()
+	left, top := insets.Left, insets.Top
+	width := max(0, box.Content.W-insets.Horizontal())
+	height := max(0, box.Content.H-insets.Vertical())
 	want := arrangement(box)
 
 	// A scrolling region cannot scroll past its own content: the widget draws the last screenful rather than blank space,

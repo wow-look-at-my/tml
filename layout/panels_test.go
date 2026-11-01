@@ -26,9 +26,10 @@ type wrapper struct {
 	offsetX, offsetY int
 }
 
-func (w wrapper) Inset() (int, int) { return w.insetW, w.insetH }
-
-func (w wrapper) Origin() (int, int) { return w.insetW / 2, w.insetH / 2 }
+// Insets splits the inset evenly, and an odd cell goes on the right or the bottom.
+func (w wrapper) Insets() sema.Thickness {
+	return sema.Thickness{Left: w.insetW / 2, Right: w.insetW - w.insetW/2, Top: w.insetH / 2, Bottom: w.insetH - w.insetH/2}
+}
 
 func (w wrapper) Compose(widget.Slots, int, int) string { return "" }
 

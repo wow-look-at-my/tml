@@ -7,6 +7,7 @@ import (
 
 	"charm.land/lipgloss/v2"
 
+	"github.com/wow-look-at-my/tml/sema"
 	"github.com/wow-look-at-my/tml/widget"
 )
 
@@ -55,21 +56,18 @@ func (b *button) AcceptsFocus() bool { return !b.disabled }
 
 func (b *button) SetState(state widget.State) { b.state = state }
 
-// Inset is the border plus a space either side of the content.
-func (b *button) Inset() (int, int) { return 4, 2 }
-
-// Origin is inside the left border and its space, and under the top border.
-func (b *button) Origin() (int, int) { return 2, 1 }
+// Insets is the border on every side, plus a space either side of the content.
+func (b *button) Insets() sema.Thickness { return sema.Thickness{Top: 1, Bottom: 1, Left: 2, Right: 2} }
 
 func (b *button) Slots() []string { return buttonSlots }
 
 func (b *button) Measure(maxW, _ int) (int, int) {
-	insetW, insetH := b.Inset()
-	width := b.measure.Width(b.label) + insetW
+	insets := b.Insets()
+	width := b.measure.Width(b.label) + insets.Horizontal()
 	if maxW > 0 {
 		width = min(width, maxW)
 	}
-	return width, 1 + insetH
+	return width, 1 + insets.Vertical()
 }
 
 func (b *button) Render(w, h int) string { return b.Compose(nil, w, h) }

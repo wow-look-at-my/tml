@@ -9,6 +9,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"github.com/charmbracelet/x/ansi"
 
+	"github.com/wow-look-at-my/tml/sema"
 	"github.com/wow-look-at-my/tml/widget"
 )
 
@@ -73,11 +74,10 @@ func newFrame(dialog bool) builder {
 	}
 }
 
-// Inset is the border on all several sides plus the horizontal padding.
-func (f *frame) Inset() (int, int) { return 2 + f.pad*2, 2 }
-
-// Origin is inside the left border and its padding, and under the top border.
-func (f *frame) Origin() (int, int) { return 1 + f.pad, 1 }
+// Insets is the border on every side, plus the padding on the left and the right.
+func (f *frame) Insets() sema.Thickness {
+	return sema.Thickness{Top: 1, Bottom: 1, Left: 1 + f.pad, Right: 1 + f.pad}
+}
 
 // DefaultAnchor puts a dialog in the middle of a canvas. A frame is a decoration and stays where it was put.
 func (f *frame) DefaultAnchor() string {
@@ -89,7 +89,8 @@ func (f *frame) DefaultAnchor() string {
 
 // Measure is only reached when the element is empty, since layout measures a composer's children itself. An empty
 func (f *frame) Measure(_, _ int) (int, int) {
-	insetW, insetH := f.Inset()
+	insets := f.Insets()
+	insetW, insetH := insets.Horizontal(), insets.Vertical()
 	if f.title != "" {
 		insetW = max(insetW, f.measure.Width(f.title)+4)
 	}

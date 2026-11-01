@@ -212,7 +212,7 @@ Then opt into whatever else applies:
 | --- | --- |
 | `Focusable` | Takes part in the focus ring. Returning false means disabled, and a disabled widget is unreachable by pointer too. |
 | `Stateful` | Told focus, hover and press before each measure. |
-| `Composer` | Wraps the children written inside it: declare the `Inset` you keep and the `Origin` the children start at, get them back already drawn. The origin is what puts a child's published rect where the widget draws it. |
+| `Composer` | Wraps the children written inside it: declare the `Insets` you keep on each side, get them back already drawn. The left and top insets are what put a child's published rect where the widget draws it. |
 | `Arranger` | Says how those children are measured and placed -- fill, free (overflowing), or offset. |
 | `Slotted` | Names the regions content can be written into, so a misspelt `<Button.Contnt>` fails when the view loads. |
 | `Anchored` | An opinion about where it sits on a `Canvas`. `Popup` says centre. |
