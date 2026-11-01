@@ -1,0 +1,8 @@
+<Scrollbox id="log" offset="9999" height="2" width="20">
+		<Stack>
+			<Text>one</Text>
+			<Text>two</Text>
+			<Text>three</Text>
+			<Text>four</Text>
+		</Stack>
+	</Scrollbox>

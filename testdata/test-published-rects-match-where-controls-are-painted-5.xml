@@ -1,0 +1,4 @@
+<Border><Scrollbox height="8"><Stack>
+			<Button id="a" label="Aaa"/>
+			<Button id="b" label="Bbb"/>
+		</Stack></Scrollbox></Border>

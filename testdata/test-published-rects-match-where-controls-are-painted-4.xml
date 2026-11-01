@@ -1,0 +1,4 @@
+<Border><Stack>
+			<Button id="a" label="Aaa"/>
+			<Border pad="0"><Button id="b" label="Bbb"/></Border>
+		</Stack></Border>

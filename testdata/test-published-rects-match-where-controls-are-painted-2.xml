@@ -1,0 +1,4 @@
+<Stack align="center" gap="1" width="40">
+			<Button id="a" label="Aaa"/>
+			<Button id="b" label="Bbbbbbbb"/>
+		</Stack>

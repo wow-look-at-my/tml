@@ -1,0 +1,5 @@
+<Stack orientation="horizontal" gap="1">
+	<Button id="save" action="save" label="Save"/>
+	<Button id="locked" label="Locked" disabled="true"/>
+	<Button id="quit" action="quit" label="Quit"/>
+</Stack>

@@ -1,0 +1,5 @@
+<Grid columns="auto,1*" rows="auto,auto" gap="1">
+			<Button id="a" label="Aaa" Grid.row="0" Grid.column="0"/>
+			<Button id="b" label="Bbb" Grid.row="0" Grid.column="1"/>
+			<Button id="c" label="Ccc" Grid.row="1" Grid.column="1"/>
+		</Grid>

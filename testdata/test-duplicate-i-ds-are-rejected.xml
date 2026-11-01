@@ -1,0 +1,4 @@
+<Stack>
+		<Button id="go" label="One"/>
+		<Button id="go" label="Two"/>
+	</Stack>
