@@ -228,6 +228,17 @@ func TestPublishedRectsMatchWhereControlsArePainted(t *testing.T) {
 			<Button id="a" label="Aaa"/>
 			<Button id="b" label="Bbb"/>
 		</Stack>`},
+		{"border", `<Border><Stack><Button id="a" label="Aaa"/></Stack></Border>`},
+		{"padded border", `<Border pad="3"><Button id="a" label="Aaa"/></Border>`},
+		{"nested borders", `<Border><Stack>
+			<Button id="a" label="Aaa"/>
+			<Border pad="0"><Button id="b" label="Bbb"/></Border>
+		</Stack></Border>`},
+		{"popup", `<Canvas><Popup title="Ask"><Button id="a" label="Aaa"/></Popup></Canvas>`},
+		{"scrollbox in a border", `<Border><Scrollbox height="8"><Stack>
+			<Button id="a" label="Aaa"/>
+			<Button id="b" label="Bbb"/>
+		</Stack></Scrollbox></Border>`},
 	} {
 		t.Run(panel.name, func(t *testing.T) {
 			loaded := interactive(t, panel.template, 40, 12)
