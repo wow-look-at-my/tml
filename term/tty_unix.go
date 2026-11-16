@@ -57,6 +57,8 @@ type pollReader struct {
 	fd         int
 	wake, woke *os.File
 	once       sync.Once
+	// blocking is set when poll does not work here, and the reader falls back to a plain read.
+	blocking bool
 }
 
 // NewReader wraps a terminal's input. A stream with no descriptor is read as it is, and Close cannot interrupt it.
@@ -73,6 +75,9 @@ func NewReader(stream io.Reader) (Reader, error) {
 }
 
 func (r *pollReader) Read(p []byte) (int, error) {
+	if r.blocking {
+		return r.readBlocking(p)
+	}
 	fds := []unix.PollFd{
 		{Fd: int32(r.fd), Events: unix.POLLIN},
 		{Fd: int32(r.woke.Fd()), Events: unix.POLLIN},
@@ -83,7 +88,9 @@ func (r *pollReader) Read(p []byte) (int, error) {
 			continue
 		}
 		if err != nil {
-			return 0, err
+			// A host with no poll for this descriptor still has a keyboard. The read then blocks, and Close cannot interrupt it.
+			r.blocking = true
+			return r.readBlocking(p)
 		}
 		if fds[1].Revents != 0 {
 			return 0, io.EOF
@@ -98,6 +105,19 @@ func (r *pollReader) Read(p []byte) (int, error) {
 			}
 			return max(n, 0), err
 		}
+	}
+}
+
+func (r *pollReader) readBlocking(p []byte) (int, error) {
+	for {
+		n, err := unix.Read(r.fd, p)
+		if errors.Is(err, unix.EINTR) {
+			continue
+		}
+		if n == 0 && err == nil {
+			return 0, io.EOF
+		}
+		return max(n, 0), err
 	}
 }
 
