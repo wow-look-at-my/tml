@@ -2,6 +2,8 @@
 // loop of its own, so the inspector can read it and cannot drive it.
 package main
 
+import _ "embed"
+
 import (
 	"fmt"
 	"os"
@@ -11,10 +13,8 @@ import (
 	"github.com/wow-look-at-my/tml"
 )
 
-const doc = `<?xml version="1.1" encoding="UTF-8"?>
-<Component xmlns="urn:tml:v1" name="App">
-	<Template><Stack id="app" width="20"><Text id="hello">hello</Text></Stack></Template>
-</Component>`
+//go:embed doc.xml
+var doc string
 
 func main() {
 	view, err := tml.Load(fstest.MapFS{"app.tml": &fstest.MapFile{Data: []byte(doc)}},
