@@ -124,7 +124,7 @@ func TestFrameReducesTheContentBox(t *testing.T) {
 	assert.Equal(t, 1, box.Content.H)
 }
 
-// Margin is TML's, not lipgloss's, so it must come out of the rect too.
+// Margin comes out of the rect too.
 func TestMarginReducesTheContentBox(t *testing.T) {
 	root := el("Box", map[string]string{"width": "20", "height": "5", "margin": "1"})
 	box := layoutTree(t, root, 40, 10)

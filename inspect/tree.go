@@ -6,8 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/charmbracelet/x/ansi"
-
 	"github.com/wow-look-at-my/tml/layout"
 	"github.com/wow-look-at-my/tml/render"
 )
@@ -63,7 +61,7 @@ func node(box *layout.Box, state map[string]layout.Target, path string) Node {
 
 // summary is a node's own drawn text on a single line, cut to something a tree can show without wrapping.
 func summary(box *layout.Box) string {
-	text := ansi.Strip(render.Render(box))
+	text := render.Alone(box, nil).Text()
 	text = strings.ReplaceAll(text, "\n", " ")
 	text = strings.Join(strings.Fields(text), " ")
 	const limit = 60

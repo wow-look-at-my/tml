@@ -6,6 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/wow-look-at-my/tml/cell"
+	"github.com/wow-look-at-my/tml/sema"
 	"github.com/wow-look-at-my/tml/syntax"
 )
 
@@ -21,7 +23,7 @@ func namedStyle(name, extends string, attrs map[string]string) *syntax.Style {
 	return style
 }
 
-// extends is resolved in TML's own model precisely because lipgloss Inherit drops padding. A style that extends another
+// A style that extends another carries its box model along, padding and border included.
 func TestExtendsCarriesTheBoxModel(t *testing.T) {
 	sheet, err := NewSheet(theme(
 		namedStyle("card", "", map[string]string{"padding": "1 2", "border": "rounded"}),
@@ -32,10 +34,9 @@ func TestExtendsCarriesTheBoxModel(t *testing.T) {
 	resolved, err := sheet.Resolve("card.title", nil)
 	require.NoError(t, err)
 
-	assert.True(t, resolved.Style.GetBold(), "the child's own attribute applies")
-	top, right, bottom, left := resolved.Style.GetPadding()
-	assert.Equal(t, []int{1, 2, 1, 2}, []int{top, right, bottom, left},
-		"padding survives extends, which Inherit alone would have dropped")
+	assert.True(t, resolved.Paint.Has(cell.Bold), "the child's own attribute applies")
+	assert.Equal(t, sema.Thickness{Top: 1, Right: 2, Bottom: 1, Left: 2}, resolved.Padding, "padding survives extends")
+	assert.NotNil(t, resolved.Border, "so does the border")
 }
 
 func TestChildOverridesParent(t *testing.T) {
@@ -47,7 +48,7 @@ func TestChildOverridesParent(t *testing.T) {
 
 	resolved, err := sheet.Resolve("tight", nil)
 	require.NoError(t, err)
-	assert.Equal(t, 0, resolved.Style.GetHorizontalPadding())
+	assert.Equal(t, 0, resolved.Padding.Horizontal())
 }
 
 func TestInlineAttributesBeatTheNamedStyle(t *testing.T) {
@@ -56,7 +57,7 @@ func TestInlineAttributesBeatTheNamedStyle(t *testing.T) {
 
 	resolved, err := sheet.Resolve("card", map[string]string{"padding": "0"})
 	require.NoError(t, err)
-	assert.Equal(t, 0, resolved.Style.GetHorizontalPadding())
+	assert.Equal(t, 0, resolved.Padding.Horizontal())
 }
 
 func TestStyleAttributesResolveThemeTokens(t *testing.T) {
@@ -68,11 +69,11 @@ func TestStyleAttributesResolveThemeTokens(t *testing.T) {
 
 	resolved, err := sheet.Resolve("card", nil)
 	require.NoError(t, err)
-	assert.Equal(t, 6, resolved.Style.GetHorizontalPadding(), "3 cells each side")
+	assert.Equal(t, 6, resolved.Padding.Horizontal(), "3 cells each side")
 }
 
-// Margin is deliberately kept off the lipgloss style.
-func TestMarginIsKeptOutOfTheLipglossStyle(t *testing.T) {
+// Margin sits outside the frame, so it neither counts as padding nor moves the frame.
+func TestMarginIsKeptOutOfTheFrame(t *testing.T) {
 	sheet, err := NewSheet(nil, nil)
 	require.NoError(t, err)
 
@@ -80,7 +81,68 @@ func TestMarginIsKeptOutOfTheLipglossStyle(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, 2, resolved.Margin.Left)
-	assert.Equal(t, 0, resolved.Style.GetHorizontalMargins(), "the style itself carries no margin")
+	assert.Equal(t, 0, resolved.Padding.Horizontal(), "margin is not padding")
+	horizontal, _ := resolved.Frame()
+	assert.Equal(t, 0, horizontal, "the frame carries no margin")
+	x, y := resolved.ContentOffset()
+	assert.Equal(t, []int{2, 1}, []int{x, y}, "the content starts past the margin")
+}
+
+func TestColoursAndTextAttributesLandOnThePaint(t *testing.T) {
+	sheet, err := NewSheet(nil, nil)
+	require.NoError(t, err)
+
+	resolved, err := sheet.Resolve("", map[string]string{
+		"fg": "#ff0000", "bg": "12", "borderColor": "red", "border": "rounded",
+		"bold": "true", "italic": "true", "underline": "false",
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, cell.MustColor("#ff0000"), resolved.Paint.Fg)
+	assert.Equal(t, cell.Indexed(12), resolved.Paint.Bg)
+	assert.True(t, resolved.Paint.Has(cell.Bold|cell.Italic))
+	assert.False(t, resolved.Paint.Has(cell.Underline))
+	require.NotNil(t, resolved.Border)
+	rounded, _ := cell.BorderNamed("rounded")
+	assert.Equal(t, rounded, *resolved.Border)
+	assert.Equal(t, cell.MustColor("red"), resolved.BorderPaint.Fg, "the border colour paints the border only")
+}
+
+func TestBorderNoneDrawsNoBorder(t *testing.T) {
+	sheet, err := NewSheet(nil, nil)
+	require.NoError(t, err)
+
+	resolved, err := sheet.Resolve("", map[string]string{"border": "none"})
+	require.NoError(t, err)
+	assert.Nil(t, resolved.Border)
+}
+
+func TestAlignmentNamesMapToAlign(t *testing.T) {
+	sheet, err := NewSheet(nil, nil)
+	require.NoError(t, err)
+
+	tests := []struct {
+		align, valign string
+		want, wantV   Align
+	}{
+		{"left", "top", AlignStart, AlignStart},
+		{"center", "middle", AlignCenter, AlignCenter},
+		{"right", "bottom", AlignEnd, AlignEnd},
+	}
+	for _, tc := range tests {
+		resolved, err := sheet.Resolve("", map[string]string{"align": tc.align, "valign": tc.valign})
+		require.NoError(t, err)
+		assert.Equal(t, tc.want, resolved.Align, tc.align)
+		assert.Equal(t, tc.wantV, resolved.VAlign, tc.valign)
+	}
+}
+
+func TestAlignOffset(t *testing.T) {
+	assert.Equal(t, 0, AlignStart.Offset(4, 10))
+	assert.Equal(t, 3, AlignCenter.Offset(4, 10))
+	assert.Equal(t, 4, AlignCenter.Offset(3, 10), "the middle rounds toward the end")
+	assert.Equal(t, 6, AlignEnd.Offset(4, 10))
+	assert.Equal(t, 0, AlignEnd.Offset(12, 10), "content larger than the space starts at the start")
 }
 
 func TestFrameCountsPaddingAndBorder(t *testing.T) {
@@ -136,6 +198,10 @@ func TestResolveRejects(t *testing.T) {
 		{name: "unknown border", inline: map[string]string{"border": "wiggly"}, wantErr: "unknown border"},
 		{name: "non-boolean flag", inline: map[string]string{"bold": "yes"}, wantErr: "expected true or false"},
 		{name: "bad alignment", inline: map[string]string{"align": "middle"}, wantErr: "align must be"},
+		{name: "bad vertical alignment", inline: map[string]string{"valign": "center"}, wantErr: "valign must be"},
+		{name: "bad foreground", inline: map[string]string{"fg": "nope"}, wantErr: "fg: "},
+		{name: "bad background", inline: map[string]string{"bg": "nope"}, wantErr: "bg: "},
+		{name: "bad border colour", inline: map[string]string{"borderColor": "nope"}, wantErr: "borderColor: "},
 		{name: "bad padding", inline: map[string]string{"padding": "1 2 3"}, wantErr: "takes 1, 2 or 4 values"},
 	}
 	for _, tc := range tests {

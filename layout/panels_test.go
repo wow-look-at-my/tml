@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/sema"
 	"github.com/wow-look-at-my/tml/style"
 	"github.com/wow-look-at-my/tml/widget"
@@ -16,7 +17,7 @@ type stub struct{ w, h int }
 
 func (s stub) Measure(_, _ int) (int, int) { return s.w, s.h }
 
-func (s stub) Render(_, _ int) string { return "" }
+func (s stub) Draw(cell.Canvas) {}
 
 // wrapper is a composer that keeps a fixed inset, for testing that children are laid out inside what a widget leaves
 type wrapper struct {
@@ -30,8 +31,6 @@ type wrapper struct {
 func (w wrapper) Insets() sema.Thickness {
 	return sema.Thickness{Left: w.insetW / 2, Right: w.insetW - w.insetW/2, Top: w.insetH / 2, Bottom: w.insetH - w.insetH/2}
 }
-
-func (w wrapper) Compose(widget.Slots, int, int) string { return "" }
 
 func (w wrapper) Arrange() widget.Layout {
 	return widget.Layout{FreeH: w.free, FreeW: w.freeW, OffsetX: w.offsetX, OffsetY: w.offsetY}

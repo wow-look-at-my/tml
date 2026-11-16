@@ -8,7 +8,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/charmbracelet/x/ansi"
 	"github.com/spf13/cobra"
 
 	"github.com/wow-look-at-my/tml/layout"
@@ -80,13 +79,10 @@ func ids(box *layout.Box, out *[]string) {
 
 // describe renders a single box on its own and reports where it landed.
 func describe(box *layout.Box, sc scroll, keepANSI bool) element {
-	text := render.Render(box)
-	if !keepANSI {
-		text = ansi.Strip(text)
-	}
-	lines := []string{}
-	if text != "" {
-		lines = strings.Split(text, "\n")
+	drawn := render.Alone(box, nil)
+	lines := drawn.Lines()
+	if keepANSI && drawn.H > 0 {
+		lines = strings.Split(drawn.String(), "\n")
 	}
 	return element{
 		ID:      box.ID,

@@ -3,6 +3,7 @@
 package widgets
 
 import (
+	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/widget"
 )
 
@@ -20,4 +21,4 @@ func newBadge(ctx widget.Context) (widget.Native, error) {
 
 func (b *badge) Measure(_, _ int) (int, int) { return b.measure.Width(b.label), 1 }
 
-func (b *badge) Render(_, _ int) string { return b.label }
+func (b *badge) Draw(c cell.Canvas) { c.Text(0, 0, b.label, cell.Style{}) }

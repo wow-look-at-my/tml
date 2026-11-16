@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/widget"
 )
 
@@ -19,12 +20,16 @@ var sparkBars = []rune{'▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'}
 type sparkline struct {
 	values []float64
 	limit  float64
-	color  string
+	color  cell.Color
 }
 
 func newSparkline(ctx widget.Context) (widget.Native, error) {
 	raw := ctx.Attrs.List("values")
-	line := &sparkline{color: ctx.Attrs.String("color", "")}
+	color, err := colorAttr(ctx.Attrs, "color")
+	if err != nil {
+		return nil, err
+	}
+	line := &sparkline{color: color}
 	for _, field := range raw {
 		n, err := strconv.ParseFloat(strings.TrimSpace(field), 64)
 		if err != nil {
@@ -63,7 +68,8 @@ func (s *sparkline) Measure(maxW, _ int) (int, int) {
 	return width, 1
 }
 
-func (s *sparkline) Render(w, _ int) string {
+func (s *sparkline) Draw(c cell.Canvas) {
+	w, _ := c.Size()
 	values := s.values
 	// Too many points for the space: keep the most recent, because a series scrolls off the left in every chart anybody
 	if w > 0 && len(values) > w {
@@ -76,5 +82,5 @@ func (s *sparkline) Render(w, _ int) string {
 		index := int(min(1, max(0, v/scale)) * float64(len(sparkBars)-1))
 		b.WriteRune(sparkBars[index])
 	}
-	return paint(s.color).Render(b.String())
+	c.Text(0, 0, b.String(), paint(s.color))
 }
