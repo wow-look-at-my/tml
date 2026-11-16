@@ -80,7 +80,7 @@ func TestButtonIsAsBigAsItsLabelPlusItsBorder(t *testing.T) {
 // Content inside a button is published where it is drawn, because its geometry is the border's.
 func TestButtonContentIsPublishedWhereItIsDrawn(t *testing.T) {
 	loaded := interactive(t, `<Stack><Text>head</Text><Button id="go"><Badge id="count" label="7"/></Button></Stack>`, 30, 8)
-	frame, err := loaded.Render(nil, 30, 8)
+	frame, err := loaded.Draw(nil, 30, 8)
 	require.NoError(t, err)
 
 	count, ok := loaded.UI().Target("count")

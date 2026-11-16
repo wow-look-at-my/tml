@@ -8,11 +8,11 @@ import (
 	"testing"
 	"testing/fstest"
 
-	"github.com/charmbracelet/x/ansi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/wow-look-at-my/tml"
+	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/sema"
 )
 
@@ -131,7 +131,7 @@ func drawWindow(t *testing.T, list measured, s tml.Slice, height int) []string {
 		"offset": sema.StringValue(fmt.Sprint(s.Offset)),
 	}, 20, height)
 	require.NoError(t, err)
-	return strings.Split(ansi.Strip(out), "\n")
+	return strings.Split(cell.Strip(out), "\n")
 }
 
 // A window and a Scrollbox agree on every row: the newest line sits on the bottom row. The top of the list fills the

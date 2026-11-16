@@ -5,9 +5,7 @@ package widgets
 import (
 	"strings"
 
-	"charm.land/lipgloss/v2"
-	"github.com/charmbracelet/x/ansi"
-
+	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/widget"
 )
 
@@ -56,11 +54,14 @@ func (l *list) Measure(maxW, _ int) (int, int) {
 	return width, len(l.items)
 }
 
-func (l *list) Render(w, _ int) string {
-	rows := make([]string, 0, len(l.items))
+func (l *list) Draw(c cell.Canvas) {
+	w, _ := c.Size()
+	if l.disabled {
+		c = c.Styled(cell.Style{}.Faint(true))
+	}
 	for i, item := range l.items {
 		mark := strings.Repeat(" ", gutter)
-		style := lipgloss.NewStyle()
+		var style cell.Style
 		if i == l.selected {
 			mark = string(l.cursor) + " "
 			style = style.Bold(true)
@@ -68,15 +69,8 @@ func (l *list) Render(w, _ int) string {
 				style = style.Reverse(true)
 			}
 		}
-		// A row too wide for the space is cut, never wrapped: a wrapped row would take a pair of lines, push every row below it
-		row := ansi.Truncate(mark+item, max(0, w), "…")
-		if gap := w - l.measure.Width(row); gap > 0 {
-			row += strings.Repeat(" ", gap)
-		}
-		rows = append(rows, style.Render(row))
+		// The mark covers the row's whole width.
+		c.Fill(0, i, w, 1, style)
+		c.Line(0, i, l.measure.Text(mark+item, cell.Style{}).Truncate(max(0, w), "…"), style)
 	}
-	if l.disabled {
-		return lipgloss.NewStyle().Faint(true).Render(strings.Join(rows, "\n"))
-	}
-	return strings.Join(rows, "\n")
 }

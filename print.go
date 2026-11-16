@@ -7,10 +7,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/charmbracelet/colorprofile"
-	"github.com/charmbracelet/x/term"
-
+	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/render"
+	"github.com/wow-look-at-my/tml/term"
 )
 
 // UnboundedWidth is the width Print lays a document out at when w is not a terminal.
@@ -36,59 +35,37 @@ func (v *View) Print(w io.Writer, props Props, width int) error {
 	if err != nil {
 		return err
 	}
-	out := render.Render(box)
-	v.record(box, out, box.Rect.W, box.Rect.H)
-	text := trimLines(out)
+	frame := render.Alone(box, v.measure)
+	v.record(box, frame, frame.W, frame.H)
+	text := trimmed(frame, cell.DetectProfile(os.Getenv, term.IsTerminal(w)))
 	if text == "" {
 		return nil
 	}
-	_, err = io.WriteString(colorprofile.NewWriter(w, os.Environ()), text+"\n")
+	_, err = io.WriteString(w, text+"\n")
 	return err
 }
 
 // PrintWidth is the width Print uses for w when it is given none: the terminal's columns, or UnboundedWidth.
 func PrintWidth(w io.Writer) int {
-	if f, ok := w.(term.File); ok && term.IsTerminal(f.Fd()) {
-		if cols, _, err := term.GetSize(f.Fd()); err == nil && cols > 0 {
-			return cols
-		}
+	if cols, _, err := term.Size(w); err == nil && cols > 0 {
+		return cols
 	}
 	return UnboundedWidth
 }
 
-// trimLines drops the blanks at the end of each line, and the blank lines at the end of the document. The layout
-// pads every line to the document's width, which on a pipe is only noise.
-func trimLines(s string) string {
-	lines := strings.Split(s, "\n")
-	for i, line := range lines {
-		lines[i] = trimTrailingBlanks(line)
+// trimmed is the frame as text without the blanks at the end of each line, or the blank lines at the end of the
+// document. The layout pads every line to the document's width, which on a pipe is only noise.
+func trimmed(frame *cell.Buffer, profile cell.Profile) string {
+	last := frame.H
+	for last > 0 && frame.Used(last-1) == 0 {
+		last--
 	}
-	for len(lines) > 0 && lines[len(lines)-1] == "" {
-		lines = lines[:len(lines)-1]
-	}
-	return strings.Join(lines, "\n")
-}
-
-// trimTrailingBlanks drops the spaces after the last visible cell. A space inside an escape run is part of the escape
-// run, so the line keeps its escapes and loses only the blanks.
-func trimTrailingBlanks(line string) string {
-	end := len(line)
-	for end > 0 {
-		switch {
-		case line[end-1] == ' ':
-			end--
-		case strings.HasSuffix(line[:end], "\x1b[m"):
-			end -= len("\x1b[m")
-		case strings.HasSuffix(line[:end], "\x1b[0m"):
-			end -= len("\x1b[0m")
-		default:
-			trimmed := line[:end]
-			if end < len(line) && strings.Contains(line[end:], "\x1b[") {
-				// A reset after the last cell keeps the next line from inheriting a style.
-				trimmed += "\x1b[m"
-			}
-			return trimmed
+	var out strings.Builder
+	for y := range last {
+		if y > 0 {
+			out.WriteByte('\n')
 		}
+		frame.WriteRow(&out, y, 0, frame.Used(y), profile)
 	}
-	return ""
+	return out.String()
 }

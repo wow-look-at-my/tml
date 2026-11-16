@@ -1,7 +1,5 @@
 package tml
 
-import tea "charm.land/bubbletea/v2"
-
 // ResetInspection drops the process's inspector and stops serving. Test-only.
 func ResetInspection() {
 	inspection.close()
@@ -25,12 +23,7 @@ func SweepStale(dir, own string) { sweepStale(dir, own) }
 func ResetDrivable() { drives.reset() }
 
 // InterruptLive delivers what SIGINT delivers to a running region, without a signal the test process would also get.
-func InterruptLive(l *Live) {
-	l.mu.Lock()
-	program := l.program
-	l.mu.Unlock()
-	program.Send(tea.InterruptMsg{})
-}
+func InterruptLive(l *Live) { l.program.Send(interruptMsg{}) }
 
 // CheckDrivable is the guard's failure, reached directly. Test-only: it is what lets a test see the panic and its
 func CheckDrivable() { drives.check() }

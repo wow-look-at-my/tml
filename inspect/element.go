@@ -2,10 +2,6 @@
 package inspect
 
 import (
-	"strings"
-
-	"github.com/charmbracelet/x/ansi"
-
 	"github.com/wow-look-at-my/tml/layout"
 	"github.com/wow-look-at-my/tml/render"
 )
@@ -63,13 +59,9 @@ type Options struct {
 
 // Describe renders box on its own and reports where it landed. state supplies the interaction flags, which the box
 func Describe(box *layout.Box, state map[string]layout.Target, opts Options) Element {
-	styled := render.Render(box)
-	text := ansi.Strip(styled)
-
-	lines := []string{}
-	if text != "" {
-		lines = strings.Split(text, "\n")
-	}
+	drawn := render.Alone(box, nil)
+	text := drawn.Text()
+	lines := drawn.Lines()
 
 	el := Element{
 		ID:      box.ID,
@@ -81,8 +73,8 @@ func Describe(box *layout.Box, state map[string]layout.Target, opts Options) Ele
 		Text:    text,
 		Lines:   lines,
 	}
-	if opts.ANSI {
-		el.ANSI = styled
+	if opts.ANSI && drawn.H > 0 {
+		el.ANSI = drawn.String()
 	}
 	if t, ok := state[box.ID]; ok {
 		el.Focus = t.Focus

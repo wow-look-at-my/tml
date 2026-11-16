@@ -75,7 +75,7 @@ func takeCapture(args []string, dark bool, width, height int, props []string, so
 	}
 	return inspect.SnapshotFrame(inspect.Frame{
 		Seq: 1, At: time.Now(), Width: width, Height: height,
-		Box: box, State: inspect.StateOf(view.UI().Targets()), ANSI: render.Render(box),
+		Box: box, State: inspect.StateOf(view.UI().Targets()), Screen: render.Frame(box, width, height, nil),
 	})
 }
 

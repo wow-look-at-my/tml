@@ -6,13 +6,12 @@ import (
 	"strings"
 	"testing"
 
-	tea "charm.land/bubbletea/v2"
-	"charm.land/lipgloss/v2"
-	"github.com/charmbracelet/x/ansi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/wow-look-at-my/tml"
+	"github.com/wow-look-at-my/tml/cell"
+	"github.com/wow-look-at-my/tml/input"
 )
 
 // buttons is a row of several controls, the middle control disabled.
@@ -32,28 +31,10 @@ func interactive(t *testing.T, template string, w, h int) *tml.View {
 
 func key(t *testing.T, loaded *tml.View, stroke string, w, h int) []tml.Event {
 	t.Helper()
-	events := loaded.UI().Update(tea.KeyPressMsg{Code: strokeCode(stroke), Mod: strokeMod(stroke)})
+	events := loaded.UI().Update(input.ParseKey(stroke))
 	_, err := loaded.Render(nil, w, h)
 	require.NoError(t, err)
 	return events
-}
-
-func strokeCode(stroke string) rune {
-	switch strings.TrimPrefix(stroke, "shift+") {
-	case "tab":
-		return tea.KeyTab
-	case "enter":
-		return tea.KeyEnter
-	default:
-		return ' '
-	}
-}
-
-func strokeMod(stroke string) tea.KeyMod {
-	if strings.HasPrefix(stroke, "shift+") {
-		return tea.ModShift
-	}
-	return 0
 }
 
 // Focus starts on the earliest control and tab walks the row, skipping the disabled control: tab must never stop somewhere
@@ -80,13 +61,13 @@ func TestFocusIsVisibleInTheRenderedFrame(t *testing.T) {
 
 	first, err := loaded.Render(nil, 40, 3)
 	require.NoError(t, err)
-	assert.Contains(t, ansi.Strip(first), "║ Save ║", "the focused button wears the doubled border")
+	assert.Contains(t, cell.Strip(first), "║ Save ║", "the focused button wears the doubled border")
 
 	key(t, loaded, "tab", 40, 3)
 	second, err := loaded.Render(nil, 40, 3)
 	require.NoError(t, err)
-	assert.Contains(t, ansi.Strip(second), "║ Quit ║")
-	assert.NotContains(t, ansi.Strip(second), "║ Save ║")
+	assert.Contains(t, cell.Strip(second), "║ Quit ║")
+	assert.NotContains(t, cell.Strip(second), "║ Save ║")
 }
 
 func TestEnterActivatesTheFocusedControl(t *testing.T) {
@@ -105,8 +86,8 @@ func TestClickingLandsOnTheControlUnderThePointer(t *testing.T) {
 	quit := targetOf(t, loaded, "quit")
 	inside := quit.Rect.X + 1
 
-	loaded.UI().Update(tea.MouseClickMsg{X: inside, Y: quit.Rect.Y + 1, Button: tea.MouseLeft})
-	events := loaded.UI().Update(tea.MouseReleaseMsg{X: inside, Y: quit.Rect.Y + 1, Button: tea.MouseLeft})
+	loaded.UI().Update(input.Mouse{X: inside, Y: quit.Rect.Y + 1, Button: input.ButtonLeft, Action: input.Press})
+	events := loaded.UI().Update(input.Mouse{X: inside, Y: quit.Rect.Y + 1, Button: input.ButtonLeft, Action: input.Release})
 
 	require.Len(t, events, 1)
 	assert.Equal(t, tml.Activated, events[0].Kind)
@@ -122,8 +103,8 @@ func TestClickingADisabledControlDoesNothing(t *testing.T) {
 	quit := targetOf(t, loaded, "quit")
 	between := (save.Rect.X + save.Rect.W + quit.Rect.X) / 2
 
-	loaded.UI().Update(tea.MouseClickMsg{X: between, Y: 1, Button: tea.MouseLeft})
-	assert.Empty(t, loaded.UI().Update(tea.MouseReleaseMsg{X: between, Y: 1, Button: tea.MouseLeft}))
+	loaded.UI().Update(input.Mouse{X: between, Y: 1, Button: input.ButtonLeft, Action: input.Press})
+	assert.Empty(t, loaded.UI().Update(input.Mouse{X: between, Y: 1, Button: input.ButtonLeft, Action: input.Release}))
 }
 
 // Hovering shows through to the frame, so a pointer over a control is visible rather than only recorded.
@@ -135,7 +116,7 @@ func TestHoverReachesTheFrame(t *testing.T) {
 	before, err := loaded.Render(nil, 40, 3)
 	require.NoError(t, err)
 
-	loaded.UI().Update(tea.MouseMotionMsg{X: quit.Rect.X + 1, Y: quit.Rect.Y + 1})
+	loaded.UI().Update(input.Mouse{X: quit.Rect.X + 1, Y: quit.Rect.Y + 1, Action: input.Motion})
 	after, err := loaded.Render(nil, 40, 3)
 	require.NoError(t, err)
 
@@ -211,7 +192,7 @@ func TestPublishedRectsMatchWhereControlsArePainted(t *testing.T) {
 	} {
 		t.Run(panel.name, func(t *testing.T) {
 			loaded := interactive(t, panel.template, 40, 12)
-			frame, err := loaded.Render(nil, 40, 12)
+			frame, err := loaded.Draw(nil, 40, 12)
 			require.NoError(t, err)
 
 			for _, target := range loaded.UI().Targets() {
@@ -231,22 +212,32 @@ func TestPublishedRectsMatchWhereControlsArePainted(t *testing.T) {
 }
 
 // cellAt is the character painted at a single cell of a frame.
-func cellAt(t *testing.T, frame string, x, y int) string {
+func cellAt(t *testing.T, frame *cell.Buffer, x, y int) string {
 	t.Helper()
-	lines := strings.Split(ansi.Strip(frame), "\n")
-	require.Less(t, y, len(lines), "row %d is off the frame", y)
-	return ansi.Cut(lines[y], x, x+1)
+	require.Less(t, y, frame.H, "row %d is off the frame", y)
+	require.Less(t, x, frame.W, "column %d is off the frame", x)
+	return frame.At(x, y).Text
 }
 
-// find is where a string was painted in a frame, in cells.
-func find(t *testing.T, frame, needle string) (x, y int) {
+// find is where a string of single-cell characters was painted in a frame, in cells.
+func find(t *testing.T, frame *cell.Buffer, needle string) (x, y int) {
 	t.Helper()
-	for row, line := range strings.Split(ansi.Strip(frame), "\n") {
-		if column := strings.Index(line, needle); column >= 0 {
-			return lipgloss.Width(line[:column]), row
+	chars := strings.Split(needle, "")
+	for y := range frame.H {
+		for x := 0; x+len(chars) <= frame.W; x++ {
+			matched := true
+			for i, char := range chars {
+				if frame.At(x+i, y).Text != char {
+					matched = false
+					break
+				}
+			}
+			if matched {
+				return x, y
+			}
 		}
 	}
-	t.Fatalf("%q is not in the frame:\n%s", needle, ansi.Strip(frame))
+	t.Fatalf("%q is not in the frame:\n%s", needle, frame.Text())
 	return 0, 0
 }
 

@@ -20,7 +20,7 @@ So the screenshots cover what the goldens cannot, and typed keys drive one of th
 
 ## What a shot declares
 
-- `args` put the program in a state before the terminal is attached. Both examples take their starting state either way round -- `-tab`, `-focus`, `-steps`, `-answer` -- which is what makes a picture reproducible.
+- `args` put the program in a state before the terminal is attached.
 - `keys` are typed into the running terminal afterwards.
 - `expect` is text the terminal has to be showing before the picture counts. A program that died on its arguments still leaves a terminal to photograph. A black rectangle published as a screenshot is worse than a failed build.
 - `rows` is the terminal to shoot in. These layouts fill the terminal they are given. A page shot in more rows than it has content for is mostly empty space. One shot in fewer rows drops whatever was pinned to the bottom.
