@@ -114,15 +114,28 @@ func TestEmptyScrollboxFillsItsSpace(t *testing.T) {
 	w, h := box.Measure(10, 4)
 	assert.Equal(t, 10, w)
 	assert.Equal(t, 4, h)
-	assert.Equal(t, "  \n  ", box.Render(2, 2))
+	assert.Equal(t, "  \n  ", widgettest.Text(box, 2, 2))
 }
 
 func split(s string) []string { return strings.Split(s, "\n") }
 
-// faded is a row the edge fade drew in one flat color, which is what a row naming no colors of its own becomes.
-func faded(channel int, line string) string {
-	return fmt.Sprintf("\x1b[38;2;%d;%d;%dm%s%s", channel, channel, channel, line, resetSGR)
+// shades is the foreground of the first cell of every row, as the grey channel the edge fade drew it in.
+func shades(buf *cell.Buffer) []int {
+	out := make([]int, buf.H)
+	for y := range buf.H {
+		fg := buf.At(0, y).Style.Fg
+		if !fg.IsSet() {
+			out[y] = -1
+			continue
+		}
+		r, _, _ := fg.RGB()
+		out[y] = int(r)
+	}
+	return out
 }
+
+// grey is a flat colour, which is what the fade turns a glyph that names no colour of its own into.
+func grey(channel uint8) cell.Color { return cell.RGB(channel, channel, channel) }
 
 // darkScrollbox is the widget as a dark-themed host builds it, where the fade blends toward black rather than white.
 func darkScrollbox(t *testing.T, pairs map[string]string) widget.Composer {
@@ -140,20 +153,35 @@ func darkScrollbox(t *testing.T, pairs map[string]string) widget.Composer {
 func TestScrollboxFadesTheEdgeWithContentBeyondIt(t *testing.T) {
 	box := composer(t, "Scrollbox", map[string]string{"offset": "5", "scrollbar": "never", "fade": "true"})
 
-	assert.Equal(t, faded(167, "f")+"\ng\nh", box.Compose(content(lines(8)...), 1, 3))
+	buf := widgettest.Compose(box, lines(8), 1, 3)
+	assert.Equal(t, "f\ng\nh", buf.Text())
+	assert.Equal(t, []int{167, -1, -1}, shades(buf))
 }
 
 // The bottom edge fades the same way once the content below it runs past the window.
 func TestScrollboxFadesTheBottomEdge(t *testing.T) {
 	box := composer(t, "Scrollbox", map[string]string{"scrollbar": "never", "fade": "true"})
 
-	assert.Equal(t, "a\nb\n"+faded(167, "c"), box.Compose(content(lines(8)...), 1, 3))
+	buf := widgettest.Compose(box, lines(8), 1, 3)
+	assert.Equal(t, "a\nb\nc", buf.Text())
+	assert.Equal(t, []int{-1, -1, 167}, shades(buf))
 }
 
 func TestScrollboxFadesBothEdges(t *testing.T) {
 	box := composer(t, "Scrollbox", map[string]string{"offset": "2", "scrollbar": "never", "fade": "true"})
 
-	assert.Equal(t, faded(167, "c")+"\nd\n"+faded(167, "e"), box.Compose(content(lines(8)...), 1, 3))
+	buf := widgettest.Compose(box, lines(8), 1, 3)
+	assert.Equal(t, "c\nd\ne", buf.Text())
+	assert.Equal(t, []int{167, -1, 167}, shades(buf))
+}
+
+// The fade lies under the scrollbar, not over it: the gutter keeps its own look.
+func TestScrollboxFadesTheContentButNotTheBar(t *testing.T) {
+	box := composer(t, "Scrollbox", map[string]string{"offset": "2", "fade": "true"})
+
+	buf := widgettest.Compose(box, lines(8), 2, 3)
+	assert.Equal(t, grey(167), buf.At(0, 0).Style.Fg)
+	assert.False(t, buf.At(1, 0).Style.Fg.IsSet(), "the scrollbar is not faded")
 }
 
 // A tall region has room for a band deeper than one row. Its rows are faded by different amounts: the edge is a
@@ -161,42 +189,48 @@ func TestScrollboxFadesBothEdges(t *testing.T) {
 func TestScrollboxStepsTheBandOnATallRegion(t *testing.T) {
 	box := composer(t, "Scrollbox", map[string]string{"offset": "4", "scrollbar": "never", "fade": "true"})
 
-	rows := split(box.Compose(content(lines(20)...), 1, 8))
-	assert.Equal(t, faded(197, "e"), rows[0], "the row at the edge is mostly background")
-	assert.Equal(t, faded(128, "f"), rows[1], "the row nearest the content keeps most of its color")
-	assert.Equal(t, []string{"g", "h", "i", "j"}, rows[2:6], "the middle is untouched")
-	assert.Equal(t, faded(128, "k"), rows[6], "the step into the bottom band is the shallower one")
-	assert.Equal(t, faded(197, "l"), rows[7])
+	buf := widgettest.Compose(box, lines(20), 1, 8)
+	assert.Equal(t, []string{"e", "f", "g", "h", "i", "j", "k", "l"}, buf.Lines())
+	got := shades(buf)
+	assert.Equal(t, 197, got[0], "the row at the edge is mostly background")
+	assert.Equal(t, 128, got[1], "the row nearest the content keeps most of its colour")
+	assert.Equal(t, []int{-1, -1, -1, -1}, got[2:6], "the middle is untouched")
+	assert.Equal(t, 128, got[6], "the step into the bottom band is the shallower one")
+	assert.Equal(t, 197, got[7])
 }
 
 // Nothing is faded when the whole content is on screen -- the fade marks what is hidden, not what is displayed.
 func TestScrollboxFadesNothingWhenTheEndIsInView(t *testing.T) {
 	box := composer(t, "Scrollbox", map[string]string{"offset": "9999", "scrollbar": "never", "fade": "true"})
 
-	assert.Equal(t, "a\nb\nc", box.Compose(content(lines(3)...), 1, 3))
+	buf := widgettest.Compose(box, lines(3), 1, 3)
+	assert.Equal(t, "a\nb\nc", buf.Text())
+	assert.Equal(t, []int{-1, -1, -1}, shades(buf))
 }
 
 // A host that hands over a window it cut itself knows which edges have content beyond them. It says so, rather than
 // handing over a total it never laid out.
 func TestScrollboxFadesTheEdgeAHostNames(t *testing.T) {
 	above := composer(t, "Scrollbox", map[string]string{"scrollbar": "never", "fade": "true", "moreAbove": "true"})
-	assert.Equal(t, faded(167, "a")+"\nb\nc", above.Compose(content(lines(3)...), 1, 3))
+	assert.Equal(t, []int{167, -1, -1}, shades(widgettest.Compose(above, lines(3), 1, 3)))
 
 	below := composer(t, "Scrollbox", map[string]string{"scrollbar": "never", "fade": "true", "moreBelow": "true"})
-	assert.Equal(t, "a\nb\n"+faded(167, "c"), below.Compose(content(lines(3)...), 1, 3))
+	assert.Equal(t, []int{-1, -1, 167}, shades(widgettest.Compose(below, lines(3), 1, 3)))
 }
 
-// On a dark theme the background is black, so the same band lands on different colors.
+// On a dark theme the background is black, so the same band lands on different colours.
 func TestScrollboxFadesTowardTheBackgroundOfTheTheme(t *testing.T) {
 	box := darkScrollbox(t, map[string]string{"scrollbar": "never", "fade": "true"})
 
-	assert.Equal(t, "a\nb\n"+faded(90, "c"), box.Compose(content(lines(8)...), 1, 3))
+	assert.Equal(t, []int{-1, -1, 90}, shades(widgettest.Compose(box, lines(8), 1, 3)))
 }
 
 func TestScrollboxLeavesTheFadeOffUnlessAsked(t *testing.T) {
 	box := composer(t, "Scrollbox", map[string]string{"scrollbar": "never"})
 
-	assert.Equal(t, "a\nb\nc", box.Compose(content(lines(8)...), 1, 3))
+	buf := widgettest.Compose(box, lines(8), 1, 3)
+	assert.Equal(t, "a\nb\nc", buf.Text())
+	assert.Equal(t, []int{-1, -1, -1}, shades(buf))
 }
 
 func TestScrollboxRejectsAnUnknownFadeValue(t *testing.T) {
@@ -215,9 +249,14 @@ func TestScrollboxFadesPastAChildsReset(t *testing.T) {
 	rows := lines(8)
 	rows[5] = "\x1b[31mf\x1b[0m tail"
 
-	pad := strings.Repeat(" ", 5)
-	assert.Equal(t, faded(167, "\x1b[38;2;233;140;140mf\x1b[0;38;2;167;167;167m tail")+"\ng"+pad+"\nh"+pad,
-		box.Compose(content(rows...), 6, 3))
+	buf := widgettest.Compose(box, rows, 6, 3)
+	assert.Equal(t, []string{"f tail", "g     ", "h     "}, buf.Lines())
+	assert.Equal(t, cell.RGB(233, 140, 140), buf.At(0, 0).Style.Fg, "the red glyph fades from its own red")
+	assert.False(t, buf.At(1, 0).Style.Fg.IsSet(), "a blank has no glyph to fade")
+	for x := 2; x < 6; x++ {
+		assert.Equal(t, grey(167), buf.At(x, 0).Style.Fg, "text past the reset fades from the default, column %d", x)
+	}
+	assert.False(t, buf.At(0, 1).Style.Fg.IsSet())
 }
 
 // A host with more content than it can afford to lay out every frame hands over the rows on screen and says how many
@@ -228,7 +267,7 @@ func TestScrollboxDrawsTheWindowItWasHanded(t *testing.T) {
 		"scrollbar":     "never",
 	})
 
-	assert.Equal(t, "a\nb\nc", box.Compose(content(lines(3)...), 1, 3))
+	assert.Equal(t, "a\nb\nc", compose(box, 1, 3, lines(3)...))
 }
 
 // The bar describes the whole content, which is the only reason to be told its size: a thumb sized against the window
@@ -240,9 +279,9 @@ func TestScrollboxBarMeasuresTheContentNotTheWindow(t *testing.T) {
 	})
 	whole := composer(t, "Scrollbox", map[string]string{"offset": "0", "scrollbar": "always"})
 
-	thumb := strings.Count(windowed.Compose(content(lines(4)...), 2, 4), "█")
+	thumb := strings.Count(compose(windowed, 2, 4, lines(4)...), "█")
 	assert.Equal(t, 1, thumb, "4 rows of 100 is the smallest thumb there is")
-	assert.Equal(t, 0, strings.Count(whole.Compose(content(lines(4)...), 2, 4), "█"),
+	assert.Equal(t, 0, strings.Count(compose(whole, 2, 4, lines(4)...), "█"),
 		"4 rows of 4 does not scroll, so there is no thumb at all")
 }
 
@@ -254,6 +293,6 @@ func TestScrollboxClampsToTheContentItWasToldAbout(t *testing.T) {
 		"scrollbar":     "always",
 	})
 
-	out := box.Compose(content(lines(3)...), 2, 3)
+	out := compose(box, 2, 3, lines(3)...)
 	assert.Equal(t, "a│\nb│\nc█", out, "clamped to 997, which is the bottom of 1000 in a 3-row view")
 }
