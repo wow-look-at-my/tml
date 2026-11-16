@@ -14,6 +14,7 @@ import (
 	"github.com/wow-look-at-my/tml"
 	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/input"
+	"github.com/wow-look-at-my/tml/layout"
 )
 
 var update = flag.Bool("update", false, "rewrite the golden files")
@@ -231,6 +232,28 @@ func TestEveryScriptedRoleIsDrawable(t *testing.T) {
 		first, _, _ := strings.Cut(beat.text, " ")
 		assert.Contains(t, cell.Strip(frame)+strings.Join(m.entries, "\n"), first)
 	}
+}
+
+func TestProbeDiff(t *testing.T) {
+	m := agent(t)
+	run(t, m, 5)
+	box, err := m.view.Layout(m.Props(), m.width, m.height)
+	require.NoError(t, err)
+	var walk func(b *layout.Box, depth int)
+	walk = func(b *layout.Box, depth int) {
+		if _, ok := b.Native.(*diff); ok || b.Name == "Border" || b.Name == "Scrollbox" || b.Name == "Stack" {
+			w, h := 0, 0
+			if b.Native != nil {
+				w, h = b.Native.Measure(b.Content.W, b.Content.H)
+			}
+			t.Logf("PROBE %*s%s rect=%+v content=%+v measure(content.W)=%d,%d", depth, "", b.Name, b.Rect, b.Content, w, h)
+		}
+		for _, c := range b.Children {
+			walk(c, depth+1)
+		}
+	}
+	walk(box, 0)
+	t.Fail()
 }
 
 func golden(t *testing.T, name, got string) {

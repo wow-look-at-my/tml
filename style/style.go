@@ -116,4 +116,3 @@ func (s *Sheet) Resolve(named string, inline map[string]string) (Resolved, error
 	maps.Copy(attrs, inline)
 	return build(attrs)
 }
-
