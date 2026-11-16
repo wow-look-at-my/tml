@@ -50,7 +50,7 @@ func runProgram(t *testing.T, p *tml.Program) <-chan error {
 
 // A program built through NewProgram can be typed into; a program built any other way refuses by name.
 func TestNewProgramIsWhatMakesAProgramDrivable(t *testing.T) {
-	t.Serial("it resets and drives the process's inspector")
+	t.Serial("TestNewProgramIsWhatMakesAProgramDrivable resets the process's inspector, which every Load and NewProgram in this package uses")
 	exclusive(t)
 	view := loadInspectorView(t)
 	insp := tml.Inspect()

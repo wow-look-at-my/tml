@@ -142,7 +142,7 @@ type answer struct{ n int }
 
 // The app hears the size first, then each byte as the key it is, and a key it does not take reaches the ring.
 func TestAProgramRoutesInputThroughTheAppAndTheRing(t *testing.T) {
-	t.Serial("a program registers with the process's inspector")
+	t.Serial("TestAProgramRoutesInputThroughTheAppAndTheRing resets the process's inspector, which every Load and NewProgram in this package uses")
 	exclusive(t)
 	run := startTyped(t, tml.ProgramOptions{})
 
@@ -166,7 +166,7 @@ func TestAProgramRoutesInputThroughTheAppAndTheRing(t *testing.T) {
 
 // A ctrl+c that nothing took ends the program, so the user always has a way out.
 func TestAnUnconsumedCtrlCInterrupts(t *testing.T) {
-	t.Serial("a program registers with the process's inspector")
+	t.Serial("TestAnUnconsumedCtrlCInterrupts resets the process's inspector, which every Load and NewProgram in this package uses")
 	exclusive(t)
 	run := startTyped(t, tml.ProgramOptions{})
 
@@ -177,7 +177,7 @@ func TestAnUnconsumedCtrlCInterrupts(t *testing.T) {
 
 // Messages from the host's own goroutines and clocks all reach Update.
 func TestAProgramDeliversTheHostsMessages(t *testing.T) {
-	t.Serial("a program registers with the process's inspector")
+	t.Serial("TestAProgramDeliversTheHostsMessages resets the process's inspector, which every Load and NewProgram in this package uses")
 	exclusive(t)
 	app := newRecordApp("hello")
 	p, err := tml.NewProgram(loadDoc(t, programDoc), app, quietOptions())
@@ -210,7 +210,7 @@ func TestAProgramDeliversTheHostsMessages(t *testing.T) {
 
 // A frame that cannot draw ends the program with the reason.
 func TestAProgramEndsOnADrawFailure(t *testing.T) {
-	t.Serial("a program registers with the process's inspector")
+	t.Serial("TestAProgramEndsOnADrawFailure resets the process's inspector, which every Load and NewProgram in this package uses")
 	exclusive(t)
 	p, err := tml.NewProgram(loadDoc(t, programDoc), newRecordApp(""), quietOptions())
 	require.NoError(t, err)
@@ -221,7 +221,7 @@ func TestAProgramEndsOnADrawFailure(t *testing.T) {
 
 // A program runs one time.
 func TestAProgramRunsOneTime(t *testing.T) {
-	t.Serial("a program registers with the process's inspector")
+	t.Serial("TestAProgramRunsOneTime resets the process's inspector, which every Load and NewProgram in this package uses")
 	exclusive(t)
 	p, err := tml.NewProgram(loadDoc(t, programDoc), newRecordApp("hello"), quietOptions())
 	require.NoError(t, err)
@@ -235,7 +235,7 @@ func TestAProgramRunsOneTime(t *testing.T) {
 
 // SetView puts another view on screen, and a full-screen program holds a printed line until it ends.
 func TestAProgramSwapsItsView(t *testing.T) {
-	t.Serial("a program registers with the process's inspector")
+	t.Serial("TestAProgramSwapsItsView resets the process's inspector, which every Load and NewProgram in this package uses")
 	exclusive(t)
 	run := startTyped(t, tml.ProgramOptions{})
 	require.Eventually(t, func() bool { return onScreen(run.out.String(), "hello") },
@@ -256,7 +256,7 @@ func TestAProgramSwapsItsView(t *testing.T) {
 
 // An inline program prints above its region, and only the printed lines stay once it ends.
 func TestAnInlineProgramLeavesOnlyItsLines(t *testing.T) {
-	t.Serial("a program registers with the process's inspector")
+	t.Serial("TestAnInlineProgramLeavesOnlyItsLines resets the process's inspector, which every Load and NewProgram in this package uses")
 	exclusive(t)
 	out := &syncBuffer{}
 	p, err := tml.NewProgram(loadDoc(t, programDoc), newRecordApp("hello"), tml.ProgramOptions{

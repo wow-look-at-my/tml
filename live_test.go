@@ -113,7 +113,7 @@ func waitDrawn(t *testing.T, out *syncBuffer, want string) {
 // The region is live while it runs. Every line printed goes above it one time and in order. Stop takes the region off
 // the screen, so what is left is the log alone.
 func TestLivePrintsAboveTheRegionAndLeavesOnlyTheLog(t *testing.T) {
-	t.Serial("a region registers with the process's inspector")
+	t.Serial("TestLivePrintsAboveTheRegionAndLeavesOnlyTheLog resets the process's inspector, which every Load and NewProgram in this package uses")
 	exclusive(t)
 	live, out := startLive(t, blockProps(), colourEnv, nil)
 
@@ -135,7 +135,7 @@ func TestLivePrintsAboveTheRegionAndLeavesOnlyTheLog(t *testing.T) {
 
 // Many lines from many goroutines all arrive, and each goroutine's lines keep their order.
 func TestLiveKeepsEveryLineFromConcurrentWriters(t *testing.T) {
-	t.Serial("a region registers with the process's inspector")
+	t.Serial("TestLiveKeepsEveryLineFromConcurrentWriters resets the process's inspector, which every Load and NewProgram in this package uses")
 	exclusive(t)
 	live, out := startLive(t, blockProps(), colourEnv, nil)
 
@@ -168,7 +168,7 @@ func TestLiveKeepsEveryLineFromConcurrentWriters(t *testing.T) {
 
 // Colour comes from the theme and the terminal decides how much of it survives. NO_COLOR removes all of it.
 func TestLiveColourFollowsTheTerminal(t *testing.T) {
-	t.Serial("a region registers with the process's inspector")
+	t.Serial("TestLiveColourFollowsTheTerminal resets the process's inspector, which every Load and NewProgram in this package uses")
 	exclusive(t)
 
 	coloured, out := startLive(t, blockProps(), colourEnv, nil)
@@ -198,7 +198,7 @@ func hasColour(s string) bool {
 
 // An interrupt is an orderly end: the pending lines print, the region comes off the screen, and then the host hears.
 func TestLiveInterruptPrintsWhatIsPendingThenTellsTheHost(t *testing.T) {
-	t.Serial("a region registers with the process's inspector")
+	t.Serial("TestLiveInterruptPrintsWhatIsPendingThenTellsTheHost resets the process's inspector, which every Load and NewProgram in this package uses")
 	exclusive(t)
 	heard := make(chan struct{})
 	live, out := startLive(t, blockProps(), colourEnv, func() { close(heard) })
@@ -219,7 +219,7 @@ func TestLiveInterruptPrintsWhatIsPendingThenTellsTheHost(t *testing.T) {
 
 // A frame that cannot render ends the region with the reason, rather than leave the last good frame up as if it were live.
 func TestLiveEndsOnARenderFailure(t *testing.T) {
-	t.Serial("a region registers with the process's inspector")
+	t.Serial("TestLiveEndsOnARenderFailure resets the process's inspector, which every Load and NewProgram in this package uses")
 	exclusive(t)
 	live, _ := startLive(t, func() tml.Props { return tml.Props{} }, colourEnv, nil)
 
@@ -233,7 +233,7 @@ func TestLiveEndsOnARenderFailure(t *testing.T) {
 
 // A region that never started still owes its lines to the terminal, and a stopped region writes straight through.
 func TestLiveLinesOutsideTheRegion(t *testing.T) {
-	t.Serial("a region registers with the process's inspector")
+	t.Serial("TestLiveLinesOutsideTheRegion resets the process's inspector, which every Load and NewProgram in this package uses")
 	exclusive(t)
 	view, err := tml.Load(fstest.MapFS{"block.tml": &fstest.MapFile{Data: []byte(liveBlock)}}, "block.tml", tml.Options{})
 	require.NoError(t, err)
@@ -252,7 +252,7 @@ func TestLiveLinesOutsideTheRegion(t *testing.T) {
 
 // A region starts one time.
 func TestLiveStartsOneTime(t *testing.T) {
-	t.Serial("a region registers with the process's inspector")
+	t.Serial("TestLiveStartsOneTime resets the process's inspector, which every Load and NewProgram in this package uses")
 	exclusive(t)
 	live, _ := startLive(t, blockProps(), colourEnv, nil)
 	assert.Error(t, live.Start())

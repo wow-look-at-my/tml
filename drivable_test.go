@@ -11,7 +11,7 @@ import (
 
 // The failure names the fix. A guard that takes a program down and leaves the reader to guess why has traded a real fix for a puzzle
 func TestTheRefusalNamesTheFix(t *testing.T) {
-	t.Serial("it resets the process's drivable guard")
+	t.Serial("TestTheRefusalNamesTheFix resets the process's drivable guard, which every paint in this package arms")
 	exclusive(t)
 	assert.PanicsWithValue(t,
 		"tml: no way to drive this program; run it with tml.NewProgram",
@@ -20,7 +20,7 @@ func TestTheRefusalNamesTheFix(t *testing.T) {
 
 // A program tml built is driven from the frame it starts on, so the guard has nothing to say about it however long it
 func TestADrivenProgramIsNeverTouched(t *testing.T) {
-	t.Serial("it resets the process's drivable guard")
+	t.Serial("TestADrivenProgramIsNeverTouched resets the process's drivable guard, which every paint in this package arms")
 	exclusive(t)
 
 	view := loadInspectorView(t)
