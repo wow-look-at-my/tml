@@ -7,11 +7,11 @@ import (
 	"testing"
 	"testing/fstest"
 
-	"github.com/charmbracelet/x/ansi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/wow-look-at-my/tml"
+	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/sema"
 	"github.com/wow-look-at-my/tml/widget"
 )
@@ -31,7 +31,7 @@ func draw(t *testing.T, body string, w, h int) string {
 	require.NoError(t, err)
 	out, err := loaded.Render(nil, w, h)
 	require.NoError(t, err)
-	return ansi.Strip(out)
+	return cell.Strip(out)
 }
 
 func app(template string) string {
@@ -55,7 +55,7 @@ func TestBareDropsTheLibrary(t *testing.T) {
 
 // A host binding its own <Button> keeps the rest of the library rather than having to shadow every name to replace
 func TestHostBindingsBeatTheLibrary(t *testing.T) {
-	host := widget.NewRegistry().Bind("Button", widget.Bubble(fixedView("HOST")))
+	host := widget.NewRegistry().Bind("Button", widget.FromViewer(fixedView("HOST"), nil))
 	loaded, err := view(t, app(`<Stack><Button/><Badge label="new"/></Stack>`),
 		tml.Options{Widgets: host})
 	require.NoError(t, err)
@@ -107,10 +107,12 @@ func TestWidgetAttributesAndStylingCoexist(t *testing.T) {
 	loaded, err := view(t, app(`<Badge label="new" bold="true"/>`), tml.Options{})
 	require.NoError(t, err)
 
-	out, err := loaded.Render(nil, 10, 1)
+	frame, err := loaded.Draw(nil, 10, 1)
 	require.NoError(t, err)
-	assert.Contains(t, ansi.Strip(out), "new")
-	assert.NotEqual(t, ansi.Strip(out), out, "the style attribute reached lipgloss")
+	text := frame.Text()
+	require.Contains(t, text, "new")
+	at := strings.Index(text, "new")
+	assert.True(t, frame.At(at, 0).Style.Has(cell.Bold), "the style attribute reached the painted cells")
 }
 
 // Anything a widget does not claim is styling.
@@ -154,7 +156,7 @@ func TestASpinnerAnimatesOnlyWhileItIsVisible(t *testing.T) {
 		t.Helper()
 		out, err := loaded.Render(p, 10, 3)
 		require.NoError(t, err)
-		return strings.Split(ansi.Strip(out), "\n")[0]
+		return strings.Split(cell.Strip(out), "\n")[0]
 	}
 
 	assert.Equal(t, blank, firstRow(hidden), "a hidden spinner draws nothing")

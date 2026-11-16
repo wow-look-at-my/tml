@@ -4,7 +4,6 @@ import _ "embed"
 
 import (
 	"bytes"
-	"io"
 	"regexp"
 	"strconv"
 	"strings"
@@ -14,13 +13,12 @@ import (
 	"testing/fstest"
 	"time"
 
-	tea "charm.land/bubbletea/v2"
-	"github.com/charmbracelet/x/ansi"
-	"github.com/charmbracelet/x/vt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/wow-look-at-my/tml"
+	"github.com/wow-look-at-my/tml/cell"
+	"github.com/wow-look-at-my/tml/internal/vt"
 	"github.com/wow-look-at-my/tml/sema"
 )
 
@@ -60,15 +58,30 @@ func startLive(t *testing.T, props func() tml.Props, env []string, onInterrupt f
 		Interval:    5 * time.Millisecond,
 		Output:      out,
 		OnInterrupt: onInterrupt,
-		Program:     []tea.ProgramOption{tea.WithWindowSize(liveWidth, liveHeight), tea.WithEnvironment(env)},
+		Width:       liveWidth,
+		Height:      liveHeight,
+		Env:         envOf(env),
 	})
 	require.NoError(t, live.Start())
 	t.Cleanup(func() { _ = live.Stop() })
 	return live, out
 }
 
-// colourEnv is a truecolor terminal. TTY_FORCE makes the test's buffer count as one.
-var colourEnv = []string{"TERM=xterm-256color", "COLORTERM=truecolor", "TTY_FORCE=1"}
+// envOf reads a variable out of NAME=value pairs. A later pair wins.
+func envOf(env []string) func(string) string {
+	return func(name string) string {
+		value := ""
+		for _, pair := range env {
+			if key, v, ok := strings.Cut(pair, "="); ok && key == name {
+				value = v
+			}
+		}
+		return value
+	}
+}
+
+// colourEnv is a truecolor terminal. CLICOLOR_FORCE makes the test's buffer count as one.
+var colourEnv = []string{"TERM=xterm-256color", "COLORTERM=truecolor", "CLICOLOR_FORCE=1"}
 
 // blockProps is a header and one row per call count, so a later frame differs from an earlier one.
 func blockProps() func() tml.Props {
@@ -86,29 +99,15 @@ func blockProps() func() tml.Props {
 // then the lines on screen, blank lines at the end dropped.
 func screenOf(t *testing.T, written string) []string {
 	t.Helper()
-	term := vt.NewEmulator(liveWidth, liveHeight)
-	// The emulator answers the program's queries on a pipe. Nobody reads that pipe unless a goroutine does.
-	go func() { _, _ = io.Copy(io.Discard, term) }()
-	_, err := term.WriteString(written)
-	require.NoError(t, err)
-	var lines []string
-	for _, line := range term.Scrollback().Lines() {
-		lines = append(lines, strings.TrimRight(line.String(), " "))
-	}
-	for _, line := range strings.Split(term.String(), "\n") {
-		lines = append(lines, strings.TrimRight(line, " "))
-	}
-	for len(lines) > 0 && lines[len(lines)-1] == "" {
-		lines = lines[:len(lines)-1]
-	}
-	require.NoError(t, term.Close())
-	return lines
+	term := vt.New(liveWidth, liveHeight)
+	term.WriteString(written)
+	return term.Lines()
 }
 
 // waitDrawn blocks until the region has painted a frame that holds want.
 func waitDrawn(t *testing.T, out *syncBuffer, want string) {
 	t.Helper()
-	require.Eventually(t, func() bool { return strings.Contains(ansi.Strip(out.String()), want) },
+	require.Eventually(t, func() bool { return strings.Contains(cell.Strip(out.String()), want) },
 		5*time.Second, 5*time.Millisecond, "the region never drew %q", want)
 }
 
@@ -152,7 +151,7 @@ func TestLiveKeepsEveryLineFromConcurrentWriters(t *testing.T) {
 	wg.Wait()
 	require.NoError(t, live.Stop())
 
-	lines := strings.Split(strings.TrimSpace(ansi.Strip(out.String())), "\n")
+	lines := strings.Split(strings.TrimSpace(cell.Strip(out.String())), "\n")
 	next := map[string]int{}
 	seen := 0
 	for _, line := range lines {
@@ -182,7 +181,7 @@ func TestLiveColourFollowsTheTerminal(t *testing.T) {
 	waitDrawn(t, out, "alpha")
 	require.NoError(t, plain.Stop())
 	assert.False(t, hasColour(out.String()), "NO_COLOR removes every colour")
-	assert.Contains(t, ansi.Strip(out.String()), "downloads: ", "the text itself still draws")
+	assert.Contains(t, cell.Strip(out.String()), "downloads: ", "the text itself still draws")
 }
 
 // hasColour reports whether any SGR sequence sets a foreground or background colour.

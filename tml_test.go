@@ -104,7 +104,7 @@ func TestGridRendersThroughTheWholePipeline(t *testing.T) {
 	golden(t, "grid-render", out)
 }
 
-// fakeInput stands in for a bubbles component: it draws itself and accepts a width.
+// fakeInput stands in for a component written against View: it draws itself and accepts a width.
 type fakeInput struct{ width int }
 
 func (f *fakeInput) View() string {
@@ -126,7 +126,7 @@ func widgetFS() fstest.MapFS {
 // A bound widget is laid out like any other element.
 func TestBoundWidgetIsSizedByLayout(t *testing.T) {
 	input := &fakeInput{}
-	widgets := widget.NewRegistry().Bind("Search", widget.Bubble(input))
+	widgets := widget.NewRegistry().Bind("Search", widget.FromViewer(input, nil))
 
 	view, err := tml.Load(widgetFS(), "app.tml", tml.Options{Widgets: widgets})
 	require.NoError(t, err)
@@ -171,7 +171,7 @@ func TestOptionsMeasureGovernsGeometry(t *testing.T) {
 	}
 
 	text, badge := layoutWith(nil)
-	assert.Equal(t, 4, text, "lipgloss is the default and counts four cells")
+	assert.Equal(t, 4, text, "the Unicode default counts four cells")
 	assert.Equal(t, 6, badge, "the badge pads its label with a space either side")
 
 	wideText, wideBadge := layoutWith(func(s string) int { return len([]rune(s)) * 2 })

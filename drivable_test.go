@@ -1,11 +1,7 @@
 package tml_test
 
 import (
-	"io"
-	"strings"
 	"testing"
-
-	tea "charm.land/bubbletea/v2"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,7 +14,7 @@ func TestTheRefusalNamesTheFix(t *testing.T) {
 	t.Serial()
 	exclusive(t)
 	assert.PanicsWithValue(t,
-		"tml: no way to drive this program; build it with tml.NewProgram",
+		"tml: no way to drive this program; run it with tml.NewProgram",
 		func() { tml.CheckDrivable() })
 }
 
@@ -28,7 +24,7 @@ func TestADrivenProgramIsNeverTouched(t *testing.T) {
 	exclusive(t)
 
 	view := loadInspectorView(t)
-	_, err := tml.NewProgram(driveModel{}, tea.WithInput(strings.NewReader("")), tea.WithOutput(io.Discard))
+	_, err := tml.NewProgram(view, driveApp{}, quietOptions())
 	require.NoError(t, err)
 
 	assert.NotPanics(t, func() {
