@@ -1,0 +1,5 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<Component xmlns="urn:tml:v1" name="Other">
+	<Property name="title" type="string" required="true"/>
+	<Template><Text>other {title}</Text></Template>
+</Component>

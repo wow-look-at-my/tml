@@ -3,10 +3,10 @@ package tml
 import (
 	"testing"
 
-	tea "charm.land/bubbletea/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/wow-look-at-my/tml/input"
 	"github.com/wow-look-at-my/tml/layout"
 	"github.com/wow-look-at-my/tml/widget"
 )
@@ -115,16 +115,16 @@ func TestPointerHoversAndActivatesOnRelease(t *testing.T) {
 	u := NewUI()
 	ring(u, target("save", "save", 0, 0, 8, 1), target("quit", "quit", 0, 2, 8, 1))
 
-	u.Update(tea.MouseMotionMsg{X: 3, Y: 2})
+	u.Update(input.Mouse{X: 3, Y: 2, Action: input.Motion})
 	assert.True(t, state(u, 1).Hovered)
 	assert.False(t, state(u, 0).Hovered)
 
-	u.Update(tea.MouseClickMsg{X: 3, Y: 2, Button: tea.MouseLeft})
+	u.Update(input.Mouse{Action: input.Press, X: 3, Y: 2, Button: input.ButtonLeft})
 	assert.True(t, state(u, 1).Pressed)
 	id, _ := u.Focused()
 	assert.Equal(t, "quit", id, "clicking takes focus as well")
 
-	events := u.Update(tea.MouseReleaseMsg{X: 3, Y: 2, Button: tea.MouseLeft})
+	events := u.Update(input.Mouse{Action: input.Release, X: 3, Y: 2, Button: input.ButtonLeft})
 	require.Len(t, events, 1)
 	assert.Equal(t, Activated, events[0].Kind)
 	assert.Equal(t, "quit", events[0].ID)
@@ -136,17 +136,17 @@ func TestReleasingElsewhereCancels(t *testing.T) {
 	u := NewUI()
 	ring(u, target("save", "save", 0, 0, 8, 1), target("quit", "quit", 0, 2, 8, 1))
 
-	u.Update(tea.MouseClickMsg{X: 1, Y: 0, Button: tea.MouseLeft})
-	assert.Empty(t, u.Update(tea.MouseReleaseMsg{X: 1, Y: 2, Button: tea.MouseLeft}))
-	assert.Empty(t, u.Update(tea.MouseReleaseMsg{X: 40, Y: 40, Button: tea.MouseLeft}))
+	u.Update(input.Mouse{Action: input.Press, X: 1, Y: 0, Button: input.ButtonLeft})
+	assert.Empty(t, u.Update(input.Mouse{Action: input.Release, X: 1, Y: 2, Button: input.ButtonLeft}))
+	assert.Empty(t, u.Update(input.Mouse{Action: input.Release, X: 40, Y: 40, Button: input.ButtonLeft}))
 }
 
 func TestClickingNothingDoesNothing(t *testing.T) {
 	u := NewUI()
 	ring(u, target("save", "save", 0, 0, 8, 1))
 
-	assert.Empty(t, u.Update(tea.MouseClickMsg{X: 30, Y: 30, Button: tea.MouseLeft}))
-	assert.Empty(t, u.Update(tea.MouseClickMsg{X: 1, Y: 0, Button: tea.MouseRight}))
+	assert.Empty(t, u.Update(input.Mouse{Action: input.Press, X: 30, Y: 30, Button: input.ButtonLeft}))
+	assert.Empty(t, u.Update(input.Mouse{Action: input.Press, X: 1, Y: 0, Button: input.ButtonRight}))
 }
 
 // Overlapping controls are painted in document order.
@@ -154,7 +154,7 @@ func TestTheTopmostControlWinsAClick(t *testing.T) {
 	u := NewUI()
 	ring(u, target("under", "", 0, 0, 10, 3), target("over", "", 2, 1, 4, 1))
 
-	u.Update(tea.MouseClickMsg{X: 3, Y: 1, Button: tea.MouseLeft})
+	u.Update(input.Mouse{Action: input.Press, X: 3, Y: 1, Button: input.ButtonLeft})
 	id, _ := u.Focused()
 	assert.Equal(t, "over", id)
 }
@@ -163,15 +163,15 @@ func TestWheelReportsScrollOverAControl(t *testing.T) {
 	u := NewUI()
 	ring(u, target("log", "scroll-log", 0, 0, 10, 5))
 
-	events := u.Update(tea.MouseWheelMsg{X: 1, Y: 1, Button: tea.MouseWheelDown})
+	events := u.Update(input.Mouse{Action: input.Wheel, X: 1, Y: 1, Button: input.WheelDown})
 	require.Len(t, events, 1)
 	assert.Equal(t, Event{Kind: Scrolled, ID: "log", Action: "scroll-log", Delta: 1, X: 1, Y: 1}, events[0])
 
-	events = u.Update(tea.MouseWheelMsg{X: 1, Y: 1, Button: tea.MouseWheelUp})
+	events = u.Update(input.Mouse{Action: input.Wheel, X: 1, Y: 1, Button: input.WheelUp})
 	require.Len(t, events, 1)
 	assert.Equal(t, -1, events[0].Delta)
 
-	assert.Empty(t, u.Update(tea.MouseWheelMsg{X: 40, Y: 40, Button: tea.MouseWheelUp}))
+	assert.Empty(t, u.Update(input.Mouse{Action: input.Wheel, X: 40, Y: 40, Button: input.WheelUp}))
 }
 
 // A control can vanish between frames -- a popup closes, an `if` flips.
@@ -222,7 +222,7 @@ func TestThePointerReachesWhatTheKeyboardSkips(t *testing.T) {
 	id, _ := u.Focused()
 	assert.Equal(t, "save", id)
 
-	events := u.Update(tea.MouseWheelMsg{X: 2, Y: 3, Button: tea.MouseWheelDown})
+	events := u.Update(input.Mouse{Action: input.Wheel, X: 2, Y: 3, Button: input.WheelDown})
 	require.Len(t, events, 1)
 	assert.Equal(t, Event{Kind: Scrolled, ID: "log", Action: "scroll-log", Delta: 1, X: 2, Y: 1}, events[0])
 }
@@ -232,7 +232,7 @@ func TestClickingAPointerOnlyElementDoesNotMoveFocus(t *testing.T) {
 	u := NewUI()
 	ring(u, target("save", "save", 0, 0, 8, 1), pointerOnly("log", "", 0, 2, 10, 5))
 
-	assert.Empty(t, u.Update(tea.MouseClickMsg{X: 2, Y: 3, Button: tea.MouseLeft}))
+	assert.Empty(t, u.Update(input.Mouse{Action: input.Press, X: 2, Y: 3, Button: input.ButtonLeft}))
 	id, _ := u.Focused()
 	assert.Equal(t, "save", id)
 	assert.False(t, u.Focus("log"), "it never takes focus by name either")
@@ -243,8 +243,8 @@ func TestPointerEventsSayWhereInTheControlTheyLanded(t *testing.T) {
 	u := NewUI()
 	ring(u, target("services", "pick", 4, 2, 12, 5))
 
-	u.Update(tea.MouseClickMsg{X: 7, Y: 5, Button: tea.MouseLeft})
-	events := u.Update(tea.MouseReleaseMsg{X: 7, Y: 5, Button: tea.MouseLeft})
+	u.Update(input.Mouse{Action: input.Press, X: 7, Y: 5, Button: input.ButtonLeft})
+	events := u.Update(input.Mouse{Action: input.Release, X: 7, Y: 5, Button: input.ButtonLeft})
 	require.Len(t, events, 1)
 	assert.Equal(t, 3, events[0].X)
 	assert.Equal(t, 3, events[0].Y)
@@ -265,5 +265,6 @@ func TestEventKindsAreNamed(t *testing.T) {
 	assert.Equal(t, "activated", Activated.String())
 	assert.Equal(t, "focus-moved", FocusMoved.String())
 	assert.Equal(t, "scrolled", Scrolled.String())
+	assert.Equal(t, "changed", Changed.String())
 	assert.Equal(t, "invalid", EventKind(9).String())
 }

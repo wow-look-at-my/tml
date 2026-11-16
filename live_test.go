@@ -4,7 +4,6 @@ import _ "embed"
 
 import (
 	"bytes"
-	"io"
 	"regexp"
 	"strconv"
 	"strings"
@@ -14,13 +13,12 @@ import (
 	"testing/fstest"
 	"time"
 
-	tea "charm.land/bubbletea/v2"
-	"github.com/charmbracelet/x/ansi"
-	"github.com/charmbracelet/x/vt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/wow-look-at-my/tml"
+	"github.com/wow-look-at-my/tml/cell"
+	"github.com/wow-look-at-my/tml/internal/vt"
 	"github.com/wow-look-at-my/tml/sema"
 )
 
@@ -60,15 +58,30 @@ func startLive(t *testing.T, props func() tml.Props, env []string, onInterrupt f
 		Interval:    5 * time.Millisecond,
 		Output:      out,
 		OnInterrupt: onInterrupt,
-		Program:     []tea.ProgramOption{tea.WithWindowSize(liveWidth, liveHeight), tea.WithEnvironment(env)},
+		Width:       liveWidth,
+		Height:      liveHeight,
+		Env:         envOf(env),
 	})
 	require.NoError(t, live.Start())
 	t.Cleanup(func() { _ = live.Stop() })
 	return live, out
 }
 
-// colourEnv is a truecolor terminal. TTY_FORCE makes the test's buffer count as one.
-var colourEnv = []string{"TERM=xterm-256color", "COLORTERM=truecolor", "TTY_FORCE=1"}
+// envOf reads a variable out of NAME=value pairs. A later pair wins.
+func envOf(env []string) func(string) string {
+	return func(name string) string {
+		value := ""
+		for _, pair := range env {
+			if key, v, ok := strings.Cut(pair, "="); ok && key == name {
+				value = v
+			}
+		}
+		return value
+	}
+}
+
+// colourEnv is a truecolor terminal. CLICOLOR_FORCE makes the test's buffer count as one.
+var colourEnv = []string{"TERM=xterm-256color", "COLORTERM=truecolor", "CLICOLOR_FORCE=1"}
 
 // blockProps is a header and one row per call count, so a later frame differs from an earlier one.
 func blockProps() func() tml.Props {
@@ -82,40 +95,25 @@ func blockProps() func() tml.Props {
 	}
 }
 
-// screenOf replays what the region wrote through a terminal emulator. It returns the lines a user scrolls back through,
-// then the lines on screen, blank lines at the end dropped.
+// screenOf replays what the region wrote through a terminal emulator.
 func screenOf(t *testing.T, written string) []string {
 	t.Helper()
-	term := vt.NewEmulator(liveWidth, liveHeight)
-	// The emulator answers the program's queries on a pipe. Nobody reads that pipe unless a goroutine does.
-	go func() { _, _ = io.Copy(io.Discard, term) }()
-	_, err := term.WriteString(written)
-	require.NoError(t, err)
-	var lines []string
-	for _, line := range term.Scrollback().Lines() {
-		lines = append(lines, strings.TrimRight(line.String(), " "))
-	}
-	for _, line := range strings.Split(term.String(), "\n") {
-		lines = append(lines, strings.TrimRight(line, " "))
-	}
-	for len(lines) > 0 && lines[len(lines)-1] == "" {
-		lines = lines[:len(lines)-1]
-	}
-	require.NoError(t, term.Close())
-	return lines
+	term := vt.New(liveWidth, liveHeight)
+	term.WriteString(written)
+	return term.Lines()
 }
 
 // waitDrawn blocks until the region has painted a frame that holds want.
 func waitDrawn(t *testing.T, out *syncBuffer, want string) {
 	t.Helper()
-	require.Eventually(t, func() bool { return strings.Contains(ansi.Strip(out.String()), want) },
+	require.Eventually(t, func() bool { return strings.Contains(cell.Strip(out.String()), want) },
 		5*time.Second, 5*time.Millisecond, "the region never drew %q", want)
 }
 
 // The region is live while it runs. Every line printed goes above it one time and in order. Stop takes the region off
 // the screen, so what is left is the log alone.
 func TestLivePrintsAboveTheRegionAndLeavesOnlyTheLog(t *testing.T) {
-	t.Serial()
+	t.Serial("a Live region is a program, and it rewires the key and click handlers of the process inspector")
 	exclusive(t)
 	live, out := startLive(t, blockProps(), colourEnv, nil)
 
@@ -137,7 +135,7 @@ func TestLivePrintsAboveTheRegionAndLeavesOnlyTheLog(t *testing.T) {
 
 // Many lines from many goroutines all arrive, and each goroutine's lines keep their order.
 func TestLiveKeepsEveryLineFromConcurrentWriters(t *testing.T) {
-	t.Serial()
+	t.Serial("the region it starts takes over driving from the process inspector while its writers run")
 	exclusive(t)
 	live, out := startLive(t, blockProps(), colourEnv, nil)
 
@@ -152,7 +150,7 @@ func TestLiveKeepsEveryLineFromConcurrentWriters(t *testing.T) {
 	wg.Wait()
 	require.NoError(t, live.Stop())
 
-	lines := strings.Split(strings.TrimSpace(ansi.Strip(out.String())), "\n")
+	lines := strings.Split(strings.TrimSpace(cell.Strip(out.String())), "\n")
 	next := map[string]int{}
 	seen := 0
 	for _, line := range lines {
@@ -170,7 +168,7 @@ func TestLiveKeepsEveryLineFromConcurrentWriters(t *testing.T) {
 
 // Colour comes from the theme and the terminal decides how much of it survives. NO_COLOR removes all of it.
 func TestLiveColourFollowsTheTerminal(t *testing.T) {
-	t.Serial()
+	t.Serial("it starts two regions in turn, each one taking the process inspector's driving hooks")
 	exclusive(t)
 
 	coloured, out := startLive(t, blockProps(), colourEnv, nil)
@@ -182,7 +180,7 @@ func TestLiveColourFollowsTheTerminal(t *testing.T) {
 	waitDrawn(t, out, "alpha")
 	require.NoError(t, plain.Stop())
 	assert.False(t, hasColour(out.String()), "NO_COLOR removes every colour")
-	assert.Contains(t, ansi.Strip(out.String()), "downloads: ", "the text itself still draws")
+	assert.Contains(t, cell.Strip(out.String()), "downloads: ", "the text itself still draws")
 }
 
 // hasColour reports whether any SGR sequence sets a foreground or background colour.
@@ -200,7 +198,7 @@ func hasColour(s string) bool {
 
 // An interrupt is an orderly end: the pending lines print, the region comes off the screen, and then the host hears.
 func TestLiveInterruptPrintsWhatIsPendingThenTellsTheHost(t *testing.T) {
-	t.Serial()
+	t.Serial("the interrupt goes to the region that holds the inspector hooks, which a parallel region would steal")
 	exclusive(t)
 	heard := make(chan struct{})
 	live, out := startLive(t, blockProps(), colourEnv, func() { close(heard) })
@@ -221,7 +219,7 @@ func TestLiveInterruptPrintsWhatIsPendingThenTellsTheHost(t *testing.T) {
 
 // A frame that cannot render ends the region with the reason, rather than leave the last good frame up as if it were live.
 func TestLiveEndsOnARenderFailure(t *testing.T) {
-	t.Serial()
+	t.Serial("the failing region registers as the program the process inspector drives until it ends")
 	exclusive(t)
 	live, _ := startLive(t, func() tml.Props { return tml.Props{} }, colourEnv, nil)
 
@@ -235,7 +233,7 @@ func TestLiveEndsOnARenderFailure(t *testing.T) {
 
 // A region that never started still owes its lines to the terminal, and a stopped region writes straight through.
 func TestLiveLinesOutsideTheRegion(t *testing.T) {
-	t.Serial()
+	t.Serial("even a region that never starts builds a program that claims the process inspector")
 	exclusive(t)
 	view, err := tml.Load(fstest.MapFS{"block.tml": &fstest.MapFile{Data: []byte(liveBlock)}}, "block.tml", tml.Options{})
 	require.NoError(t, err)
@@ -254,7 +252,7 @@ func TestLiveLinesOutsideTheRegion(t *testing.T) {
 
 // A region starts one time.
 func TestLiveStartsOneTime(t *testing.T) {
-	t.Serial()
+	t.Serial("starting the region claims the process inspector's driving hooks for the length of the test")
 	exclusive(t)
 	live, _ := startLive(t, blockProps(), colourEnv, nil)
 	assert.Error(t, live.Start())

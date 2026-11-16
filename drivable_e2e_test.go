@@ -88,7 +88,7 @@ func TestARealUndrivableProgramDoesNotStayUp(t *testing.T) {
 	said := stderr.String()
 	assert.Contains(t, said, "the inspector cannot drive it", "the program said why it stopped")
 	assert.Contains(t, said, "tml.NewProgram", "the program named the fix")
-	assert.Contains(t, said, "tea.NewProgram", "the program named what it did instead")
+	assert.Contains(t, said, "instead of a loop of its own", "the program named what it did instead")
 }
 
 // A program that prints a document and keeps going is not a screen nothing can drive. It stays up past the grace.

@@ -1,11 +1,7 @@
 package tml_test
 
 import (
-	"io"
-	"strings"
 	"testing"
-
-	tea "charm.land/bubbletea/v2"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -15,20 +11,20 @@ import (
 
 // The failure names the fix. A guard that takes a program down and leaves the reader to guess why has traded a real fix for a puzzle
 func TestTheRefusalNamesTheFix(t *testing.T) {
-	t.Serial()
+	t.Serial("it disarms the process-wide drivable guard before it calls the guard's failure by hand")
 	exclusive(t)
 	assert.PanicsWithValue(t,
-		"tml: no way to drive this program; build it with tml.NewProgram",
+		"tml: no way to drive this program; run it with tml.NewProgram",
 		func() { tml.CheckDrivable() })
 }
 
 // A program tml built is driven from the frame it starts on, so the guard has nothing to say about it however long it
 func TestADrivenProgramIsNeverTouched(t *testing.T) {
-	t.Serial()
+	t.Serial("a program built here marks the whole process as driven, which the drivable guard reads on every paint")
 	exclusive(t)
 
 	view := loadInspectorView(t)
-	_, err := tml.NewProgram(driveModel{}, tea.WithInput(strings.NewReader("")), tea.WithOutput(io.Discard))
+	_, err := tml.NewProgram(view, driveApp{}, quietOptions())
 	require.NoError(t, err)
 
 	assert.NotPanics(t, func() {
