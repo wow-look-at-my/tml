@@ -116,6 +116,9 @@ func (e *Engine) arrangeComposer(box *Box, composer widget.Composer) {
 	want.OffsetX, want.OffsetY = max(0, want.OffsetX), max(0, want.OffsetY)
 	scroll.X, scroll.Y = want.OffsetX, want.OffsetY
 	box.scroll = scroll
+	if scrolling, ok := composer.(widget.Scrolling); ok {
+		scrolling.SetScroll(scroll)
+	}
 
 	// Children that are a window start at the top of it: the host sliced at the offset, so shifting by it again would
 	shiftX, shiftY := want.OffsetX, want.OffsetY

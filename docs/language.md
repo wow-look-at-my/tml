@@ -47,11 +47,11 @@ A file defines exactly one component, rooted at `<Component>` (or exactly one th
 
 `<Property>` takes `name`, `type`, and either `required="true"` or a `default`. To require a property and default it at the same time is an error, because the default never applies.
 
-Types: `string`, `int`, `bool`, `color`, `length`, `thickness`, `enum(a|b|c)`, and a `[]` suffix for a list of any of them. The suffix spelling exists so a type never needs XML escaping. `list<string>` needs it.
+Types. The suffix spelling exists so a type never needs XML escaping. `list<string>` needs it.
 
 - `color` is a hex triplet (`#e0af68`, `#fff`) or an ANSI index `0-255`. Names are not accepted. A theme token is how a colour gets a name.
 - `length` is `auto`, a cell count, or a star share (`*`, `2*`).
-- `thickness` is the CSS shorthand: `1`, `1 2`, or `1 2 3 4` clockwise from the top.
+- `thickness` is the CSS shorthand.
 
 A default is evaluated against the theme only, not against the component's other properties, so defaults do not depend on declaration order.
 
@@ -166,14 +166,11 @@ A `<DataTemplate>` is written exactly like a `<Component>`. It differs in one wa
 
 ## Layout
 
-Every element takes `width` and `height`: `auto` (default), a cell count, or a star share.
-
 `auto` sizes to content. A star share takes a weighted slice of what is left after the fixed and auto siblings are placed. A star size propagates upward. A container that holds a star child asks for all the space available on that axis. Without that, the container shrinks to its content, and the star has nothing to fill.
 
 Panels:
 
 - `Stack` — `orientation="vertical|horizontal"` (vertical is the default) and `gap`
-- `Grid` — `columns`, `rows`, `gap`, with placement declared per child
 - `Canvas` — free positioning: children sit where they are put, and overlap
 - `Box` — a single-child decorator for border, padding, background and alignment
 - `Text` — character data, wrapped to the width it is given. `overflow="clip"` cuts each line at that width instead, and `overflow="ellipsis"` marks the cut. A clipped Text is as tall as it has lines, however narrow it gets. That keeps a fixed-height card fixed when one line inside it runs long
@@ -191,7 +188,7 @@ Panels:
 </Canvas>
 ```
 
-A canvas takes all the space it is offered. One that shrank to its content leaves a child anchored to its bottom-right corner nowhere to sit. Attached properties place each child: `Canvas.x`, `Canvas.y` and `Canvas.anchor` (`topLeft`, `topRight`, `bottomLeft`, `bottomRight`, `center`). The offsets measure from the anchor. A negative one therefore moves back in from the edge it is pinned to.
+A canvas takes all the space it is offered. One that shrank to its content leaves a child anchored to its bottom-right corner nowhere to sit. Attached properties place each child. The offsets measure from the anchor. A negative one therefore moves back in from the edge it is pinned to.
 
 A child that says nothing sits where its own default anchor puts it, which is how `<Popup>` lands in the middle without being told to. Children paint in document order, so a dialog written last is the one on top.
 
@@ -203,13 +200,13 @@ A child that says nothing sits where its own default anchor puts it, which is ho
 </Grid>
 ```
 
-Tracks are declared on the grid. Placement is declared on each child with XAML-style attached properties: `Grid.row`, `Grid.column`, `Grid.rowSpan`, `Grid.columnSpan`. Track solving runs fixed, then auto, then star. A star track therefore divides only what the other two left behind. The last star track absorbs the rounding, so the grid fills exactly.
+Tracks are declared on the grid. Placement is declared on each child with XAML-style attached properties. Track solving runs fixed, then auto, then star. A star track therefore divides only what the other two left behind. The last star track absorbs the rounding, so the grid fills exactly.
 
 An auto track sizes to the widest child confined to it. A child spanning several tracks is excluded from that measurement, because it cannot say which of the tracks it covers must grow.
 
 Placing a child past the last declared track widens the grid with auto tracks rather than dropping the child.
 
-An auto or a star track can carry a range: `*[8..32]`, `auto[..20]`, `*[4..]`. Either end can be left out. A star track that reaches its maximum stops there, and the other star tracks share what it did not take. A lone capped star therefore leaves the rest of the row empty. That keeps a label column near the numbers beside it on a wide terminal. A track below its minimum keeps the minimum, and the grid overflows.
+An auto or a star track can carry a range. Either end can be left out. A star track that reaches its maximum stops there, and the other star tracks share what it did not take. A lone capped star therefore leaves the rest of the row empty. That keeps a label column near the numbers beside it on a wide terminal. A track below its minimum keeps the minimum, and the grid overflows.
 
 A fixed track has no range.
 
@@ -227,7 +224,7 @@ A grid child fills the cell it is placed in. A `1*` track is therefore how you s
 
 An attached property written on a child of anything other than a `Grid` is an error, as is an unknown one such as `Grid.depth`. To ignore them leaves a layout that quietly disregards what was written.
 
-Grid children sit at coordinates rather than in a line, so the renderer composites them through lipgloss layers instead of joining. Each layer gets a distinct, increasing z in document order. See docs/lipgloss-contract.md for why equal z values are dangerous.
+Grid children sit at coordinates rather than in a line. The painter draws them in document order, and a later child covers an earlier one where their cells overlap. See docs/renderer.md.
 
 Layout attributes are not forwarded through a component instance: every attribute on `<Card .../>` is a property. A component that wants to be sized declares a `length` property and puts it on its own root, which is what `Card.tml` in `testdata/dashboard` does.
 
@@ -246,11 +243,11 @@ Layout attributes are not forwarded through a component instance: every attribut
 
 A token has either a single `value` or a `light`/`dark` pair, not both and never half a pair. The pair follows `Options.Dark`.
 
-Style attributes: `fg`, `bg`, `bold`, `italic`, `underline`, `strikethrough`, `faint`, `reverse`, `padding`, `margin`, `border`, `borderColor`, `align`, `valign`. Borders are named: `none`, `normal`, `rounded`, `thick`, `double`, `hidden`, `block`, `ascii`.
+Style attributes. Borders are named.
 
 An element picks a named style with `style="card"` and overrides individual attributes inline.
 
-`lipgloss.Style.Inherit` resolves `extends`, because Inherit deliberately drops padding and margin. See docs/lipgloss-contract.md.
+`extends` copies every attribute of the parent style, padding and margin included, and the child's own attributes win. A colour is a palette index, `#rgb`, `#rrggbb` or a terminal colour name such as `red` or `brightBlue`. A value that is not a colour fails the load. An element's `fg` and text attributes reach its descendants, and its `bg` fills its padding box. See docs/renderer.md.
 
 ## Widgets
 
@@ -259,12 +256,12 @@ Everything that is not a panel is a widget. The library in `widgets/` holds butt
 A host binds its own elements the same way, and TML measures, places and draws them without touching their state:
 
 ```go
-widgets := widget.NewRegistry().Bind("Search", widget.Bubble(&m.input))
+widgets := widget.NewRegistry().BindFactory("Transcript", widget.NewFactory([]string{"entries"}, newTranscript))
 view, err := tml.Load(ui, "app.tml", tml.Options{Widgets: widgets})
 ```
 
-Pass a pointer to `Bubble`. `SetWidth` has a pointer receiver. Without a pointer, the width TML computes lands on a copy and is thrown away.
+A widget draws on a `cell.Canvas`. A component that only knows how to return a string still plugs in: `widget.FromViewer(&component, nil)` adapts anything with a `View() string` method. It reads the SGR in what it returns. Pass a pointer. `SetWidth` has a pointer receiver. Without a pointer, the width TML computes lands on a copy and is thrown away.
 
 Widget names are checked when the view loads, so a template naming a widget that was never bound fails there rather than rendering a blank.
 
-TML never routes messages. The host keeps its `Update` and its state. What TML reports is what the user did. `view.UI().Update(msg)` hands back the id and action of whatever was activated, and nothing else. `examples/dashboard` shows the split with a bubbles component. `examples/gallery` shows it with the library.
+The host keeps its state. What TML reports is what the user did. The program hands the app the id and action of whatever was activated, edited or scrolled, as a `tml.Event`. `examples/dashboard` shows the split with a text field. `examples/gallery` shows it with the whole library, and `examples/agent` with widgets of its own.

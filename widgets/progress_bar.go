@@ -5,6 +5,7 @@ package widgets
 import (
 	"fmt"
 
+	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/widget"
 )
 
@@ -14,7 +15,7 @@ var progressAttrs = []string{"value", "max", "filled", "empty", "color", "trackC
 type progressBar struct {
 	value, limit  float64
 	filled, empty rune
-	color, track  string
+	color, track  cell.Color
 	percent       bool
 	measure       widget.Measurer
 }
@@ -40,8 +41,12 @@ func newProgressBar(ctx widget.Context) (widget.Native, error) {
 	if bar.percent, err = ctx.Attrs.Bool("percent", false); err != nil {
 		return nil, err
 	}
-	bar.color = ctx.Attrs.String("color", "")
-	bar.track = ctx.Attrs.String("trackColor", "")
+	if bar.color, err = colorAttr(ctx.Attrs, "color"); err != nil {
+		return nil, err
+	}
+	if bar.track, err = colorAttr(ctx.Attrs, "trackColor"); err != nil {
+		return nil, err
+	}
 	return bar, nil
 }
 
@@ -66,10 +71,12 @@ func (b *progressBar) Measure(maxW, _ int) (int, int) {
 	return width, 1
 }
 
-func (b *progressBar) Render(w, _ int) string {
+func (b *progressBar) Draw(c cell.Canvas) {
+	w, _ := c.Size()
 	label := b.label()
 	track := max(0, w-b.measure.Width(label))
 	full := int(float64(track)*b.ratio() + 0.5)
-	return paint(b.color).Render(repeat(b.filled, full)) +
-		paint(b.track).Render(repeat(b.empty, track-full)) + label
+	c.Repeat(0, 0, full, 1, string(b.filled), paint(b.color))
+	c.Repeat(full, 0, track-full, 1, string(b.empty), paint(b.track))
+	c.Text(track, 0, label, cell.Style{})
 }

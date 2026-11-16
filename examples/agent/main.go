@@ -8,10 +8,6 @@ import (
 	"io/fs"
 	"os"
 	"strconv"
-	"time"
-	"unicode"
-
-	tea "charm.land/bubbletea/v2"
 
 	"github.com/wow-look-at-my/tml"
 	"github.com/wow-look-at-my/tml/sema"
@@ -85,6 +81,7 @@ type model struct {
 	tokens  int
 	offset  int
 	prompt  string
+	cursor  int
 
 	// patchAt and resultsAt are how many turns had been said when each card arrived.
 	patchAt, resultsAt int
@@ -96,12 +93,6 @@ type model struct {
 
 	width, height int
 	quitting      bool
-}
-
-type tick time.Time
-
-func ticker() tea.Cmd {
-	return tea.Tick(120*time.Millisecond, func(t time.Time) tea.Msg { return tick(t) })
 }
 
 func newModel() (*model, error) {
@@ -129,8 +120,6 @@ func newModel() (*model, error) {
 		height:    30,
 	}, nil
 }
-
-func (m *model) Init() tea.Cmd { return ticker() }
 
 // step runs the next beat. A beat that asks for permission stops the script where it is until the answer arrives.
 func (m *model) step() {
@@ -208,35 +197,32 @@ func (m *model) answer(allowed bool) {
 	m.follow()
 }
 
-func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+// Update takes a message from the program. A key it does not consume goes to the focus ring and comes back as an
+// event. The program steps the spinner by itself, so there is no clock here.
+func (m *model) Update(p *tml.Program, msg tml.Msg) bool {
 	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.width, m.height = msg.Width, msg.Height
-		return m, nil
-	case tick:
-		// The view counts its own animation frames: the host moves them on and paints what comes out.
-		m.view.Advance()
-		return m, ticker()
-	case tea.KeyPressMsg:
-		if cmd, handled := m.hotkey(msg); handled {
-			return m, cmd
+	case tml.Key:
+		handled := m.hotkey(msg)
+		if m.quitting {
+			p.Quit()
 		}
-	}
-
-	for _, event := range m.view.UI().Update(msg) {
-		switch event.Kind {
+		return handled
+	case tml.Event:
+		switch msg.Kind {
+		case tml.Changed:
+			// The prompt edits itself and holds nothing: the value and the caret come back here.
+			if msg.ID == "prompt" {
+				m.prompt, m.cursor = msg.Value, msg.Cursor
+			}
 		case tml.Activated:
-			m.act(event.Action, event.ID, event.Y)
+			m.act(msg.Action, msg.ID, msg.Y)
 		case tml.Scrolled:
-			if event.ID == "session" {
-				m.offset = m.scroll(event.Delta)
+			if msg.ID == "session" {
+				m.offset = m.scroll(msg.Delta)
 			}
 		}
 	}
-	if m.quitting {
-		return m, tea.Quit
-	}
-	return m, nil
+	return false
 }
 
 func (m *model) act(action, id string, row int) {
@@ -256,7 +242,7 @@ func (m *model) act(action, id string, row int) {
 func (m *model) send() {
 	if m.prompt != "" {
 		m.entries = append(m.entries, "you|"+m.prompt)
-		m.prompt = ""
+		m.prompt, m.cursor = "", 0
 		m.entries = append(m.entries, "note|the script is what answers here, not a model")
 		m.follow()
 		return
@@ -264,70 +250,63 @@ func (m *model) send() {
 	m.step()
 }
 
-func (m *model) hotkey(msg tea.KeyPressMsg) (tea.Cmd, bool) {
+// hotkey handles the keys the host keeps for itself, and reports whether it consumed the key. Typing is the prompt's
+// own while it has the focus.
+func (m *model) hotkey(key tml.Key) bool {
 	focused, _ := m.view.UI().Focused()
-	switch msg.String() {
+	switch key.String() {
 	case "ctrl+c":
-		return tea.Quit, true
+		m.quitting = true
+		return true
 	case "esc":
 		if m.asking {
 			m.answer(false)
-			return nil, true
+			return true
 		}
-		return tea.Quit, true
+		m.quitting = true
+		return true
 	}
 	if m.asking {
-		switch msg.String() {
+		switch key.String() {
 		case "y":
 			m.answer(true)
-			return nil, true
+			return true
 		case "n":
 			m.answer(false)
-			return nil, true
+			return true
 		}
 	}
 	if focused == "prompt" {
-		return m.typing(msg)
-	}
-	switch msg.String() {
-	case "q":
-		return tea.Quit, true
-	case " ", "space":
-		m.step()
-		return nil, true
-	}
-	return nil, false
-}
-
-func (m *model) typing(msg tea.KeyPressMsg) (tea.Cmd, bool) {
-	switch msg.String() {
-	case "backspace":
-		if m.prompt != "" {
-			m.prompt = m.prompt[:len(m.prompt)-1]
+		if key.String() == "enter" {
+			m.send()
+			return true
 		}
-		return nil, true
-	case "enter":
-		m.send()
-		return nil, true
-	case "tab", "shift+tab", "up", "down":
-		return nil, false
+		return false
 	}
-	if r := msg.Code; unicode.IsPrint(r) && msg.Mod == 0 {
-		m.prompt += string(r)
-		return nil, true
+	switch key.String() {
+	case "q":
+		m.quitting = true
+		return true
+	case "space":
+		m.step()
+		return true
 	}
-	return nil, false
+	return false
 }
 
-func (m *model) View() tea.View {
-	view := tea.NewView(m.render())
-	view.MouseMode = tea.MouseModeAllMotion
-	return view
-}
-
+// render draws one frame as text, which is how -frame and the golden tests reach the UI without a terminal.
 func (m *model) render() string {
+	out, err := m.view.Render(m.Props(), m.width, m.height)
+	if err != nil {
+		return "tml: " + err.Error()
+	}
+	return out
+}
+
+// Props is what the document is drawn from.
+func (m *model) Props() tml.Props {
 	before, between, after := m.split()
-	out, err := m.view.Render(tml.Props{
+	return tml.Props{
 		"status":      sema.StringValue(m.state.status),
 		"working":     sema.BoolValue(m.state.working),
 		"tokens":      sema.StringValue(strconv.Itoa(m.tokens)),
@@ -346,15 +325,11 @@ func (m *model) render() string {
 		"results":     sema.ListValue(results),
 		"showResults": sema.BoolValue(m.state.results),
 		"prompt":      sema.StringValue(m.prompt),
-		"cursor":      sema.StringValue(strconv.Itoa(len(m.prompt))),
+		"cursor":      sema.StringValue(strconv.Itoa(m.cursor)),
 		"sendVariant": sema.StringValue(sendVariant(m.waiting)),
 		"asking":      sema.BoolValue(m.asking),
 		"ask":         sema.StringValue(m.ask),
-	}, m.width, m.height)
-	if err != nil {
-		return "tml: " + err.Error()
 	}
-	return out
 }
 
 // cost is the going rate for a model that does not exist, so the meter has something to show.
@@ -413,8 +388,8 @@ func main() {
 		fmt.Println(m.render())
 		return
 	}
-	// Nothing here wires an inspector. Load adopted the view and opened the socket, and Run gave the protocol a program
-	if _, err := tml.Run(m); err != nil {
+	// Nothing here wires an inspector. Load adopted the view and opened the socket, and Run gave the protocol a program.
+	if err := tml.Run(m.view, m); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
 	}
