@@ -3,8 +3,6 @@
 package widgets
 
 import (
-	"strings"
-
 	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/widget"
 )
@@ -23,12 +21,4 @@ func colorAttr(attrs widget.Attrs, name string) (cell.Color, error) {
 		return cell.Color{}, attrs.Errorf(name, "%v", err)
 	}
 	return color, nil
-}
-
-// repeat draws n copies of r, guarding the negative counts that arithmetic on a too-small box produces.
-func repeat(r rune, n int) string {
-	if n <= 0 {
-		return ""
-	}
-	return strings.Repeat(string(r), n)
 }
