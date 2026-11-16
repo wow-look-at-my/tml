@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/wow-look-at-my/go-containers/set"
 	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/sema"
 )
@@ -66,7 +67,7 @@ func (r Resolved) ContentOffset() (x, y int) {
 }
 
 // colorAttrs are the attributes that take a colour.
-var colorAttrs = map[string]bool{"fg": true, "bg": true, "borderColor": true}
+var colorAttrs = set.Of[string]("fg", "bg", "borderColor")
 
 // build turns a flattened attribute map into a resolved style.
 func build(attrs map[string]string) (Resolved, error) {
@@ -97,7 +98,7 @@ func build(attrs map[string]string) (Resolved, error) {
 			err = fmt.Errorf("unknown style attribute %q", name)
 		}
 		if err != nil {
-			if colorAttrs[name] {
+			if colorAttrs.Contains(name) {
 				err = fmt.Errorf("%s: %w", name, err)
 			}
 			return Resolved{}, err

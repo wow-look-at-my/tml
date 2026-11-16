@@ -20,6 +20,9 @@ import (
 	"github.com/wow-look-at-my/tml/widget/widgettest"
 )
 
+var itermSeq = regexp.MustCompile(`^\x1b\]1337;File=name=bG9nby5wbmc=;size=\d+;width=4;height=2;` +
+	`preserveAspectRatio=0;inline=1;doNotMoveCursor=1:[A-Za-z0-9+/=]+\a$`)
+
 // encode writes an image as a PNG.
 func encode(t *testing.T, img image.Image) []byte {
 	t.Helper()
@@ -146,9 +149,8 @@ func TestKittyAndITermEmitTheirOwnProtocols(t *testing.T) {
 	iterm := widgettest.Draw(picture(t, "logo.png", data, map[string]string{"protocol": "iterm"}, true), 4, 2)
 	require.Len(t, iterm.Placements, 1)
 	seq = iterm.Placements[0].Seq
-	name := base64.StdEncoding.EncodeToString([]byte("logo.png"))
-	assert.Regexp(t, regexp.MustCompile(`^\x1b\]1337;File=name=`+regexp.QuoteMeta(name)+
-		`;size=\d+;width=4;height=2;preserveAspectRatio=0;inline=1;doNotMoveCursor=1:[A-Za-z0-9+/=]+\a$`), seq)
+	assert.Equal(t, "bG9nby5wbmc=", base64.StdEncoding.EncodeToString([]byte("logo.png")), "the name is the file's, in base64")
+	assert.Regexp(t, itermSeq, seq)
 	assert.Empty(t, iterm.Placements[0].Clear, "text drawn over an iTerm image is enough to remove it")
 }
 

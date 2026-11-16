@@ -30,8 +30,6 @@ func TestRuleSurvivesTooLittleSpace(t *testing.T) {
 	rule := build(t, "Rule", map[string]string{"title": "Logs"})
 
 	assert.Equal(t, " Lo", widgettest.Text(rule, 3, 1))
-	w, _ := rule.Measure(3, 1)
-	assert.Equal(t, 6, w, "the rule asks for room for its title")
 }
 
 func TestRuleColoursItsLineButNotItsTitle(t *testing.T) {

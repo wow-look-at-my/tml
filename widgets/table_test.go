@@ -117,15 +117,15 @@ func TestTableMeasuresTheHeightItWrapsTo(t *testing.T) {
 // wrap="false" keeps a row to a single line, which is what makes a row index a line index. A host that maps a click or
 // a scroll offset onto a row needs that arithmetic to hold. It breaks once a long cell takes another line too.
 func TestATableCanKeepEveryRowToOneLine(t *testing.T) {
-	rows := map[string]string{
+	attrs := map[string]string{
 		"columns": "path",
 		"rows":    "/a/long/path/that/will/not/fit,/another/long/path/that/will/not/fit",
 		"border":  "false",
 	}
-	wrapped := build(t, "Table", rows)
+	wrapped := build(t, "Table", attrs)
 
-	rows["wrap"] = "false"
-	cut := build(t, "Table", rows)
+	attrs["wrap"] = "false"
+	cut := build(t, "Table", attrs)
 
 	const narrow = 14
 	assert.Greater(t, len(rows(wrapped, narrow, 0)), len(rows(cut, narrow, 0)))
@@ -171,10 +171,10 @@ func TestTableRejectsACollapseColumnItDoesNotHave(t *testing.T) {
 
 // rule="false" makes the header one more line of the listing. A tool whose output an agent reads wants no blank line under it.
 func TestABorderlessTableCanDropTheRuleUnderItsHeader(t *testing.T) {
-	rows := map[string]string{"columns": "A,B", "rows": "1|2", "border": "false"}
-	ruled := build(t, "Table", rows)
-	rows["rule"] = "false"
-	bare := build(t, "Table", rows)
+	attrs := map[string]string{"columns": "A,B", "rows": "1|2", "border": "false"}
+	ruled := build(t, "Table", attrs)
+	attrs["rule"] = "false"
+	bare := build(t, "Table", attrs)
 
 	assert.Len(t, rows(ruled, 0, 0), 3)
 	assert.Len(t, rows(bare, 0, 0), 2)
@@ -211,11 +211,11 @@ func TestTableRejectsANonBooleanBorder(t *testing.T) {
 // The marked row is drawn differently from the rest. That is what makes a table something to pick a row out of, rather
 // than only something to read.
 func TestTableMarksTheSelectedRow(t *testing.T) {
-	rows := map[string]string{"columns": "Name", "rows": "a,b,c", "border": "false"}
-	plainTable := build(t, "Table", rows)
+	attrs := map[string]string{"columns": "Name", "rows": "a,b,c", "border": "false"}
+	plainTable := build(t, "Table", attrs)
 
-	rows["selected"] = "1"
-	marked := build(t, "Table", rows)
+	attrs["selected"] = "1"
+	marked := build(t, "Table", attrs)
 
 	assert.Equal(t, rows(plainTable, 10, 0), rows(marked, 10, 0),
 		"marking a row decorates it rather than changing what it says")
