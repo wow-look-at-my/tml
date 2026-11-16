@@ -61,7 +61,10 @@ func (f *fake) Reset() error {
 func box() *layout.Box {
 	child := &layout.Box{
 		Name: "Text", ID: "status", Action: "refresh", Text: "ready",
-		Screen: layout.Rect{X: 2, Y: 3, W: 10, H: 1},
+		// Rect and Content are what the painter draws from: the text's own cells.
+		Rect:    layout.Rect{W: 5, H: 1},
+		Content: layout.Size{W: 5, H: 1},
+		Screen:  layout.Rect{X: 2, Y: 3, W: 10, H: 1},
 		Clip:   layout.Rect{X: 0, Y: 0, W: 80, H: 24},
 	}
 	return &layout.Box{
