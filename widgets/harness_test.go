@@ -41,7 +41,7 @@ func attrsOf(element string, pairs map[string]string) widget.Attrs {
 
 // text is what a widget paints at a size, without styles, each row cut of its trailing blanks.
 func text(native widget.Native, w, h int) string {
-	return strings.Join(trimmedLines(widgettest.Draw(native, w, h).Lines()), "\n")
+	return strings.Join(trimmed(widgettest.Draw(native, w, h).Lines()), "\n")
 }
 
 // rows is what a widget paints at a size, without styles, one row per entry at the full width.
@@ -49,8 +49,8 @@ func rows(native widget.Native, w, h int) []string {
 	return widgettest.Draw(native, w, h).Lines()
 }
 
-// trimmedLines cuts the trailing blanks off every line.
-func trimmedLines(lines []string) []string {
+// trimmed cuts the trailing blanks off every line.
+func trimmed(lines []string) []string {
 	out := make([]string, len(lines))
 	for i, line := range lines {
 		out[i] = strings.TrimRight(line, " ")
