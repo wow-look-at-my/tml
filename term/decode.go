@@ -20,9 +20,8 @@ type Decoder struct {
 }
 
 const (
-	esc        = 0x1b
-	pasteStart = "\x1b[200~"
-	pasteEnd   = "\x1b[201~"
+	esc      = 0x1b
+	pasteEnd = "\x1b[201~"
 )
 
 // Feed takes the next bytes and returns every value they complete: input.Key,

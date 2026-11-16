@@ -179,6 +179,3 @@ func fadeRow(c cell.Canvas, row, width, depth, band int, dark bool) {
 		return style
 	})
 }
-
-// clamp keeps n inside [low, high].
-func clamp(n, low, high int) int { return max(low, min(n, high)) }
