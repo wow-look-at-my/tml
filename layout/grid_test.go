@@ -10,7 +10,7 @@ import (
 	"github.com/wow-look-at-my/tml/syntax"
 )
 
-func cell(row, column string, extra map[string]string) map[string]string {
+func at(row, column string, extra map[string]string) map[string]string {
 	attrs := map[string]string{"Grid.row": row, "Grid.column": column}
 	for key, value := range extra {
 		attrs[key] = value
@@ -20,7 +20,7 @@ func cell(row, column string, extra map[string]string) map[string]string {
 
 // textCell is a Text element already placed on the grid.
 func textCell(content, row, column string) *sema.Node {
-	node := el("Text", cell(row, column, nil))
+	node := el("Text", at(row, column, nil))
 	node.Children = append(node.Children, &sema.Node{Kind: syntax.TextNode, Text: content})
 	return node
 }
@@ -28,9 +28,9 @@ func textCell(content, row, column string) *sema.Node {
 // Track solving runs fixed, then auto, then star: a star track only ever divides what the other a pair of left behind.
 func TestTrackSolvingOrder(t *testing.T) {
 	grid := el("Grid", map[string]string{"columns": "6,auto,*"},
-		el("Box", cell("0", "0", nil)),
+		el("Box", at("0", "0", nil)),
 		textCell("abc", "0", "1"), // the auto column sizes to this
-		el("Box", cell("0", "2", nil)),
+		el("Box", at("0", "2", nil)),
 	)
 
 	box := layoutTree(t, grid, 20, 5)
@@ -42,8 +42,8 @@ func TestTrackSolvingOrder(t *testing.T) {
 
 func TestStarTracksDivideByWeight(t *testing.T) {
 	grid := el("Grid", map[string]string{"columns": "1*,3*"},
-		el("Box", cell("0", "0", nil)),
-		el("Box", cell("0", "1", nil)),
+		el("Box", at("0", "0", nil)),
+		el("Box", at("0", "1", nil)),
 	)
 	box := layoutTree(t, grid, 20, 5)
 
@@ -53,8 +53,8 @@ func TestStarTracksDivideByWeight(t *testing.T) {
 
 func TestGapSitsBetweenTracksOnly(t *testing.T) {
 	grid := el("Grid", map[string]string{"columns": "*,*", "gap": "2"},
-		el("Box", cell("0", "0", nil)),
-		el("Box", cell("0", "1", nil)),
+		el("Box", at("0", "0", nil)),
+		el("Box", at("0", "1", nil)),
 	)
 	box := layoutTree(t, grid, 12, 5)
 
@@ -66,7 +66,7 @@ func TestGapSitsBetweenTracksOnly(t *testing.T) {
 // A span covers its tracks and swallows the gaps between them, so a spanning child lines up with the columns
 func TestSpanCoversTracksAndTheGapsBetween(t *testing.T) {
 	grid := el("Grid", map[string]string{"columns": "4,4,4", "gap": "1"},
-		el("Box", cell("0", "0", map[string]string{"Grid.columnSpan": "2"})),
+		el("Box", at("0", "0", map[string]string{"Grid.columnSpan": "2"})),
 	)
 	box := layoutTree(t, grid, 20, 5)
 
@@ -75,8 +75,8 @@ func TestSpanCoversTracksAndTheGapsBetween(t *testing.T) {
 
 func TestRowsPlaceChildrenVertically(t *testing.T) {
 	grid := el("Grid", map[string]string{"rows": "2,3"},
-		el("Box", cell("0", "0", nil)),
-		el("Box", cell("1", "0", nil)),
+		el("Box", at("0", "0", nil)),
+		el("Box", at("1", "0", nil)),
 	)
 	box := layoutTree(t, grid, 10, 10)
 
@@ -88,7 +88,7 @@ func TestRowsPlaceChildrenVertically(t *testing.T) {
 // Declaring fewer tracks than a child uses widens the grid rather than dropping the child off it.
 func TestGridWidensForAChildBeyondTheDeclaredTracks(t *testing.T) {
 	grid := el("Grid", map[string]string{"columns": "auto"},
-		el("Box", cell("0", "0", nil)),
+		el("Box", at("0", "0", nil)),
 		textCell("x", "0", "3"),
 	)
 
@@ -99,16 +99,16 @@ func TestGridWidensForAChildBeyondTheDeclaredTracks(t *testing.T) {
 // A star track with a range keeps inside it. What a capped track cannot take goes to the other star tracks.
 func TestStarTrackRange(t *testing.T) {
 	grid := el("Grid", map[string]string{"columns": "*[..5],*"},
-		el("Box", cell("0", "0", nil)),
-		el("Box", cell("0", "1", nil)),
+		el("Box", at("0", "0", nil)),
+		el("Box", at("0", "1", nil)),
 	)
 	box := layoutTree(t, grid, 20, 5)
 	assert.Equal(t, 5, box.Children[0].Rect.W, "the capped track stops at its maximum")
 	assert.Equal(t, 15, box.Children[1].Rect.W, "the other track takes what the cap left")
 
 	grid = el("Grid", map[string]string{"columns": "*[8..],12"},
-		el("Box", cell("0", "0", nil)),
-		el("Box", cell("0", "1", nil)),
+		el("Box", at("0", "0", nil)),
+		el("Box", at("0", "1", nil)),
 	)
 	box = layoutTree(t, grid, 16, 5)
 	assert.Equal(t, 8, box.Children[0].Rect.W, "a track keeps its minimum even when the grid runs out")
@@ -117,8 +117,8 @@ func TestStarTrackRange(t *testing.T) {
 // A lone star track with a maximum leaves the rest of the row empty rather than stretching past it.
 func TestCappedStarLeavesTheRestEmpty(t *testing.T) {
 	grid := el("Grid", map[string]string{"columns": "*[4..10],6", "gap": "1"},
-		el("Box", cell("0", "0", nil)),
-		el("Box", cell("0", "1", nil)),
+		el("Box", at("0", "0", nil)),
+		el("Box", at("0", "1", nil)),
 	)
 	box := layoutTree(t, grid, 40, 5)
 	assert.Equal(t, 10, box.Children[0].Rect.W)
@@ -171,7 +171,7 @@ func TestCollapseDropsColumnsInOrderUntilTheRestFit(t *testing.T) {
 // A child that spans a collapsed column keeps the shown part of its span.
 func TestSpanSkipsACollapsedColumn(t *testing.T) {
 	grid := el("Grid", map[string]string{"columns": "4,4,4", "gap": "1", "collapse": "1"},
-		el("Box", cell("0", "0", map[string]string{"Grid.columnSpan": "3"})),
+		el("Box", at("0", "0", map[string]string{"Grid.columnSpan": "3"})),
 	)
 	box := layoutTree(t, grid, 10, 1)
 	assert.Equal(t, 9, box.Children[0].Rect.W, "two shown columns and the one gap between them")

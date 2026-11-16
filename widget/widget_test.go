@@ -6,6 +6,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/wow-look-at-my/tml/cell"
 )
 
 // fakeInput stands in for a bubbles component: it draws itself and can be told how wide it is.
@@ -31,33 +33,60 @@ type viewOnly struct{ text string }
 
 func (v viewOnly) View() string { return v.text }
 
-func TestBubbleMeasuresWhatTheComponentDraws(t *testing.T) {
-	native := Bubble(viewOnly{text: "ab\ncd"})
+// draw paints a widget on a buffer of the given size. widgettest imports this package, so a test here cannot use it.
+func draw(native Native, w, h int) *cell.Buffer {
+	buf := cell.NewBuffer(w, h)
+	native.Draw(buf.Canvas(nil))
+	return buf
+}
+
+func TestFromViewerMeasuresWhatTheComponentDraws(t *testing.T) {
+	native := FromViewer(viewOnly{text: "ab\ncd"}, nil)
 
 	w, h := native.Measure(0, 0)
 	assert.Equal(t, 2, w)
 	assert.Equal(t, 2, h)
 }
 
-// A component that accepts a width is told the space layout gave it, which is how a widget fills a star-sized cell.
-func TestBubblePassesTheWidthThrough(t *testing.T) {
-	input := &fakeInput{value: "hi"}
-	native := Bubble(input)
+// A styled view takes the cells its text shows, not the bytes of its escapes.
+func TestFromViewerMeasuresStyledTextByItsCells(t *testing.T) {
+	native := FromViewer(viewOnly{text: "\x1b[1mbold\x1b[m"}, nil)
 
-	assert.Equal(t, "hi........", native.Render(10, 1))
+	w, h := native.Measure(0, 0)
+	assert.Equal(t, 4, w)
+	assert.Equal(t, 1, h)
+
+	buf := draw(native, 4, 1)
+	assert.Equal(t, "bold", buf.Text())
+	assert.True(t, buf.At(0, 0).Style.Has(cell.Bold), "the SGR in the view styles the cells")
+}
+
+// The measurer decides how wide a grapheme cluster is.
+func TestFromViewerMeasuresWithTheMeasurer(t *testing.T) {
+	wide := func(string) int { return 2 }
+	w, _ := FromViewer(viewOnly{text: "abc"}, wide).Measure(0, 0)
+	assert.Equal(t, 6, w)
+}
+
+// A component that accepts a width is told the space layout gave it, which is how a widget fills a star-sized cell.
+func TestFromViewerPassesTheWidthThrough(t *testing.T) {
+	input := &fakeInput{value: "hi"}
+	native := FromViewer(input, nil)
+
+	assert.Equal(t, "hi........", draw(native, 10, 1).Text())
 	assert.Equal(t, 10, input.width, "the component was told its width")
 }
 
 // A component without SetWidth is left alone rather than being forced.
-func TestBubbleToleratesAComponentThatCannotResize(t *testing.T) {
-	native := Bubble(viewOnly{text: "fixed"})
-	assert.Equal(t, "fixed", native.Render(40, 1))
+func TestFromViewerToleratesAComponentThatCannotResize(t *testing.T) {
+	native := FromViewer(viewOnly{text: "fixed"}, nil)
+	assert.Equal(t, "fixed", strings.TrimRight(draw(native, 40, 1).Text(), " "))
 }
 
 func TestRegistryBindingAndNames(t *testing.T) {
 	registry := NewRegistry().
-		Bind("Search", Bubble(&fakeInput{value: "q"})).
-		Bind("Alpha", Bubble(viewOnly{text: "a"}))
+		Bind("Search", FromViewer(&fakeInput{value: "q"}, nil)).
+		Bind("Alpha", FromViewer(viewOnly{text: "a"}, nil))
 
 	assert.Equal(t, []string{"Alpha", "Search"}, registry.Names(), "names are sorted for stable diagnostics")
 
@@ -87,11 +116,11 @@ type stub struct{ attrs []string }
 
 func (s stub) Attributes() []string { return s.attrs }
 
-func (s stub) Build(Context) (Native, error) { return Bubble(viewOnly{text: "stub"}), nil }
+func (s stub) Build(Context) (Native, error) { return FromViewer(viewOnly{text: "stub"}, nil), nil }
 
 func TestRegistryHoldsBothKindsOfBinding(t *testing.T) {
 	registry := NewRegistry().
-		Bind("Search", Bubble(&fakeInput{value: "q"})).
+		Bind("Search", FromViewer(&fakeInput{value: "q"}, nil)).
 		BindFactory("Rule", stub{attrs: []string{"char"}})
 
 	assert.Equal(t, []string{"Rule", "Search"}, registry.Names())
@@ -108,7 +137,7 @@ func TestRegistryHoldsBothKindsOfBinding(t *testing.T) {
 
 // Rebinding a name has to drop the other kind of binding, or the stale binding wins every lookup and the new binding
 func TestRebindingReplacesTheOtherKind(t *testing.T) {
-	registry := NewRegistry().BindFactory("Button", stub{}).Bind("Button", Bubble(viewOnly{text: "host"}))
+	registry := NewRegistry().BindFactory("Button", stub{}).Bind("Button", FromViewer(viewOnly{text: "host"}, nil))
 	_, ok := registry.Factory("Button")
 	assert.False(t, ok)
 
@@ -120,14 +149,14 @@ func TestRebindingReplacesTheOtherKind(t *testing.T) {
 // A host binding its own <Button> keeps the rest of the library rather than having to shadow every name to get its own
 func TestMergeLetsTheHostWin(t *testing.T) {
 	library := NewRegistry().BindFactory("Button", stub{attrs: []string{"label"}}).BindFactory("Rule", stub{})
-	host := NewRegistry().Bind("Button", Bubble(viewOnly{text: "host"}))
+	host := NewRegistry().Bind("Button", FromViewer(viewOnly{text: "host"}, nil))
 
 	merged := host.Merge(library)
 	assert.Equal(t, []string{"Button", "Rule"}, merged.Names())
 
 	native, ok := merged.Lookup("Button")
 	require.True(t, ok, "the host's binding survived")
-	assert.Equal(t, "host", native.Render(0, 0))
+	assert.Equal(t, "host", draw(native, 4, 1).Text())
 
 	_, ok = merged.Factory("Rule")
 	assert.True(t, ok, "the library's other widgets came along")
