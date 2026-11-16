@@ -99,8 +99,10 @@ type Program struct {
 	opts ProgramOptions
 	out  io.Writer
 
-	msgs chan Msg
-	done chan struct{}
+	// queue is the messages waiting for the loop, and signal wakes the loop for them.
+	queue  []Msg
+	signal chan struct{}
+	done   chan struct{}
 
 	screen        *term.Screen
 	width, height int
@@ -119,14 +121,13 @@ type Program struct {
 type (
 	quitMsg      struct{}
 	interruptMsg struct{}
-	wakeMsg      struct{}
 	viewMsg      struct{ view *View }
 )
 
 // NewProgram prepares a program that shows view and is driven by app. Nothing touches the terminal until Run. The
 // error is the reason the inspection socket is not served, as InspectError reports it.
 func NewProgram(view *View, app App, opts ...ProgramOptions) (*Program, error) {
-	p := &Program{view: view, app: app, msgs: make(chan Msg, 256), done: make(chan struct{})}
+	p := &Program{view: view, app: app, signal: make(chan struct{}, 1), done: make(chan struct{})}
 	if len(opts) > 0 {
 		p.opts = opts[0]
 	}
@@ -154,12 +155,26 @@ func Run(view *View, app App, opts ...ProgramOptions) error {
 	return p.Run()
 }
 
-// Send hands the loop a message from any goroutine. After the program has ended the message is dropped.
+// Send hands the loop a message from any goroutine, the loop's own included. It never blocks. After the program has
+// ended the message is dropped.
 func (p *Program) Send(msg Msg) {
-	select {
-	case p.msgs <- msg:
-	case <-p.done:
+	p.mu.Lock()
+	if p.state == programStopped {
+		p.mu.Unlock()
+		return
 	}
+	p.queue = append(p.queue, msg)
+	p.mu.Unlock()
+	p.wake()
+}
+
+// received removes the messages that are waiting.
+func (p *Program) received() []Msg {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	msgs := p.queue
+	p.queue = nil
+	return msgs
 }
 
 // Quit ends the program after the messages already sent.
@@ -253,10 +268,10 @@ func (p *Program) line(s string) {
 	p.wake()
 }
 
-// wake asks the loop to look at the queue. A loop that is already behind will get to it without being asked.
+// wake asks the loop to look at its queues. A loop already asked needs no second asking.
 func (p *Program) wake() {
 	select {
-	case p.msgs <- wakeMsg{}:
+	case p.signal <- struct{}{}:
 	default:
 	}
 }
@@ -370,7 +385,7 @@ func (p *Program) enter() (stops []func(), err error) {
 			case <-signals:
 				p.Send(interruptMsg{})
 			case <-resizes:
-				p.Send(wakeMsg{})
+				p.wake()
 			case <-quit:
 				return
 			}
@@ -494,16 +509,14 @@ func (p *Program) loop() {
 		}
 
 		select {
-		case msg := <-p.msgs:
-			p.dispatch(msg)
+		case <-p.signal:
 			// A burst of input is one frame, not a frame for each value.
-			for more := true; more && !p.stopping; {
-				select {
-				case msg := <-p.msgs:
-					p.dispatch(msg)
-				default:
-					more = false
+			p.dirty = true
+			for _, msg := range p.received() {
+				if p.stopping {
+					break
 				}
+				p.dispatch(msg)
 			}
 		case <-ticks:
 			p.view.Advance()
@@ -521,7 +534,6 @@ func (p *Program) dispatch(msg Msg) {
 	case interruptMsg:
 		p.err = ErrInterrupted
 		p.stopping = true
-	case wakeMsg:
 	case viewMsg:
 		p.view = msg.view
 		p.screen.Invalidate()
