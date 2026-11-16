@@ -65,7 +65,7 @@ func box() *layout.Box {
 		Rect:    layout.Rect{W: 5, H: 1},
 		Content: layout.Size{W: 5, H: 1},
 		Screen:  layout.Rect{X: 2, Y: 3, W: 10, H: 1},
-		Clip:   layout.Rect{X: 0, Y: 0, W: 80, H: 24},
+		Clip:    layout.Rect{X: 0, Y: 0, W: 80, H: 24},
 	}
 	return &layout.Box{
 		Name: "Stack", ID: "app",
