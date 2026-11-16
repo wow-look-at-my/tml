@@ -1,6 +1,6 @@
 # Widgets
 
-TML's language is layout: `Stack`, `Grid`, `Canvas`, `Box`, `Text`, `Spacer`. Everything else on screen is a widget, and widgets come from a registry. Default registers the library in `widgets/`. A template can therefore use `<Button>` with no setup. A host that binds its own `Button` wins the name, and `Options{Bare: true}` drops the library fully.
+TML's language is layout. Everything else on screen is a widget, and widgets come from a registry. Default registers the library in `widgets/`. A template can therefore use `<Button>` with no setup. A host that binds its own `Button` wins the name, and `Options{Bare: true}` drops the library fully.
 
 The split is that **widgets draw and panels solve constraints**. A widget is handed a size and returns a string. That is the whole contract, and every widget below goes through it -- including the ones that wrap children.
 
@@ -64,15 +64,13 @@ Focus is a rendering input, not something a widget stores. The engine hands each
 
 ## The library
 
-Every widget also takes the style attributes (`fg`, `bg`, `bold`, `padding`, `border`, …). Anything a widget does not claim goes to the stylesheet, so `<Badge label="new" bg="#f00"/>` means both things at once.
+Every widget also takes the style attributes. Anything a widget does not claim goes to the stylesheet, so `<Badge label="new" bg="#f00"/>` means both things at once.
 
 ### Containers
 
 | Element | Attributes | Notes |
 | --- | --- | --- |
-| `Border` | `kind`, `title`, `titleAlign`, `color`, `pad`, `contentAlign` | A frame around its children. `kind` is a lipgloss border name. The title is spliced into the top edge. `contentAlign="center"` puts each child in the middle of the width, and publishes it there. |
 | `Popup` | as `Border` | A dialog. Defaults to a rounded border and centres itself on a `Canvas`. |
-| `Scrollbox` | `offset`, `offsetX`, `scrollbar`, `contentHeight`, `fade`, `moreAbove`, `moreBelow` | A viewport onto taller content. The host owns the offset. The wheel reports `Scrolled` and the host moves it. `scrollbar` is `auto`, `always` or `never`. `contentHeight` says the children are a window over content that long -- see below. `fade` blends the rows at an edge that has content beyond it toward the background, one step per row of the band, so the edge reads as a gradient; `moreAbove` and `moreBelow` name those edges for a host that cut the window itself and has no total to offer. |
 
 `Scrollbox` is where the pointer-only rule earns itself. It never takes focus, and its clipping is real. A control scrolled out of view is not in the frame's geometry. A click where it used to be finds nothing.
 
@@ -104,13 +102,6 @@ The window stops at the first and the last screenful. It steps over an item of h
 
 ### Controls
 
-| Element | Attributes | Notes |
-| --- | --- | --- |
-| `Button` | `label`, `variant`, `disabled` | `variant` is `default`, `primary` or `danger`. Focused, hovered and pressed each look different. In the tree a button is a `<Border>` around its content: the button takes the focus, and the border draws. |
-| `Textbox` | `value`, `placeholder`, `cursor`, `disabled`, `password` | Draws a field. It does not edit one. Editing is state, and state is the host's. |
-| `Checkbox` | `label`, `checked`, `disabled` | `[x]` / `[ ]`. |
-| `Radio` | `label`, `checked`, `disabled` | `(•)` / `( )`. The host owns which one is on. |
-
 A button's label is sugar for its `Content` slot, so anything can go inside one:
 
 ```xml
@@ -125,11 +116,6 @@ A button's label is sugar for its `Content` slot, so anything can go inside one:
 ```
 
 ### Data
-
-| Element | Attributes | Notes |
-| --- | --- | --- |
-| `List` | `items`, `selected`, `cursor`, `disabled` | A cursor beside the selected row. |
-| `Table` | `columns`, `rows`, `separator`, `border`, `rule`, `spacing`, `selected`, `disabled`, `wrap`, `collapse` | Rows are `separator`-joined cells. Columns size to their widest. `collapse` lists the column indices that give way, in order, while the table is wider than its space. `rule="false"` drops the line under a borderless header. `spacing` is the gap between borderless columns. |
 
 Both take focus, and both leave the selection to the host. `selected` is a row index the model owns. Nothing in the widget can therefore disagree with what the program thinks is picked. A `Table` marks its row in place, as a reversed bar across every column, bold while the table focus. It uses no cursor gutter, because a row of columns has no single place to put one. The bar draws whether or not the table focus.
 
@@ -153,12 +139,8 @@ That arithmetic holds only while a row is a line. A cell too wide for its column
 
 | Element | Attributes | Notes |
 | --- | --- | --- |
-| `Rule` | `orientation`, `char`, `title`, `color` | A divider, with an optional label breaking it. |
-| `ProgressBar` | `value`, `max`, `filled`, `empty`, `color`, `trackColor`, `percent` | Clamps out-of-range values rather than drawing past its track. |
-| `Spinner` | `kind`, `color` | `kind` is `arrow`, `bar`, `circle`, `dot`, `dots` or `line`. It animates itself; see [Animation](#animation). |
-| `Sparkline` | `values`, `max`, `color` | Plots against `max`, or against the series' own largest value. Keeps the most recent points when the space is short. |
+| `Spinner` | `kind`, `color` | It animates itself; see [Animation](#animation). |
 | `Badge` | `label` | A padded chip. |
-| `Image` | `src`, `alt`, `protocol` | See docs/images.md. |
 
 Nothing in the library holds state of its own. Every one of them draws what its attributes say, which is why the host's model stays the only place anything is true. The element that moves is a `Spinner`. It moves because the engine counts its frame. `examples/gallery` is all of them on one screen.
 
@@ -218,4 +200,4 @@ Then opt into whatever else applies:
 | `Templated` | Names another element the engine wraps the children in, the way a WPF control template is a Border around a ContentPresenter. `Bind` hands that element back, so the widget's state can steer how it draws. `Button` is a templated `Border`. |
 | `Anchored` | An opinion about where it sits on a `Canvas`. `Popup` says centre. |
 
-`Border`, `Popup` and `Scrollbox` are built on exactly these interfaces and nothing else, so a widget written outside. The language is not a second-class one.
+The language is not a second-class one.

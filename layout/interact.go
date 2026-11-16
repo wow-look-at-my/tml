@@ -17,10 +17,12 @@ type Target struct {
 	Rect   Rect
 	// Scroll is where a scrolling region ended up. It is the nothing value for anything that does not scroll.
 	Scroll Scroll
+	// Keys is the widget's own key handler, or nil for a widget that leaves every key to the focus ring.
+	Keys widget.Keyed
 }
 
 // Scroll is how far a scrolling region's content is shifted, and how far it could be.
-type Scroll struct{ X, Y, MaxX, MaxY int }
+type Scroll = widget.Scroll
 
 // Interaction is the focus and pointer state a frame renders against. Layout asks it how each focusable element should
 type Interaction interface {
@@ -77,7 +79,8 @@ func (p *pass) publish() {
 		if rect.W <= 0 || rect.H <= 0 {
 			continue
 		}
-		targets = append(targets, Target{ID: box.ID, Action: box.Action, Focus: box.focus, Rect: rect, Scroll: box.scroll})
+		keys, _ := box.Native.(widget.Keyed)
+		targets = append(targets, Target{ID: box.ID, Action: box.Action, Focus: box.focus, Rect: rect, Scroll: box.scroll, Keys: keys})
 	}
 	p.e.opts.Interaction.Frame(targets)
 }

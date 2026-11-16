@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/x/ansi"
+	"github.com/wow-look-at-my/tml/cell"
 )
 
 //go:embed ui/index.html ui/inspector.css ui/inspector.js
@@ -101,6 +101,6 @@ func writeJSON(w http.ResponseWriter, code int, body any) {
 	_, _ = w.Write(encoded)
 }
 
-func stripANSI(s string) string { return ansi.Strip(s) }
+func stripANSI(s string) string { return cell.Strip(s) }
 
 func join(items []string) string { return strings.Join(items, ", ") }

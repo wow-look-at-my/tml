@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestOneComponentPerFile pins the layout basic.go, data.go and input.go used to violate: several widget structs (rule,
 func TestOneComponentPerFile(t *testing.T) {
 	entries, err := os.ReadDir(".")
 	require.NoError(t, err)

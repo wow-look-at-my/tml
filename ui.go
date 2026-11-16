@@ -5,8 +5,7 @@ package tml
 import (
 	"strconv"
 
-	tea "charm.land/bubbletea/v2"
-
+	"github.com/wow-look-at-my/tml/input"
 	"github.com/wow-look-at-my/tml/layout"
 	"github.com/wow-look-at-my/tml/widget"
 )
@@ -27,6 +26,8 @@ const (
 	FocusMoved
 	// Scrolled is a wheel turn over a control, with Delta in notches: negative up, positive down.
 	Scrolled
+	// Changed is a key or a paste editing the focused control. Value and Cursor are what the control holds now.
+	Changed
 )
 
 func (k EventKind) String() string {
@@ -37,6 +38,8 @@ func (k EventKind) String() string {
 		return "focus-moved"
 	case Scrolled:
 		return "scrolled"
+	case Changed:
+		return "changed"
 	default:
 		return "invalid"
 	}
@@ -50,6 +53,9 @@ type Event struct {
 	Delta  int
 	// X and Y are where the pointer was inside the control, in cells from its top-left. A widget that draws several
 	X, Y int
+	// Value and Cursor are a Changed control's new value and caret column.
+	Value  string
+	Cursor int
 }
 
 // KeyMap is which keys drive the focus ring.
@@ -121,16 +127,47 @@ func firstFocusable(targets []layout.Target) string {
 	return ""
 }
 
-// Update feeds a Bubble Tea message through the focus ring and reports what the user did. Messages that mean nothing
-func (u *UI) Update(msg tea.Msg) []Event {
+// Update feeds one input value through the focus ring and reports what the user did. A value that means nothing to
+// the ring reports nothing. A Program calls this for the host. A host with a loop of its own calls it.
+func (u *UI) Update(msg any) []Event {
 	switch msg := msg.(type) {
-	case tea.KeyPressMsg:
+	case input.Key:
+		if events, taken := u.edit(msg); taken {
+			return events
+		}
 		return u.key(msg.Keystroke())
-	case tea.MouseMotionMsg:
+	case input.Paste:
+		events, _ := u.edit(input.Key{Text: msg.Text})
+		return events
+	case input.Mouse:
+		return u.pointer(msg)
+	}
+	return nil
+}
+
+// edit offers a key to the focused control when that control takes keys itself.
+func (u *UI) edit(key input.Key) ([]Event, bool) {
+	index := u.indexOf(u.focus)
+	if index < 0 || u.targets[index].Keys == nil {
+		return nil, false
+	}
+	change, taken := u.targets[index].Keys.Key(key)
+	if !taken {
+		return nil, false
+	}
+	target := u.targets[index]
+	return []Event{{
+		Kind: Changed, ID: target.ID, Action: target.Action,
+		X: -1, Y: -1, Value: change.Value, Cursor: change.Cursor,
+	}}, true
+}
+
+func (u *UI) pointer(msg input.Mouse) []Event {
+	switch msg.Action {
+	case input.Motion:
 		u.hover = u.hit(msg.X, msg.Y)
-		return nil
-	case tea.MouseClickMsg:
-		if msg.Button != tea.MouseLeft {
+	case input.Press:
+		if msg.Button != input.ButtonLeft {
 			return nil
 		}
 		target := u.hit(msg.X, msg.Y)
@@ -140,7 +177,7 @@ func (u *UI) Update(msg tea.Msg) []Event {
 			return nil
 		}
 		return u.focusKey(target)
-	case tea.MouseReleaseMsg:
+	case input.Release:
 		pressed := u.press
 		u.press = ""
 		target := u.hit(msg.X, msg.Y)
@@ -150,15 +187,15 @@ func (u *UI) Update(msg tea.Msg) []Event {
 			return nil
 		}
 		return u.at(target, Activated, 0, msg.X, msg.Y)
-	case tea.MouseWheelMsg:
+	case input.Wheel:
 		target := u.hit(msg.X, msg.Y)
 		if target == "" {
 			return nil
 		}
 		switch msg.Button {
-		case tea.MouseWheelUp:
+		case input.WheelUp:
 			return u.at(target, Scrolled, -1, msg.X, msg.Y)
-		case tea.MouseWheelDown:
+		case input.WheelDown:
 			return u.at(target, Scrolled, 1, msg.X, msg.Y)
 		}
 	}
