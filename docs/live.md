@@ -15,7 +15,7 @@ err := live.Stop()            // pending lines print, the region goes, the curso
 
 ## What the host supplies
 
-- **The view.** Any loaded `*tml.View`. The region lays it out with `View.RenderFit`. As a result, it takes only the rows its content uses. `LiveOptions.MaxHeight` caps it. The default cap is the terminal's height.
+- **The view.** Any loaded `*tml.View`. The region lays it out with `View.DrawFit`. As a result, it takes only the rows its content uses. `LiveOptions.MaxHeight` caps it. The default cap is the terminal's height.
 - **The props function.** The region calls it on its own goroutine at each repaint, every `LiveOptions.Interval` (100 ms by default). Workers keep their state as they like, for example in atomics. The function reads a snapshot. Nothing else calls it. `Refresh` repaints before the next interval.
 - **The lines.** `Write` holds a partial line until its newline arrives. It drops carriage returns, so a child that draws its own progress cannot break a line in pieces. The lines print in the order they arrive, at the next repaint.
 
