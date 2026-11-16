@@ -50,7 +50,7 @@ func runProgram(t *testing.T, p *tml.Program) <-chan error {
 
 // A program built through NewProgram can be typed into; a program built any other way refuses by name.
 func TestNewProgramIsWhatMakesAProgramDrivable(t *testing.T) {
-	t.Serial("TestNewProgramIsWhatMakesAProgramDrivable resets the process's inspector, which every Load and NewProgram in this package uses")
+	t.Serial("it checks the inspector refuses input before any program exists, so no parallel program may start")
 	exclusive(t)
 	view := loadInspectorView(t)
 	insp := tml.Inspect()
