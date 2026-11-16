@@ -19,8 +19,9 @@ type Terminal struct {
 	history        []string
 	savedX, savedY int
 	// main holds the main screen while the alternate screen is up.
-	main    [][]string
-	pending string
+	main         [][]string
+	mainX, mainY int
+	pending      string
 }
 
 // New returns a blank terminal.
@@ -219,13 +220,16 @@ func (t *Terminal) eraseScreen(body string) {
 }
 
 func (t *Terminal) alternate(on bool) {
+	// The cursor is saved with the main screen and comes back with it, as a terminal does.
 	switch {
 	case on && t.main == nil:
 		t.main = t.rows
+		t.mainX, t.mainY = t.x, t.y
 		t.rows = t.blank()
 	case !on && t.main != nil:
 		t.rows = t.main
 		t.main = nil
+		t.x, t.y, t.wrap = t.mainX, t.mainY, false
 	}
 }
 

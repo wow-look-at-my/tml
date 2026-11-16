@@ -117,7 +117,7 @@ func ParseKey(name string) Key {
 	for cut := true; cut; {
 		cut = false
 		for _, m := range mods {
-			if rest, ok := strings.CutPrefix(name, m.prefix); ok && rest != "" {
+			if rest, ok := strings.CutPrefix(name, m.prefix); ok {
 				key.Mod |= m.mod
 				name = rest
 				cut = true
