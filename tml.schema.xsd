@@ -79,8 +79,9 @@
 	</xs:simpleType>
 
 	<!--
-		A colour is a hex triplet or an ANSI index, and lipgloss accepts the string as written. Nothing rejects a
-		misspelling, here or at run time, so this states only that the attribute carries something.
+		A colour is a hex triplet, a palette index or a terminal colour name. The style resolver reads the string and
+		rejects a misspelling when the view loads. A token can supply the value, so this states only that the attribute
+		carries something.
 	-->
 	<xs:simpleType name="color">
 		<xs:restriction base="xs:token">

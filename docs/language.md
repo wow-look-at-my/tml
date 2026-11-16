@@ -224,7 +224,7 @@ A grid child fills the cell it is placed in. A `1*` track is therefore how you s
 
 An attached property written on a child of anything other than a `Grid` is an error, as is an unknown one such as `Grid.depth`. To ignore them leaves a layout that quietly disregards what was written.
 
-Grid children sit at coordinates rather than in a line, so the renderer composites them through lipgloss layers instead of joining. Each layer gets a distinct, increasing z in document order. See docs/lipgloss-contract.md for why equal z values are dangerous.
+Grid children sit at coordinates rather than in a line. The painter draws them in document order, and a later child covers an earlier one where their cells overlap. See docs/renderer.md.
 
 Layout attributes are not forwarded through a component instance: every attribute on `<Card .../>` is a property. A component that wants to be sized declares a `length` property and puts it on its own root, which is what `Card.tml` in `testdata/dashboard` does.
 
@@ -247,7 +247,7 @@ Style attributes. Borders are named.
 
 An element picks a named style with `style="card"` and overrides individual attributes inline.
 
-`lipgloss.Style.Inherit` resolves `extends`, because Inherit deliberately drops padding and margin. See docs/lipgloss-contract.md.
+`extends` copies every attribute of the parent style, padding and margin included, and the child's own attributes win. A colour is a palette index, `#rgb`, `#rrggbb` or a terminal colour name such as `red` or `brightBlue`. A value that is not a colour fails the load. An element's `fg` and text attributes reach its descendants, and its `bg` fills its padding box. See docs/renderer.md.
 
 ## Widgets
 
@@ -256,12 +256,12 @@ Everything that is not a panel is a widget. The library in `widgets/` holds butt
 A host binds its own elements the same way, and TML measures, places and draws them without touching their state:
 
 ```go
-widgets := widget.NewRegistry().Bind("Search", widget.Bubble(&m.input))
+widgets := widget.NewRegistry().BindFactory("Transcript", widget.NewFactory([]string{"entries"}, newTranscript))
 view, err := tml.Load(ui, "app.tml", tml.Options{Widgets: widgets})
 ```
 
-Pass a pointer to `Bubble`. `SetWidth` has a pointer receiver. Without a pointer, the width TML computes lands on a copy and is thrown away.
+A widget draws on a `cell.Canvas`. A component that only knows how to return a string still plugs in: `widget.FromViewer(&component, nil)` adapts anything with a `View() string` method. It reads the SGR in what it returns. Pass a pointer. `SetWidth` has a pointer receiver. Without a pointer, the width TML computes lands on a copy and is thrown away.
 
 Widget names are checked when the view loads, so a template naming a widget that was never bound fails there rather than rendering a blank.
 
-TML never routes messages. The host keeps its `Update` and its state. What TML reports is what the user did. `view.UI().Update(msg)` hands back the id and action of whatever was activated, and nothing else. `examples/dashboard` shows the split with a bubbles component. `examples/gallery` shows it with the library.
+The host keeps its state. What TML reports is what the user did. The program hands the app the id and action of whatever was activated, edited or scrolled, as a `tml.Event`. `examples/dashboard` shows the split with a text field. `examples/gallery` shows it with the whole library, and `examples/agent` with widgets of its own.

@@ -2,7 +2,7 @@
 
 TML's language is layout. Everything else on screen is a widget, and widgets come from a registry. Default registers the library in `widgets/`. A template can therefore use `<Button>` with no setup. A host that binds its own `Button` wins the name, and `Options{Bare: true}` drops the library fully.
 
-The split is that **widgets draw and panels solve constraints**. A widget is handed a size and returns a string. That is the whole contract, and every widget below goes through it -- including the ones that wrap children.
+The split is that **widgets draw and panels solve constraints**. A widget is handed a canvas of the size layout settled on, and draws on it. That is the whole contract, and every widget below goes through it -- including the ones that wrap children.
 
 ## Interaction
 
@@ -12,24 +12,26 @@ Attributes work on any element:
 - `action` is the string the element reports when it is activated. The host matches on it, so its `Update` never learns where anything ended up.
 
 ```go
-for _, event := range m.view.UI().Update(msg) {
-    switch event.Kind {
-    case tml.Activated:
-        m.act(event.Action)
-    case tml.Scrolled:
-        m.scroll(event.ID, event.Delta)
+func (m *model) Update(p *tml.Program, msg tml.Msg) bool {
+    if event, ok := msg.(tml.Event); ok {
+        switch event.Kind {
+        case tml.Activated:
+            m.act(event.Action)
+        case tml.Changed:
+            m.fields[event.ID] = field{value: event.Value, cursor: event.Cursor}
+        case tml.Scrolled:
+            m.scroll(event.ID, event.Delta)
+        }
     }
+    return false
 }
 ```
 
-`Update` takes any Bubble Tea message and ignores the ones that mean nothing here, so forwarding everything is safe. Tab and the arrows move the focus ring, enter and space activate, and the pointer hovers, clicks and scrolls. Replace the bindings with `view.UI().SetKeyMap(...)` when the host wants a key back.
+The program gives every input value to the app first. A value the app does not consume goes to the focus ring, and what the ring makes of it comes back as events. Tab and the arrows move the ring, enter and space activate, and the pointer hovers, clicks and scrolls. Replace the bindings with `view.UI().SetKeyMap(...)` when the host wants a key back. A host with a loop of its own calls `view.UI().Update(msg)` itself.
 
-Mouse events only arrive if the program asks for them. In Bubble Tea v2 that is a property of the view:
+A focused `Textbox` takes keys before the ring does. It edits its value and holds nothing. Enter, tab and the vertical arrows are not the field's, so they still reach the ring. A pasted text arrives the same way, as one edit.
 
-```go
-view := tea.NewView(m.frame())
-view.MouseMode = tea.MouseModeAllMotion  // cell motion only reports movement while a button is held
-```
+By default, the pointer is reported, motion included, because hover is part of how a control draws. `ProgramOptions{NoMouse: true}` leaves the pointer to the terminal, so the user selects text with it.
 
 A control is reachable ways. The two are not the same set:
 
@@ -153,7 +155,7 @@ A `Spinner` changes without the host saying so. The engine keeps the frame count
 Animating() bool
 ```
 
-The host steps the animation and asks whether anything moved:
+A program steps the animation by itself: its clock runs while something on screen moves, and stops when nothing does. A host with a loop of its own does the same by hand:
 
 ```go
 view.Advance()                                    // move every animation on one frame
@@ -165,14 +167,18 @@ if view.Animating() { /* keep the ticker */ }     // false means nothing on scre
 
 ## Writing your own
 
-A widget is a `widget.Native`: measure, then render into what layout settled on.
+A widget is a `widget.Native`: measure, then draw on what layout settled on.
 
 ```go
 type clock struct{ at time.Time }
 
 func (c *clock) Measure(maxW, maxH int) (int, int) { return 5, 1 }
-func (c *clock) Render(w, h int) string            { return c.at.Format("15:04") }
+func (c *clock) Draw(canvas cell.Canvas) {
+    canvas.Text(0, 0, c.at.Format("15:04"), cell.Style{}.Bold(true))
+}
 ```
+
+The canvas clips, so a widget never checks its own edges. It also carries the style the element inherited, so a widget states only what it changes. The text above is bold in whatever colour the element has. `widget/widgettest` draws a widget with no view around it, for a test that asserts on the cells.
 
 Bind it either per view or per element:
 
@@ -194,7 +200,11 @@ Then opt into whatever else applies:
 | --- | --- |
 | `Focusable` | Takes part in the focus ring. Returning false means disabled, and a disabled widget is unreachable by pointer too. |
 | `Stateful` | Told focus, hover and press before each measure. |
-| `Composer` | Wraps the children written inside it: declare the `Insets` you keep on each side, get them back already drawn. The left and top insets are what put a child's published rect where the widget draws it. |
+| `Composer` | Wraps the children written inside it: declare the `Insets` you keep on each side. `Draw` paints what sits behind the children, and the engine paints the children inside the insets. |
+| `Overlay` | Draws over the children once they are painted. `Scrollbox` draws its scrollbar and its fade this way. |
+| `Styler` | A style the children inherit. `Border` hands a button's face to its label this way. |
+| `Scrolling` | Told where layout put its content, before it draws. |
+| `Keyed` | Takes keys itself while it holds the focus, and answers with an edit. `Textbox` does. |
 | `Arranger` | Says how those children are measured and placed -- fill, free (overflowing), or offset. |
 | `Slotted` | Names the regions content can be written into, so a misspelt `<Button.Contnt>` fails when the view loads. |
 | `Templated` | Names another element the engine wraps the children in, the way a WPF control template is a Border around a ContentPresenter. `Bind` hands that element back, so the widget's state can steer how it draws. `Button` is a templated `Border`. |

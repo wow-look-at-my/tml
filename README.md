@@ -1,6 +1,6 @@
 # tml
 
-Terminal Markup Language: an XML-based declarative language for reusable terminal components. XAML-flavoured, built for the Charm stack — TML solves layout and Lip Gloss renders, so a view drops straight into a Bubble Tea `View()`.
+Terminal Markup Language: an XML-based declarative language for reusable terminal components. XAML-flavoured, with a renderer and a runtime of its own — TML lays a view out, paints it on a grid of cells. And runs it on the terminal.
 
 ```xml
 <?xml version="1.1" encoding="UTF-8"?>
@@ -48,19 +48,40 @@ Both pictures are the examples running in a real terminal, retaken on every push
 
 Your own widgets plug into the same seam the library uses — see `docs/widgets.md`.
 
-## In a Bubble Tea program
+## A program
 
-The model keeps its state and its `Update`. TML owns layout, theming and structure.
+The host keeps its state. TML owns the terminal, the loop, layout, theming and structure.
 
 ```go
-widgets := widget.NewRegistry().Bind("Search", widget.Bubble(&m.input))
-view, _ := tml.Load(ui, "app.tml", tml.Options{Widgets: widgets, Dark: true})
+view, _ := tml.Load(ui, "app.tml", tml.Options{Dark: true})
 
-func (m *model) View() tea.View {
-    out, err := m.view.Render(tml.Props{"title": sema.StringValue("Deployments")}, m.width, m.height)
-    ...
+type model struct{ query string; cursor int }
+
+// Props is what the view draws from, read before every frame.
+func (m *model) Props() tml.Props {
+    return tml.Props{"query": sema.StringValue(m.query), "cursor": sema.StringValue(strconv.Itoa(m.cursor))}
 }
+
+// Update takes one message. A key it does not consume goes to the focus ring and comes back as an Event.
+func (m *model) Update(p *tml.Program, msg tml.Msg) bool {
+    switch msg := msg.(type) {
+    case tml.Key:
+        if msg.String() == "esc" {
+            p.Quit()
+            return true
+        }
+    case tml.Event:
+        if msg.Kind == tml.Changed && msg.ID == "search" {
+            m.query, m.cursor = msg.Value, msg.Cursor
+        }
+    }
+    return false
+}
+
+err := tml.Run(view, &model{})
 ```
+
+The program reads the keyboard and the pointer, steps the view's animations, and writes only the cells that changed. See `docs/program.md`.
 
 Run the worked example: `go-toolchain && ./build/dashboard`, or `./build/dashboard -frame` for one frame without a terminal. `./build/agent` is a bigger one. It is a mock coding agent: a transcript that outgrows its viewport, tool output as cards, and a permission prompt that interrupts. It binds two of its own widgets alongside the library's.
 
@@ -137,7 +158,8 @@ go-toolchain
 - `docs/widgets.md` — the widget library, interaction, and writing your own
 - `docs/images.md` — how a picture reaches a terminal, and what happens when it cannot
 - `docs/live.md` — an inline region pinned below the log, repainted in place
-- `docs/lipgloss-contract.md` — what TML delegates to Lip Gloss, and the traps in it
+- `docs/program.md` — the program loop: input, events, timers and what a host writes
+- `docs/renderer.md` — cells, styles, the painter and the screen writer
 - `docs/agent.md` — the mock coding agent, and what building it changed about the language
 - `docs/screenshots.md` — how the pictures above are taken and published
 - `CLAUDE.md` — the working index for this repo
