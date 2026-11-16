@@ -6,17 +6,19 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/widget"
+	"github.com/wow-look-at-my/tml/widget/widgettest"
 )
 
 func TestCheckboxAndRadioUseTheirOwnGlyphs(t *testing.T) {
-	assert.Equal(t, "[ ] Dark mode", build(t, "Checkbox", map[string]string{"label": "Dark mode"}).Render(20, 1))
+	assert.Equal(t, "[ ] Dark mode", text(build(t, "Checkbox", map[string]string{"label": "Dark mode"}), 20, 1))
 	assert.Equal(t, "[x] Dark mode",
-		build(t, "Checkbox", map[string]string{"label": "Dark mode", "checked": "true"}).Render(20, 1))
+		text(build(t, "Checkbox", map[string]string{"label": "Dark mode", "checked": "true"}), 20, 1))
 
-	assert.Equal(t, "( ) Small", build(t, "Radio", map[string]string{"label": "Small"}).Render(20, 1))
+	assert.Equal(t, "( ) Small", text(build(t, "Radio", map[string]string{"label": "Small"}), 20, 1))
 	assert.Equal(t, "(•) Small",
-		build(t, "Radio", map[string]string{"label": "Small", "checked": "true"}).Render(20, 1))
+		text(build(t, "Radio", map[string]string{"label": "Small", "checked": "true"}), 20, 1))
 }
 
 func TestCheckWithoutALabelIsJustItsMark(t *testing.T) {
@@ -25,7 +27,7 @@ func TestCheckWithoutALabelIsJustItsMark(t *testing.T) {
 	w, h := box.Measure(0, 0)
 	assert.Equal(t, 3, w)
 	assert.Equal(t, 1, h)
-	assert.Equal(t, "[ ]", box.Render(3, 1))
+	assert.Equal(t, "[ ]", widgettest.Text(box, 3, 1))
 }
 
 func TestDisabledCheckRefusesFocus(t *testing.T) {
@@ -35,12 +37,22 @@ func TestDisabledCheckRefusesFocus(t *testing.T) {
 
 func TestCheckShowsItsState(t *testing.T) {
 	box := build(t, "Checkbox", map[string]string{"label": "On"})
-	resting := box.Render(10, 1)
+	assert.True(t, widgettest.Draw(box, 10, 1).At(0, 0).Style.IsZero(), "a resting check is plain")
 
-	for _, state := range []widget.State{{Focused: true}, {Hovered: true}, {Pressed: true}} {
+	for state, attr := range map[widget.State]cell.Attr{
+		{Focused: true}: cell.Underline | cell.Bold,
+		{Hovered: true}: cell.Underline,
+		{Pressed: true}: cell.Reverse,
+	} {
 		box.(widget.Stateful).SetState(state)
-		assert.NotEqual(t, resting, box.Render(10, 1))
+		assert.True(t, widgettest.Draw(box, 10, 1).At(0, 0).Style.Has(attr), "%+v", state)
 	}
+}
+
+func TestDisabledCheckIsFaint(t *testing.T) {
+	box := build(t, "Checkbox", map[string]string{"label": "On", "disabled": "true"})
+
+	assert.True(t, widgettest.Draw(box, 0, 0).At(0, 0).Style.Has(cell.Faint))
 }
 
 func TestCheckRejectsANonBooleanChecked(t *testing.T) {

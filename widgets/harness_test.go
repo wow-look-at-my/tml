@@ -1,6 +1,7 @@
 package widgets
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/wow-look-at-my/tml/sema"
 	"github.com/wow-look-at-my/tml/widget"
+	"github.com/wow-look-at-my/tml/widget/widgettest"
 )
 
 // build makes a single widget the way the engine does, from the element's name and its attributes.
@@ -35,6 +37,25 @@ func attrsOf(element string, pairs map[string]string) widget.Attrs {
 		order = append(order, name)
 	}
 	return widget.NewAttrs(element, values, order)
+}
+
+// text is what a widget paints at a size, without styles, each row cut of its trailing blanks.
+func text(native widget.Native, w, h int) string {
+	return strings.Join(trimmedLines(widgettest.Draw(native, w, h).Lines()), "\n")
+}
+
+// rows is what a widget paints at a size, without styles, one row per entry at the full width.
+func rows(native widget.Native, w, h int) []string {
+	return widgettest.Draw(native, w, h).Lines()
+}
+
+// trimmedLines cuts the trailing blanks off every line.
+func trimmedLines(lines []string) []string {
+	out := make([]string, len(lines))
+	for i, line := range lines {
+		out[i] = strings.TrimRight(line, " ")
+	}
+	return out
 }
 
 type unknownElement string
