@@ -136,7 +136,7 @@ func TestLinesReadEveryAttributeAndItsOff(t *testing.T) {
 	assert.Zero(t, plain.Attrs(), "an empty SGR is a reset")
 
 	assert.Equal(t, "x", Lines("\x1b[38mx")[0].String(), "a colour with no form is dropped")
-	assert.Equal(t, "x", Lines("\x1b[bogusmx")[0].String())
+	assert.Equal(t, "x", Lines("\x1b[?1mx")[0].String(), "parameters that are not numbers are dropped")
 }
 
 func TestLinesDropWhatIsNotText(t *testing.T) {
