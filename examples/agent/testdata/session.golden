@@ -3,14 +3,13 @@
  ────────────────────────────────────────────────────────────────────────────────────────────── 
                                                                                                 
  ┌ Context ─────────┐  ┌ Session ─────────────────────────────────────────────────────────────┐ 
- │   cmd/report.go  │  │  tml It writes the table straight to stdout, so the flag has to    │ │ 
- │ > report/table.… │  │      pick the encoder rather than post-process the text.           │ │ 
+ │   cmd/report.go  │  │                                                                    │ │ 
+ │ > report/table.… │  │   ⚙  edit_file cmd/report.go                                       │ │ 
  │   report/json.go │  │                                                                    │ │ 
- │   report/report… │  │                                                                    │ │ 
- │                  │  │ ┌ cmd/report.go ──────────────────────────────────────────────────┐│ │ 
+ │   report/report… │  │ ┌ cmd/report.go ──────────────────────────────────────────────────┐│ │ 
  │                  │  │ │ @@ -18,6 +18,10 @@ func newReportCmd() *cobra.Command {         ││ │ 
- │                  │  │ │      cmd.Flags().StringVar(&out, "out", "", "write to a file")  │█ │ 
- │                  │  │ │ +    cmd.Flags().BoolVar(&asJSON, "json", false, "write the     │█ │ 
+ │                  │  │ │      cmd.Flags().StringVar(&out, "out", "", "write to a file")  ││ │ 
+ │                  │  │ │ +    cmd.Flags().BoolVar(&asJSON, "json", false, "write the     ││ │ 
  │                  │  │ │ report as JSON")                                                │█ │ 
  │                  │  │ │                                                                 │█ │ 
  │                  │  │ │      return cmd                                                 │█ │ 
@@ -20,6 +19,7 @@
  │                  │  │ │ +    if asJSON {                                                │█ │ 
  │                  │  │ │ +        return json.NewEncoder(os.Stdout).Encode(rows)         │█ │ 
  │                  │  │ │ +    }                                                          │█ │ 
+ │                  │  │ │ +    return table.Write(os.Stdout, rows)                        │█ │ 
  │                  │  │ └─────────────────────────────────────────────────────────────────┘█ │ 
  └──────────────────┘  └──────────────────────────────────────────────────────────────────────┘ 
                                                                                                 

@@ -10,9 +10,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"unicode"
-
-	tea "charm.land/bubbletea/v2"
 
 	"github.com/wow-look-at-my/tml"
 	"github.com/wow-look-at-my/tml/sema"
@@ -36,6 +33,7 @@ type model struct {
 	tab      string
 	status   string
 	query    string
+	cursor   int
 	notify   bool
 	size     string
 	progress int
@@ -52,12 +50,10 @@ type model struct {
 	quitting      bool
 }
 
-// tick drives the spinner, the progress bar and the sparkline. A declarative widget draws the frame it is handed.
-type tick time.Time
+// tick drives the progress bar and the sparkline. The spinner needs none: the program steps a view's animations.
+type tick struct{}
 
-func ticker() tea.Cmd {
-	return tea.Tick(120*time.Millisecond, func(t time.Time) tea.Msg { return tick(t) })
-}
+const tickEvery = 120 * time.Millisecond
 
 func newModel() (*model, error) {
 	ui, err := fs.Sub(uiFS, "ui")
@@ -85,86 +81,73 @@ func newModel() (*model, error) {
 	return m, nil
 }
 
-func (m *model) Init() tea.Cmd { return ticker() }
-
-func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+// Update takes a message from the program. A key it does not consume goes to the focus ring, which owns the
+// geometry a click resolves against, and comes back as an event.
+func (m *model) Update(p *tml.Program, msg tml.Msg) bool {
 	switch msg := msg.(type) {
-	case tea.WindowSizeMsg:
-		m.width, m.height = msg.Width, msg.Height
-		return m, nil
 	case tick:
-		// The view counts its own animation frames: the host moves them on and paints what comes out.
-		m.view.Advance()
 		m.progress = (m.progress + 3) % 101
+		m.frame++
 		m.load = append(m.load[1:], 1+(m.frame*7)%9)
-		return m, ticker()
-	case tea.KeyPressMsg:
-		if cmd, handled := m.hotkey(msg); handled {
-			return m, cmd
+	case tml.Key:
+		return m.hotkey(p, msg)
+	case tml.Event:
+		m.event(msg)
+		if m.quitting {
+			p.Quit()
 		}
 	}
-
-	// Everything else goes to the view, which owns the focus ring and the geometry a click resolves against.
-	for _, event := range m.view.UI().Update(msg) {
-		switch event.Kind {
-		case tml.Activated:
-			// A list is a single control to the ring.
-			if event.ID == "services" && event.Y >= 0 {
-				m.selected = clamp(event.Y, 0, len(services)-1)
-				continue
-			}
-			// A table's header takes the leading line, so its rows start below the y a click reports.
-			if event.ID == "steps" && event.Y >= 0 {
-				m.step = clamp(event.Y-1, 0, len(steps)-1)
-				continue
-			}
-			if event.Action != "" && !m.act(event.Action) {
-				// A control the model has no answer for is a bug in this file, and a button that does nothing when pressed looks
-				m.status = "unhandled: " + event.Action
-			}
-		case tml.Scrolled:
-			m.scroll(event.ID, event.Delta)
-		}
-	}
-	if m.quitting {
-		return m, tea.Quit
-	}
-	return m, nil
+	return false
 }
 
-// hotkey handles the keys the host keeps for itself. Typing goes to the search box while it has focus, so the ring's
-func (m *model) hotkey(msg tea.KeyPressMsg) (tea.Cmd, bool) {
+func (m *model) event(event tml.Event) {
+	switch event.Kind {
+	case tml.Changed:
+		// The search box edits itself and holds nothing: the value and the caret come back here.
+		if event.ID == "search" {
+			m.query, m.cursor = event.Value, event.Cursor
+		}
+	case tml.Activated:
+		// A list is a single control to the ring.
+		if event.ID == "services" && event.Y >= 0 {
+			m.selected = clamp(event.Y, 0, len(services)-1)
+			return
+		}
+		// A table's header takes the first line, so its rows start below the y a click reports.
+		if event.ID == "steps" && event.Y >= 0 {
+			m.step = clamp(event.Y-1, 0, len(steps)-1)
+			return
+		}
+		if event.Action != "" && !m.act(event.Action) {
+			// A control the model has no answer for is a bug in this file, so it says so on screen.
+			m.status = "unhandled: " + event.Action
+		}
+	case tml.Scrolled:
+		m.scroll(event.ID, event.Delta)
+	}
+}
+
+// hotkey handles the keys the host keeps for itself. A letter is the search box's while it has the focus.
+func (m *model) hotkey(p *tml.Program, key tml.Key) bool {
 	focused, _ := m.view.UI().Focused()
-	switch msg.String() {
+	switch key.String() {
 	case "ctrl+c":
-		return tea.Quit, true
+		p.Quit()
+		return true
 	case "esc":
 		if m.confirming {
 			m.confirming = false
-			return nil, true
+			return true
 		}
-		return tea.Quit, true
-	}
-	if focused != "search" {
-		if msg.String() == "q" {
-			return tea.Quit, true
+		p.Quit()
+		return true
+	case "q":
+		if focused != "search" {
+			p.Quit()
+			return true
 		}
-		return nil, false
 	}
-	switch msg.String() {
-	case "backspace":
-		if m.query != "" {
-			m.query = m.query[:len(m.query)-1]
-		}
-		return nil, true
-	case "tab", "shift+tab", "enter", "up", "down":
-		return nil, false
-	}
-	if r := msg.Code; unicode.IsPrint(r) && msg.Mod == 0 {
-		m.query += string(r)
-		return nil, true
-	}
-	return nil, false
+	return false
 }
 
 // act runs a single control's action and reports whether it was a single this model knows.
@@ -207,16 +190,20 @@ func (m *model) scroll(id string, delta int) {
 
 func clamp(n, low, high int) int { return max(low, min(n, high)) }
 
-func (m *model) View() tea.View {
-	view := tea.NewView(m.frameOf())
-	// All motion, not cell motion: cell motion only reports movement while a button is held, so a button would never
-	view.MouseMode = tea.MouseModeAllMotion
-	return view
+// frameOf renders a single frame as text, which is how -frame and the golden tests reach the whole UI without a
+// terminal.
+func (m *model) frameOf() string {
+	out, err := m.view.Render(m.Props(), m.width, m.height)
+	if err != nil {
+		// A render failure is shown rather than swallowed: a blank frame looks like an empty gallery.
+		return "tml: " + err.Error()
+	}
+	return out
 }
 
-// frameOf renders a single frame. Keeping it out of View is what lets -frame and any golden test reach the whole UI without
-func (m *model) frameOf() string {
-	out, err := m.view.Render(tml.Props{
+// Props is what the document is drawn from.
+func (m *model) Props() tml.Props {
+	return tml.Props{
 		"status":      sema.StringValue(m.status),
 		"controlsTab": sema.BoolValue(m.tab == "controls"),
 		"dataTab":     sema.BoolValue(m.tab == "data"),
@@ -226,7 +213,7 @@ func (m *model) frameOf() string {
 		"dataVariant":     sema.StringValue(variant(m.tab == "data")),
 		"mediaVariant":    sema.StringValue(variant(m.tab == "media")),
 		"query":           sema.StringValue(m.query),
-		"cursor":          sema.StringValue(strconv.Itoa(len(m.query))),
+		"cursor":          sema.StringValue(strconv.Itoa(m.cursor)),
 		"notify":          sema.BoolValue(m.notify),
 		"small":           sema.BoolValue(m.size == "small"),
 		"medium":          sema.BoolValue(m.size == "medium"),
@@ -240,12 +227,7 @@ func (m *model) frameOf() string {
 		"steps":           sema.StringValue(strings.Join(steps, ",")),
 		"step":            sema.StringValue(strconv.Itoa(m.step)),
 		"confirming":      sema.BoolValue(m.confirming),
-	}, m.width, m.height)
-	if err != nil {
-		// A render failure is shown rather than swallowed: a blank frame looks like an empty gallery instead of a broken gallery.
-		return "tml: " + err.Error()
 	}
-	return out
 }
 
 // variant is how a tab button is drawn. The language has no conditional expression on purpose, so a choice like this
@@ -282,7 +264,7 @@ func main() {
 	// The flags set the starting state either way round: a still frame and a terminal session are the same program.
 	m.tab, m.confirming = *tab, *popup
 	// An animation shown at its start reads as an animation that does not work, so both begin partway through.
-	m.query, m.progress, m.frame = "sched", 62, 3
+	m.query, m.cursor, m.progress, m.frame = "sched", len("sched"), 62, 3
 	if *frame {
 		m.width, m.height = *width, *height
 	}
@@ -298,7 +280,14 @@ func main() {
 		fmt.Println(m.frameOf())
 		return
 	}
-	if _, err := tml.Run(m); err != nil {
+	// Nothing here wires an inspector. Load adopted the view and opened the socket, and the program is what drives it.
+	program, err := tml.NewProgram(m.view, m)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "error:", err)
+		os.Exit(1)
+	}
+	program.Every(tickEvery, tick{})
+	if err := program.Run(); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)
 	}

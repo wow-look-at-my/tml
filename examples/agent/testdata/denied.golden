@@ -4,20 +4,20 @@
                                                                                                 
  ┌ Context ─────────┐  ┌ Session ─────────────────────────────────────────────────────────────┐ 
  │   cmd/report.go  │  │                                                                    │ │ 
- │ > report/table.… │  │                                                                    │ │ 
- │   report/json.go │  │ ┌ cmd/report.go ──────────────────────────────────────────────────┐│ │ 
- │   report/report… │  │ │ @@ -18,6 +18,10 @@ func newReportCmd() *cobra.Command {         ││ │ 
- │                  │  │ │      cmd.Flags().StringVar(&out, "out", "", "write to a file")  ││ │ 
+ │ > report/table.… │  │ ┌ cmd/report.go ──────────────────────────────────────────────────┐│ │ 
+ │   report/json.go │  │ │ @@ -18,6 +18,10 @@ func newReportCmd() *cobra.Command {         ││ │ 
+ │   report/report… │  │ │      cmd.Flags().StringVar(&out, "out", "", "write to a file")  ││ │ 
  │                  │  │ │ +    cmd.Flags().BoolVar(&asJSON, "json", false, "write the     ││ │ 
  │                  │  │ │ report as JSON")                                                ││ │ 
- │                  │  │ │                                                                 │█ │ 
- │                  │  │ │      return cmd                                                 │█ │ 
+ │                  │  │ │                                                                 ││ │ 
+ │                  │  │ │      return cmd                                                 ││ │ 
  │                  │  │ │ @@ -41,7 +45,11 @@ func run(cmd *cobra.Command, args []string)  │█ │ 
  │                  │  │ │ error {                                                         │█ │ 
  │                  │  │ │ -    return table.Write(os.Stdout, rows)                        │█ │ 
  │                  │  │ │ +    if asJSON {                                                │█ │ 
  │                  │  │ │ +        return json.NewEncoder(os.Stdout).Encode(rows)         │█ │ 
  │                  │  │ │ +    }                                                          │█ │ 
+ │                  │  │ │ +    return table.Write(os.Stdout, rows)                        │█ │ 
  │                  │  │ └─────────────────────────────────────────────────────────────────┘█ │ 
  │                  │  │                                                                    █ │ 
  │                  │  │      denied -- the run was skipped and the session stopped here    █ │ 

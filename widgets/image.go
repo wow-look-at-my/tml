@@ -14,11 +14,7 @@ import (
 	"path"
 	"strings"
 
-	"charm.land/lipgloss/v2"
-	"github.com/charmbracelet/x/ansi"
-	"github.com/charmbracelet/x/ansi/iterm2"
-	"github.com/charmbracelet/x/ansi/kitty"
-
+	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/widget"
 
 	// Decoding is by format sniffing, so the formats a terminal is likely to be shown have to be registered.
@@ -150,25 +146,22 @@ func cellsHigh(bounds image.Rectangle, w int) int {
 	return max(1, bounds.Dy()*w/(bounds.Dx()*cellAspect))
 }
 
-func (i *imageWidget) Render(w, h int) string {
+func (i *imageWidget) Draw(c cell.Canvas) {
+	w, h := c.Size()
 	if w <= 0 || h <= 0 {
-		return ""
+		return
 	}
 	switch {
 	case i.img == nil:
-		return i.link()
+		// Every terminal shows the text. A terminal that understands the hyperlink escape makes it a link to the file.
+		c.Text(0, 0, i.alt, cell.Style{}.Hyperlink(i.uri()))
 	case i.protocol == protoKitty:
-		return i.reserve(i.kitty(w, h), w, h)
+		c.Place(0, 0, w, h, i.kitty(w, h), kittyClear)
 	case i.protocol == protoITerm:
-		return i.reserve(i.iterm(w, h), w, h)
+		c.Place(0, 0, w, h, i.iterm(w, h), "")
 	default:
-		return i.mosaic(w, h)
+		i.mosaic(c, w, h)
 	}
-}
-
-// link writes the alt text as a hyperlink to the file. Every terminal shows the text; a terminal that understands the hyperlink escape makes
-func (i *imageWidget) link() string {
-	return ansi.SetHyperlink(i.uri()) + i.alt + ansi.ResetHyperlink()
 }
 
 func (i *imageWidget) uri() string {
@@ -178,72 +171,62 @@ func (i *imageWidget) uri() string {
 	return "file://" + i.src
 }
 
-// reserve pairs a graphics escape with the cells it will cover. The escape itself measures nothing, because that is what
-func (i *imageWidget) reserve(escape string, w, h int) string {
-	row := strings.Repeat(" ", w)
-	lines := make([]string, h)
-	for n := range lines {
-		lines[n] = row
-	}
-	return escape + strings.Join(lines, "\n")
-}
+// kittyChunk is the most payload one graphics escape carries. The protocol sets the limit.
+const kittyChunk = 4096
 
+// kittyClear removes every image the protocol drew. The renderer writes it before it draws the frame's images again.
+const kittyClear = "\x1b_Ga=d,d=A,q=2\x1b\\"
+
+// kitty spells the image as graphics escapes: transmit and place in one, scaled to the cells, with the cursor left
+// where it was. The payload goes in chunks, and only the first carries the keys.
 func (i *imageWidget) kitty(w, h int) string {
 	var buf bytes.Buffer
 	if err := png.Encode(&buf, i.img); err != nil {
 		return ""
 	}
-	opts := kitty.Options{
-		Action:          kitty.TransmitAndPut,
-		Transmission:    kitty.Direct,
-		Format:          kitty.PNG,
-		Columns:         w,
-		Rows:            h,
-		DoNotMoveCursor: true,
-	}
 	payload := base64.StdEncoding.EncodeToString(buf.Bytes())
-	return ansi.KittyGraphics([]byte(payload), opts.String())
+	var b strings.Builder
+	for first := true; first || payload != ""; first = false {
+		chunk := payload
+		if len(chunk) > kittyChunk {
+			chunk = chunk[:kittyChunk]
+		}
+		payload = payload[len(chunk):]
+		more := 0
+		if payload != "" {
+			more = 1
+		}
+		b.WriteString("\x1b_G")
+		if first {
+			fmt.Fprintf(&b, "a=T,f=100,t=d,c=%d,r=%d,C=1,q=2,", w, h)
+		}
+		fmt.Fprintf(&b, "m=%d;%s\x1b\\", more, chunk)
+	}
+	return b.String()
 }
 
+// iterm spells the image as an inline file, scaled to the cells, with the cursor left where it was.
 func (i *imageWidget) iterm(w, h int) string {
 	var buf bytes.Buffer
 	if err := png.Encode(&buf, i.img); err != nil {
 		return ""
 	}
-	return ansi.ITerm2(iterm2.File{
-		Name:            path.Base(i.src),
-		Inline:          true,
-		Width:           iterm2.Cells(w),
-		Height:          iterm2.Cells(h),
-		DoNotMoveCursor: true,
-		Content:         []byte(base64.StdEncoding.EncodeToString(buf.Bytes())),
-	})
+	name := base64.StdEncoding.EncodeToString([]byte(path.Base(i.src)))
+	return fmt.Sprintf("\x1b]1337;File=name=%s;size=%d;width=%d;height=%d;preserveAspectRatio=0;inline=1;doNotMoveCursor=1:%s\a",
+		name, buf.Len(), w, h, base64.StdEncoding.EncodeToString(buf.Bytes()))
 }
 
-// mosaic draws the image out of half-block characters.
-func (i *imageWidget) mosaic(w, h int) string {
+// mosaic draws the image out of half-block characters: the glyph's colour is the upper pixel, the fill is the lower.
+func (i *imageWidget) mosaic(c cell.Canvas, w, h int) {
 	pixels := sample(i.img, w, h*2, i.backdrop())
-
-	var b strings.Builder
-	for y := 0; y < h; y++ {
-		if y > 0 {
-			b.WriteByte('\n')
-		}
-		for x := 0; x < w; x++ {
-			top := pixels[y*2][x]
-			bottom := pixels[y*2+1][x]
-			b.WriteString(lipgloss.NewStyle().
-				Foreground(rgb(top)).
-				Background(rgb(bottom)).
-				Render("▀"))
+	for y := range h {
+		for x := range w {
+			c.Text(x, y, "▀", cell.Style{Fg: rgb(pixels[y*2][x]), Bg: rgb(pixels[y*2+1][x])})
 		}
 	}
-	return b.String()
 }
 
-func rgb(c color.RGBA) color.Color {
-	return lipgloss.Color(fmt.Sprintf("#%02x%02x%02x", c.R, c.G, c.B))
-}
+func rgb(c color.RGBA) cell.Color { return cell.RGB(c.R, c.G, c.B) }
 
 // sample reduces the image to a w by h grid by averaging each source region, which keeps detail that picking a single pixel
 func sample(img image.Image, w, h int, back backdrop) [][]color.RGBA {

@@ -5,6 +5,7 @@ package inspect
 import (
 	"time"
 
+	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/layout"
 )
 
@@ -16,8 +17,26 @@ type Frame struct {
 	Box           *layout.Box
 	// State is the interaction state by id: focus, and where a scrolling region ended up.
 	State map[string]layout.Target
-	// ANSI is exactly what the program handed the terminal.
+	// Screen is the cells the program painted. Styled and Plain read from it.
+	Screen *cell.Buffer
+	// ANSI is the frame as styled text, for a frame that has no Screen.
 	ANSI string
+}
+
+// Styled is the frame as the text a terminal draws.
+func (f Frame) Styled() string {
+	if f.Screen != nil {
+		return f.Screen.String()
+	}
+	return f.ANSI
+}
+
+// Plain is the frame's text without its styles.
+func (f Frame) Plain() string {
+	if f.Screen != nil {
+		return f.Screen.Text()
+	}
+	return stripANSI(f.ANSI)
 }
 
 // Source is a live program that can report the frame on screen. A program

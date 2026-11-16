@@ -4,6 +4,7 @@ package tml
 import (
 	"io/fs"
 
+	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/layout"
 	"github.com/wow-look-at-my/tml/render"
 	"github.com/wow-look-at-my/tml/sema"
@@ -24,7 +25,7 @@ type Options struct {
 	Widgets *widget.Registry
 	// Bare drops the built-in widget library, leaving only the host's own bindings. A view that never uses the library
 	Bare bool
-	// Measure is how wide a string is, in cells; nil means lipgloss.Width. See widget.Measurer for why a host would have
+	// Measure is how wide a grapheme cluster is, in cells. Nil is the Unicode default.
 	Measure widget.Measurer
 }
 
@@ -34,6 +35,7 @@ type View struct {
 	engine  *layout.Engine
 	dark    bool
 	ui      *UI
+	measure widget.Measurer
 	// frames is the last painted frame, kept only while an inspector is attached. A view without an inspector pays a single atomic
 	frames *frameRecord
 }
@@ -62,7 +64,7 @@ func Load(fsys fs.FS, entry string, opts Options) (*View, error) {
 	if err != nil {
 		return nil, err
 	}
-	view := &View{program: program, dark: opts.Dark, ui: NewUI()}
+	view := &View{program: program, dark: opts.Dark, ui: NewUI(), measure: opts.Measure}
 	view.engine = layout.New(sheet, layout.Options{
 		Widgets:     registry,
 		FS:          fsys,
@@ -91,13 +93,23 @@ func (v *View) Layout(props Props, width, height int) (*layout.Box, error) {
 	return v.engine.Layout(node, width, height)
 }
 
-// Render produces the terminal output for a viewport. The result is a styled string ready to hand to tea.NewView.
-func (v *View) Render(props Props, width, height int) (string, error) {
+// Draw lays the view out in a viewport and paints it. The frame is a grid of cells: a Program puts it on the terminal,
+// and anything else reads it.
+func (v *View) Draw(props Props, width, height int) (*cell.Buffer, error) {
 	box, err := v.Layout(props, width, height)
+	if err != nil {
+		return nil, err
+	}
+	return v.paint(box, width, height), nil
+}
+
+// Render is Draw as the text a terminal draws: one line per row, styled with SGR.
+func (v *View) Render(props Props, width, height int) (string, error) {
+	frame, err := v.Draw(props, width, height)
 	if err != nil {
 		return "", err
 	}
-	return v.paint(box, width, height), nil
+	return frame.String(), nil
 }
 
 // Fit instantiates the view and lays it out at the given width, as tall as its content, up to maxHeight.
@@ -119,14 +131,26 @@ func (v *View) ItemHeight(template string, item sema.Value, width int) (int, err
 	return v.engine.Height(node, width)
 }
 
-// RenderFit produces a frame as tall as its content, up to maxHeight, rather than one that fills a viewport. A region
+// DrawFit paints a frame as tall as its content, up to maxHeight, rather than one that fills a viewport. A region
 // drawn inline under a shell prompt wants this. See Live.
-func (v *View) RenderFit(props Props, width, maxHeight int) (string, error) {
+func (v *View) DrawFit(props Props, width, maxHeight int) (*cell.Buffer, error) {
 	box, err := v.Fit(props, width, maxHeight)
+	if err != nil {
+		return nil, err
+	}
+	return v.paint(box, width, box.Rect.H), nil
+}
+
+// RenderFit is DrawFit as the text a terminal draws.
+func (v *View) RenderFit(props Props, width, maxHeight int) (string, error) {
+	frame, err := v.DrawFit(props, width, maxHeight)
 	if err != nil {
 		return "", err
 	}
-	return v.paint(box, width, box.Rect.H), nil
+	if frame.H == 0 {
+		return "", nil
+	}
+	return frame.String(), nil
 }
 
 // Advance moves the view's animations on to their next step.
@@ -135,10 +159,10 @@ func (v *View) Advance() { v.engine.Advance() }
 // Animating reports whether the last layout left something animating on screen.
 func (v *View) Animating() bool { return v.engine.Animating() }
 
-func (v *View) paint(box *layout.Box, width, height int) string {
-	out := render.Render(box)
-	v.record(box, out, width, height)
+func (v *View) paint(box *layout.Box, width, height int) *cell.Buffer {
+	frame := render.Frame(box, width, height, v.measure)
+	v.record(box, frame, width, height)
 	// Readable is half.
 	drives.painted(inspection.isDriven())
-	return out
+	return frame
 }

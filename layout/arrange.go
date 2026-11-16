@@ -3,8 +3,6 @@
 package layout
 
 import (
-	"charm.land/lipgloss/v2"
-
 	"github.com/wow-look-at-my/tml/sema"
 )
 
@@ -16,6 +14,11 @@ func (e *Engine) arrange(box *Box, rect Rect) {
 		return
 	}
 	box.Rect = rect
+	// A box measured against one width and given another is measured again, so
+	// what is inside it wraps where it is drawn.
+	if stale(box, rect) {
+		e.measure(box, Constraints{MaxW: rect.W, MaxH: box.offered.MaxH})
+	}
 
 	outerW, outerH := box.outer()
 	box.Content = Size{W: max(0, rect.W-outerW), H: max(0, rect.H-outerH)}
@@ -46,9 +49,26 @@ func (e *Engine) arrange(box *Box, rect Rect) {
 			if child.height.Kind == sema.LengthStar {
 				h = box.Content.H
 			}
-			e.arrange(child, Rect{W: min(w, box.Content.W), H: min(h, box.Content.H)})
+			w, h = min(w, box.Content.W), min(h, box.Content.H)
+			e.arrange(child, Rect{
+				X: box.Style.Align.Offset(w, box.Content.W),
+				Y: box.Style.VAlign.Offset(h, box.Content.H),
+				W: w, H: h,
+			})
 		}
 	}
+}
+
+// stale reports whether a box's measurements belong to a width it did not
+// get. A star-sized box is measured before its share is known.
+func stale(box *Box, rect Rect) bool {
+	if rect.W <= 0 || rect.W == box.offered.MaxW {
+		return false
+	}
+	if box.width.Kind == sema.LengthStar {
+		return true
+	}
+	return rect.W < box.desired.W
 }
 
 func (e *Engine) arrangeStack(box *Box) {
@@ -89,7 +109,15 @@ func (e *Engine) arrangeStack(box *Box) {
 	}
 	leftover := max(0, available-used)
 
+	// Space no star child takes is shared out by the stack's own alignment along its axis.
 	offset := 0
+	if weight == 0 {
+		along := box.Style.VAlign
+		if !vertical {
+			along = box.Style.Align
+		}
+		offset = along.Offset(used, available)
+	}
 	remaining := leftover
 	remainingWeight := weight
 	first := true
@@ -128,12 +156,11 @@ func (e *Engine) arrangeStack(box *Box) {
 		}
 		cross = min(cross, crossAvailable)
 
-		// The renderer joins these parts with the same alignment, so the rects have to carry the same offset or the geometry
 		align := box.Style.Align
 		if !vertical {
 			align = box.Style.VAlign
 		}
-		crossOffset := alignOffset(align, cross, crossAvailable)
+		crossOffset := align.Offset(cross, crossAvailable)
 
 		if vertical {
 			e.arrange(child, Rect{X: crossOffset, Y: offset, W: cross, H: main})
@@ -143,10 +170,4 @@ func (e *Engine) arrangeStack(box *Box) {
 
 		offset += main
 	}
-}
-
-// alignOffset is where a child of the given size starts along the cross axis. lipgloss positions are a fraction of the free space
-func alignOffset(pos lipgloss.Position, size, available int) int {
-	slack := max(0, available-size)
-	return min(slack, max(0, int(float64(slack)*float64(pos)+0.5)))
 }

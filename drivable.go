@@ -13,7 +13,7 @@ import (
 // DriveGrace is how long a program may paint before it has to be drivable. A program is readable the moment it loads,
 const DriveGrace = 5 * time.Second
 
-// drivable is the guard on the only hole this library cannot close by construction. tea.NewProgram builds a program tml
+// drivable is the guard on the only hole this library cannot close.
 type drivable struct {
 	mu    sync.Mutex
 	timer *time.Timer
@@ -43,13 +43,13 @@ func (d *drivable) painted(driven bool) {
 // check is the failure itself, with no timer and no exemptions.
 func (d *drivable) check() {
 	fmt.Fprintf(os.Stderr, "\ntml: this program has been drawing for %s and the inspector cannot drive it.\n"+
-		"Build it with tml.NewProgram (or tml.Run) instead of tea.NewProgram:\n"+
-		"\n    program, err := tml.NewProgram(model)\n\n"+
-		"tea.NewProgram returns a program this library never sees, so op=key, op=click\n"+
-		"and op=restyle have nothing to send to. Reading works either way; driving does\n"+
-		"not, and a program the debugger only half works against is not one this library\n"+
-		"will keep running.\n", DriveGrace)
-	panic("tml: no way to drive this program; build it with tml.NewProgram")
+		"Run it with tml.NewProgram (or tml.Run) instead of a loop of its own:\n"+
+		"\n    err := tml.Run(view, app)\n\n"+
+		"A loop that only calls View.Render is one this library never sees, so op=key,\n"+
+		"op=click and op=restyle have nothing to send to. Reading works either way;\n"+
+		"driving does not, and a program the debugger only half works against is not one\n"+
+		"this library will keep running.\n", DriveGrace)
+	panic("tml: no way to drive this program; run it with tml.NewProgram")
 }
 
 // reset disarms the guard. Test-only.

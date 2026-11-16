@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	tea "charm.land/bubbletea/v2"
+	"github.com/wow-look-at-my/tml/input"
 )
 
 // pidSocket is the name SocketPath gives a socket in the shared directory.
@@ -90,7 +90,7 @@ func (s *session) adopt(v *View) error {
 }
 
 // drive gives the protocol the several capabilities that need a running program.
-func (s *session) drive(p *tea.Program) {
+func (s *session) drive(p *Program) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.driven = true
@@ -98,11 +98,13 @@ func (s *session) drive(p *tea.Program) {
 		return
 	}
 	s.insp.OnKey(func(key string) error {
-		p.Send(KeyMsg(key))
+		p.Send(input.ParseKey(key))
 		return nil
 	})
 	s.insp.OnClick(func(x, y int) error {
-		p.Send(tea.MouseClickMsg{X: x, Y: y, Button: tea.MouseLeft})
+		// A click is the button going down and coming up on one cell, which is what activates a control.
+		p.Send(Mouse{X: x, Y: y, Button: input.ButtonLeft, Action: input.Press})
+		p.Send(Mouse{X: x, Y: y, Button: input.ButtonLeft, Action: input.Release})
 		return nil
 	})
 	s.insp.OnRepaint(func() error {
@@ -125,24 +127,4 @@ func InspectError() error {
 	inspection.mu.Lock()
 	defer inspection.mu.Unlock()
 	return inspection.err
-}
-
-// RepaintMsg asks the program to draw again. The inspector sends it after an override.
-type RepaintMsg struct{}
-
-// Run runs a Bubble Tea program with the inspection protocol wired.
-func NewProgram(m tea.Model, opts ...tea.ProgramOption) (*tea.Program, error) {
-	p := tea.NewProgram(m, opts...)
-	inspection.drive(p)
-	return p, InspectError()
-}
-
-// Run is NewProgram plus running it, for a host with nothing to say to the program in between.
-func Run(m tea.Model, opts ...tea.ProgramOption) (tea.Model, error) {
-	p, err := NewProgram(m, opts...)
-	if err != nil {
-		return nil, err
-	}
-	defer inspection.close()
-	return p.Run()
 }

@@ -9,9 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/charmbracelet/x/ansi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/wow-look-at-my/tml/cell"
 )
 
 var update = flag.Bool("update", false, "rewrite the golden files")
@@ -33,10 +34,10 @@ func frameAt(t *testing.T, width int) string {
 func TestTheBlockDropsColumnsAsTheTerminalNarrows(t *testing.T) {
 	for _, width := range []int{110, 72, 40} {
 		t.Run(strconv.Itoa(width), func(t *testing.T) {
-			out := ansi.Strip(frameAt(t, width))
+			out := cell.Strip(frameAt(t, width))
 			golden(t, "block-"+strconv.Itoa(width), out)
 			for _, line := range strings.Split(out, "\n") {
-				assert.LessOrEqual(t, ansi.StringWidth(line), width, "no line runs past the terminal: %q", line)
+				assert.LessOrEqual(t, cell.Width(line), width, "no line runs past the terminal: %q", line)
 			}
 		})
 	}
@@ -46,7 +47,7 @@ func TestTheBlockDropsColumnsAsTheTerminalNarrows(t *testing.T) {
 func TestTheBlockIsColoured(t *testing.T) {
 	out := frameAt(t, 110)
 	assert.Contains(t, out, "\x1b[", "the frame carries styling")
-	assert.Contains(t, ansi.Strip(out), "1 failed")
+	assert.Contains(t, cell.Strip(out), "1 failed")
 }
 
 // A header, a status line, active rows and the TOTAL row, and not one blank row more.

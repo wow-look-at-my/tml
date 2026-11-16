@@ -5,8 +5,8 @@ import (
 	"io/fs"
 	"sort"
 
-	"charm.land/lipgloss/v2"
-
+	"github.com/wow-look-at-my/tml/cell"
+	"github.com/wow-look-at-my/tml/input"
 	"github.com/wow-look-at-my/tml/sema"
 )
 
@@ -14,8 +14,8 @@ import (
 type Native interface {
 	// Measure reports the size the widget wants within the space on offer. A nothing maximum means unconstrained.
 	Measure(maxW, maxH int) (w, h int)
-	// Render draws the widget into the size layout settled on.
-	Render(w, h int) string
+	// Draw paints the widget on a canvas of the size layout settled on.
+	Draw(c cell.Canvas)
 }
 
 // State is what the view knows about an element's interaction at render time. A widget that draws itself differently
@@ -50,8 +50,37 @@ type Composer interface {
 	Native
 	// Insets is the space the widget keeps for itself on each side of its children.
 	Insets() sema.Thickness
-	// Compose draws the widget at the size it was given, around its children.
-	Compose(slots Slots, w, h int) string
+}
+
+// Overlay is the optional half of a composer that draws over its children
+// once they are painted: a scrollbar, a fade.
+type Overlay interface {
+	Overlay(c cell.Canvas)
+}
+
+// Scroll is how far a scrolling region's content is shifted, and how far it could be.
+type Scroll struct{ X, Y, MaxX, MaxY int }
+
+// Scrolling is the optional half of a composer that scrolls.
+type Scrolling interface {
+	SetScroll(Scroll)
+}
+
+// Styler is the optional half of a composer whose children inherit a style from it.
+type Styler interface {
+	ContentStyle() cell.Style
+}
+
+// Edit is what a key did to a widget's value.
+type Edit struct {
+	Value  string
+	Cursor int
+}
+
+// Keyed is the optional half of a focusable widget that takes keys itself while it holds the focus. A text field does.
+type Keyed interface {
+	// Key offers the widget one key. It reports the edit the key makes, and false for a key it has no use for.
+	Key(key input.Key) (Edit, bool)
 }
 
 // Layout is how a composer wants its children measured and placed, for the cases the default does not cover.
@@ -98,31 +127,14 @@ type Context struct {
 	Dir string
 	// Dark reports whether the view is rendering against a dark theme.
 	Dark bool
-	// Measure is how wide a string is, in cells; nil means lipgloss.Width.
+	// Measure is how wide a grapheme cluster is, in cells. Nil is the Unicode default.
 	Measure Measurer
 	// Frame is the animation step the engine is on; a widget that animates draws it, others ignore it.
 	Frame int
 }
 
-// Measurer reports the width of a string in display cells. A terminal draws a ZWJ sequence like a family emoji in a width only it knows
-type Measurer func(string) int
-
-// Width measures s, falling back to lipgloss when the host had no opinion.
-func (m Measurer) Width(s string) int {
-	if m == nil {
-		return lipgloss.Width(s)
-	}
-	return m(s)
-}
-
-// Slots are a composer's children, already drawn, grouped by the slot they were written into. The default slot --
-type Slots map[string][]string
-
-// Get is the content of a single slot.
-func (s Slots) Get(name string) []string { return s[name] }
-
-// Default is the content written directly inside the element.
-func (s Slots) Default() []string { return s[""] }
+// Measurer reports the width of a grapheme cluster in display cells. See cell.Measure for why a host supplies one.
+type Measurer = cell.Measure
 
 // Slotted is the optional half of a factory that accepts named content. The names are checked when the view loads.
 type Slotted interface {
@@ -261,39 +273,38 @@ func (r *Registry) Merge(other *Registry) *Registry {
 	return merged
 }
 
-// Viewer is the part of a Bubble Tea component TML needs: something that can draw itself. Every bubbles component
+// Viewer is a component that draws itself as a string, styled with SGR or not. It is the seam for code that was not
+// written against a canvas.
 type Viewer interface {
 	View() string
 }
 
-// Sizer is the optional half: a component that can be told how wide it is. bubbles components that support it expose
+// Sizer is the optional half of a Viewer that can be told how wide it is.
 type Sizer interface {
 	SetWidth(int)
 }
 
-// Bubble adapts a Bubble Tea component into a native element. Pass a pointer, as in Bubble(&m.input).
-func Bubble(v Viewer) Native { return bubble{v: v} }
+// FromViewer adapts a Viewer into a native element. Pass a pointer, as in FromViewer(&m.table, nil).
+func FromViewer(v Viewer, m Measurer) Native { return viewer{v: v, m: m} }
 
-// BubbleMeasured is Bubble with the host's own width method, for a host that negotiated the width with its terminal.
-func BubbleMeasured(v Viewer, m Measurer) Native { return bubble{v: v, m: m} }
-
-type bubble struct {
+type viewer struct {
 	v Viewer
 	m Measurer
 }
 
-func (b bubble) Measure(maxW, _ int) (int, int) {
+func (b viewer) Measure(maxW, _ int) (int, int) {
 	b.resize(maxW)
 	out := b.v.View()
-	return b.m.Width(out), lipgloss.Height(out)
+	return b.m.Width(out), cell.Height(out)
 }
 
-func (b bubble) Render(w, _ int) string {
+func (b viewer) Draw(c cell.Canvas) {
+	w, _ := c.Size()
 	b.resize(w)
-	return b.v.View()
+	c.Text(0, 0, b.v.View(), cell.Style{})
 }
 
-func (b bubble) resize(w int) {
+func (b viewer) resize(w int) {
 	if sizer, ok := b.v.(Sizer); ok && w > 0 {
 		sizer.SetWidth(w)
 	}
