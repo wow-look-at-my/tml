@@ -85,6 +85,8 @@ type Box struct {
 	attrs   map[string]string
 	slot    string
 	desired Size
+	// offered is the space the box was last measured against. Arrange measures again when it gives a different width.
+	offered Constraints
 	width   sema.Length
 	height  sema.Length
 

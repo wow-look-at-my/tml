@@ -9,6 +9,7 @@ import (
 
 // measure computes each box's desired outer size within the given constraints.
 func (e *Engine) measure(box *Box, c Constraints) Size {
+	box.offered = c
 	// A collapsed element gives its slot back before anything is measured, so its parent lays out without it.
 	if box.Visibility == Collapsed {
 		box.desired = Size{}
@@ -142,10 +143,12 @@ func (e *Engine) measureStack(box *Box, inner Constraints) Size {
 	vertical := box.vertical()
 	gap := box.gap()
 
+	e.measureStackChildren(box, inner, vertical, gap)
+
 	var content Size
 	placed := false
 	for _, child := range box.Children {
-		size := e.measure(child, inner)
+		size := child.desired
 		if !stackPlaces(child, vertical) {
 			continue
 		}
