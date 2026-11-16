@@ -84,13 +84,6 @@ func (t *dataTable) AcceptsFocus() bool { return !t.disabled && len(t.rows) > 0 
 
 func (t *dataTable) SetState(state widget.State) { t.state = state }
 
-// shape is a table laid out for one width: the columns it shows, and how wide each is.
-type shape struct {
-	// shown is the indices of the columns on screen, in order.
-	shown  []int
-	widths []int
-}
-
 // gap is the cells between a pair of columns: a border glyph, or the spacing of a borderless table.
 func (t *dataTable) gap() int {
 	if t.bordered {
