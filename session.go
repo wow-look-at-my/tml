@@ -128,4 +128,3 @@ func InspectError() error {
 	defer inspection.mu.Unlock()
 	return inspection.err
 }
-
