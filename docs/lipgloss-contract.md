@@ -6,7 +6,7 @@ Target is `charm.land/lipgloss/v2` v2.0.6. The v2 modules moved off the `github.
 
 ## Measurement
 
-`lipgloss.Width`, `Height` and `Size` count display cells and ignore ANSI, and account for wide runes (`世` is cells). This is the whole leaf measure pass — TML never counts bytes or runes itself.
+This is the whole leaf measure pass — TML never counts bytes or runes itself.
 
 `Style.Width(n)` wraps text and pads every line to `n`. It does not truncate. This is what renders a text leaf once layout assigned it a rect.
 
@@ -18,7 +18,7 @@ TML resolves the cascade in its own style model and emits one fully-resolved `li
 
 ## Compositing is Compositor, not Canvas
 
-`Canvas` is the low-level cell buffer: `NewCanvas(width, height int)`, `SetCell`, `Compose`, `Render`. It has no hit testing.
+`Canvas` is the low-level cell buffer. It has no hit testing.
 
 `Compositor` is the targets of the layer engine TML:
 

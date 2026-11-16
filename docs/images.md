@@ -17,7 +17,7 @@ There is no one way to put a picture in a terminal. `Image` takes the best one a
 
 `protocol="kitty|iterm|mosaic|link|auto"` picks one. `auto` is the default. It reads the environment.
 
-Nothing is auto-detected by asking the terminal. A query writes to the terminal and waits for the reply. A renderer that does that blocks on a pipe. So detection is what `TERM`, `TERM_PROGRAM`, `KITTY_WINDOW_ID` and their neighbours say. `protocol` is the override for when they are incorrect. Half-blocks are what is left when nothing claims to do better.
+Nothing is auto-detected by asking the terminal. A query writes to the terminal and waits for the reply. A renderer that does that blocks on a pipe. `protocol` is the override for when they are incorrect. Half-blocks are what is left when nothing claims to do better.
 
 The answer is never a blank space.
 

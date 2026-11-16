@@ -107,13 +107,13 @@ tml capture app.tml --width 80 --height 24 -o frame.html
 
 `inspect` is the testable half of `render`. It lays the view out, then prints JSON for the elements that carry an `id`. That JSON gives the rect each one occupies, the content size it was given, its clip, its scroll position, and the lines it drew. With `--id` it reports one element. When nothing carries the id asked for, it fails and names the ids that do exist. A test can then assert where a region sits and what it says, without pinning the whole frame.
 
-The live commands talk to any program that called `tml.Load`: `query`, `elements`, `ids`, `list`, `at`, `frame`, `input`, `restyle`, and `serve`. A program serves on `$XDG_RUNTIME_DIR/tml/<pid>.sock` with nothing set, and `tml list` names them. `tree` with a file is the expanded document. `tree` with no file is the frame on screen. See `docs/inspector.md`.
+A program serves on `$XDG_RUNTIME_DIR/tml/<pid>.sock` with nothing set, and `tml list` names them. `tree` with a file is the expanded document. `tree` with no file is the frame on screen. See `docs/inspector.md`.
 
 `capture` writes that browser inspector over a single frame, as a self-contained HTML file. The file holds the terminal as it was painted, the element tree, and every element's geometry, clip, scroll and drawn text. It fetches nothing when it opens, so a frame travels through a bug report or a comment box. With a file it captures a layout at the given size, and with no file it captures the frame a running program has on screen.
 
 ## What it does
 
-Typed properties with defaults, slots with fallback content, imports, `if` and `For`. Themes carry light and dark tokens and named styles. The widget library takes keyboard and mouse interaction. The measure and arrange engine gives `auto`, fixed and star sizing across `Stack`, `Grid`, `Canvas` and `Box`. `Grid` takes XAML-style attached properties:
+Typed properties with defaults, slots with fallback content, imports, `if` and `For`. Themes carry light and dark tokens and named styles. The widget library takes keyboard and mouse interaction. `Grid` takes XAML-style attached properties:
 
 ```xml
 <Grid columns="auto,1*,2*" gap="1">

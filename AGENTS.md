@@ -28,19 +28,19 @@ Target the v2 line via the `charm.land/*` module paths, not `github.com/charmbra
 - Strict XML 1.1 — every file opens with the XML declaration. Inherited from xml-validator.
 - `<Slot>` declares and marks the insertion point in one element. Its children are fallback content.
 - Call sites fill named slots with XAML property-element syntax: `<Card.actions>…</Card.actions>`.
-- Expressions are `{name}`, `{name.path}`, `{theme.token}`, `{not name}`, interpolated in text and attribute values. Unknown names are a hard error at analysis time. No arithmetic, no calls.
+- Unknown names are a hard error at analysis time. No arithmetic, no calls.
 - `itemsSource`/`itemTemplate` on any element repeat a `<DataTemplate>` over a list the host supplies. A repeated thing is therefore a widget rather than a line somebody else already drew. An item's fields are the template's property values, by name. A field nobody declared is an error rather than a blank cell.
 - See docs/language.md for the full grammar and the built-in element reference.
 
 ## Layout
 
-Two-pass measure/arrange. Implemented panels: `Stack`, `Grid`, `Canvas`, `Box`, `Text`, `Spacer`. Sizing is `auto`, fixed cells, or `*` star share, and a star size propagates upward so an auto-sized ancestor cannot collapse it.
+Two-pass measure/arrange. Implemented panels. Sizing is `auto`, fixed cells, or `*` star share, and a star size propagates upward so an auto-sized ancestor cannot collapse it.
 
 `Grid` declares tracks and each child declares placement through attached properties (`Grid.row`, `Grid.column`, and the span variants). Track solving is fixed, then auto, then star. Grid children are composited through lipgloss layers rather than joined, since they sit at coordinates.
 
 A `Grid` track takes a range (`*[8..32]`), and `collapse` names the columns that give way, in order, when the grid is too narrow. A hidden column takes no width and no gap, and `render` skips a grid child with no area. See docs/language.md.
 
-`Canvas` positions children freely through `Canvas.x`, `Canvas.y` and `Canvas.anchor`, and fills whatever it is offered rather than shrinking. A widget can name its own default anchor, which is how `<Popup>` centres itself.
+`Canvas` positions children freely, and fills whatever it is offered rather than shrinking. A widget can name its own default anchor, which is how `<Popup>` centres itself.
 
 `Text` wraps by default, and `overflow="clip"` or `overflow="ellipsis"` cuts each line at the width instead. A clipped Text keeps its line count however narrow it gets. A card that holds a log tail therefore keeps its height when one line runs long. Clipping happens in `render`, because `MaxWidth` cuts without marking the cut.
 
@@ -57,7 +57,7 @@ Containers go through the public `widget.Composer`/`Arranger` seam, not through 
 
 ## Interaction
 
-Any element takes an `id` and an `action`. `view.UI().Update(msg)` turns a Bubble Tea message into an `Activated`, `FocusMoved` or `Scrolled` event that carries that id and action. Layout asks the UI for each element's state before it measures. It then publishes where everything landed. A click therefore resolves against the frame the user looks at.
+Any element takes an `id` and an `action`. Layout asks the UI for each element's state before it measures. It then publishes where everything landed. A click therefore resolves against the frame the user looks at.
 
 The focus ring is the widgets that take focus. The pointer also reaches anything else with an id, which is what lets the wheel find a `Scrollbox`. A widget that implements `Focusable` and refuses is disabled and reachable by neither.
 
@@ -73,7 +73,7 @@ A list of data-template items too long to lay out scrolls through `tml.Window` (
 
 Delegated to `github.com/wow-look-at-my/xml-validator`: strict XML 1.1, namespace validation, UTF-8/BOM rejection, and line and column positions on elements and attributes alike. An attribute-scoped diagnostic therefore points at the attribute, not at the element several columns to its left. TML contains no XML parser.
 
-`tml.schema.xsd` is the grammar of a file's DECLARATIONS — `<Component>`, `<Property>`, `<Import>`, `<DataTemplate>`, `<Theme>`, `<Token>`, `<Style>` — for an editor, and gated by the `validate-xml` job. The `<Template>` body is deliberately unchecked. It names components the file imported and widgets the host bound. This validator allows only `processContents="strict"`, which demands a global declaration for every element it matches. `sema/` is the authority on the whole file. Other rules the schema cannot reach: a root in the incorrect namespace, and a style attribute's vocabulary when a `{theme.token}` supplies the value.
+The `<Template>` body is deliberately unchecked. It names components the file imported and widgets the host bound. This validator allows only `processContents="strict"`, which demands a global declaration for every element it matches. `sema/` is the authority on the whole file. Other rules the schema cannot reach: a root in the incorrect namespace, and a style attribute's vocabulary when a `{theme.token}` supplies the value.
 
 ## Gotchas that decide the design
 
@@ -85,7 +85,7 @@ Delegated to `github.com/wow-look-at-my/xml-validator`: strict XML 1.1, namespac
 
 The root is the importable package, so a Bubble Tea app imports `github.com/wow-look-at-my/tml` directly and the binary lives under `cmd/`.
 
-- `tml.go` — the façade: `Load`, `View`, `Props`, `Options`
+- `tml.go` — the façade
 - `ui.go` — the focus ring, the pointer, and the events a host reads
 - `syntax/` — AST, loader, `<Import>` resolution, diagnostics
 - `sema/` — property types, values, expressions, slot and component analysis, expansion
@@ -94,7 +94,7 @@ The root is the importable package, so a Bubble Tea app imports `github.com/wow-
 - `render/` — composition of a laid-out tree into terminal output
 - `widget/` — the widget seam: registry, typed attributes, the bubbles adapter
 - `widgets/` — the built-in widget library
-- `cli/` — cobra commands, one self-registering command per file: file commands (`check`, `tree`, `render`, `inspect`) and live-program commands (`query`, `ids`, `list`, `serve`, …)
+- `cli/` — cobra commands, one self-registering command per file: file commands and live-program commands
 - `cmd/tml/` — the CLI binary
 - `inspect/` — the per-element inspection protocol, its socket and HTTP transports, and the browser inspector's page
 - `examples/dashboard/` — a Bubble Tea program whose whole view is TML
