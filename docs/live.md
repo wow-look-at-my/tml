@@ -30,7 +30,7 @@ err := live.Stop()            // pending lines print, the region goes, the curso
 
 ## Colour
 
-Style the view with a theme, as with any other view. The region runs on Bubble Tea, and Bubble Tea reduces each colour to what the terminal supports. `NO_COLOR` removes colour and keeps bold and faint. `TERM=dumb` removes all styling.
+Style the view with a theme, as with any other view. The region is an inline `tml.Program`, and the program reduces each colour to what the terminal supports. `NO_COLOR` removes colour and keeps bold and faint. `TERM=dumb` removes all styling.
 
 A styled row usually picks its style from its data. A named style takes an expression, so a state field selects the style:
 

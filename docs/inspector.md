@@ -24,18 +24,19 @@ That is deliberate. It is the whole design. To wire an inspector once took calls
 
 A capability every program has is worth more than one every program can have.
 
-`tml.NewProgram` is the other half, and the thing a host does. It builds the Bubble Tea program. As a result, the protocol has something to type into and the program can be driven as well as read. It returns the program, because a host that kills it from a worker or sends to it needs the handle. `tml.Run` is the same plus running it, for a host with nothing to say in between.
+`tml.NewProgram` is the other half, and the thing a host does. It builds the program that owns the terminal and the loop. As a result, the protocol has something to type into and the program can be driven as well as read. It returns the program, because a host that sends to it from a worker needs the handle. `tml.Run` is the same plus running it, for a host with nothing to say in between.
 
-It cannot be automatic. The inspector delivers a keystroke as a message to a running `*tea.Program`. That program does not exist when this package initialises, and Go offers no way to intercept another package's constructor. A guard enforces it instead. A view still painting `DriveGrace` after its first frame, with nothing able to drive it, takes the program down and names this function. A program the debugger only half works against is not one this library keeps running.
+A host can still paint frames from a loop of its own, with `View.Render`. The inspector delivers a keystroke as a message to a running `*tml.Program`, and such a host has none. A guard catches it. A view still painting `DriveGrace` after its first frame, with nothing able to drive it, takes the program down and names this function. A program the debugger only half works against is not one this library keeps running.
 
 See `drivable.go`, and `testdata/undrivable` for the program that proves the guard still fires.
 
 ```go
-program, err := tml.NewProgram(model, tea.WithContext(ctx))
+program, err := tml.NewProgram(view, app)
 if err != nil { ... }
+err = program.Run()
 ```
 
-`tea.NewProgram` builds a program this library cannot reach. One started that way still answers every question about its frames. It refuses every keystroke by name. That answer is true and unhelpful. One way to start avoids it.
+A loop of its own still answers every question about its frames. It refuses every keystroke by name. That answer is true and unhelpful. One way to start avoids it.
 
 Reloading is nothing either. `Load` bakes in which half of every theme token resolves, and how a width is measured. A host that learns either one late loads again and renders through a new `View`. A terminal that answers OSC 11, or mode 2027, is such a late answer. The inspector follows. The new view records, the old one stops, and the overrides carry over.
 
@@ -43,7 +44,7 @@ Frame numbers continue upward, so the new view's first paint never answers a cal
 
 ### The one thing a host writes
 
-`tml.RepaintMsg` arrives after an override, and a model that caches its frame must invalidate that cache on it. Bubble Tea redraws after every update. But a model that answers `View` with the string it answered last time paints the old geometry. The override then lands in the layout and never on the screen.
+`tml.RepaintMsg` arrives after an override, and an app that caches what `Props` returns must drop that cache on it. The program draws again after every message. But an override changes the layout and not the props, so nothing else tells such an app to look again.
 
 The protocol catches that rather than lets it pass. `Restyle` and `Reset` drive the repaint themselves. They wait for a frame that is genuinely new, and fail by name when none arrives.
 
