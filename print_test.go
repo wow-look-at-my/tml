@@ -8,11 +8,11 @@ import (
 	"testing"
 	"testing/fstest"
 
-	"github.com/charmbracelet/x/ansi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/wow-look-at-my/tml"
+	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/sema"
 )
 
@@ -53,16 +53,16 @@ func TestPrintKeepsInsideAGivenWidth(t *testing.T) {
 	require.NoError(t, loadListing(t).Print(&out, listingProps("✅\t1\t"+strings.Repeat("y", 60)), 30))
 
 	for _, line := range strings.Split(strings.TrimSuffix(out.String(), "\n"), "\n") {
-		assert.LessOrEqual(t, ansi.StringWidth(line), 30, "line %q", line)
+		assert.LessOrEqual(t, cell.Width(line), 30, "line %q", line)
 	}
 }
 
-// TTY_FORCE makes the writer treat the buffer as a terminal. The colour then reaches it, and NO_COLOR takes the
+// CLICOLOR_FORCE makes the writer treat the buffer as a terminal. The colour then reaches it, and NO_COLOR takes the
 // colour away and leaves the bold.
 func TestPrintFollowsTheTerminalAndNoColor(t *testing.T) {
 	t.Serial()
 	view := loadListing(t)
-	t.Setenv("TTY_FORCE", "1")
+	t.Setenv("CLICOLOR_FORCE", "1")
 	t.Setenv("TERM", "xterm-256color")
 	t.Setenv("COLORTERM", "truecolor")
 	t.Setenv("NO_COLOR", "")
@@ -76,14 +76,14 @@ func TestPrintFollowsTheTerminalAndNoColor(t *testing.T) {
 	require.NoError(t, view.Print(&bare, listingProps("✅\t1\tbuild"), 80))
 	assert.NotContains(t, bare.String(), "38;2", "NO_COLOR drops the colour")
 	assert.Contains(t, bare.String(), "\x1b[1m", "NO_COLOR keeps the bold")
-	assert.Equal(t, "Runs\n    ID  NAME\n✅  1   build\n", ansi.Strip(bare.String()))
+	assert.Equal(t, "Runs\n    ID  NAME\n✅  1   build\n", cell.Strip(bare.String()))
 
 	t.Setenv("NO_COLOR", "")
 	t.Setenv("TERM", "dumb")
 	t.Setenv("COLORTERM", "")
 	var dumb bytes.Buffer
 	require.NoError(t, view.Print(&dumb, listingProps("✅\t1\tbuild"), 80))
-	assert.Equal(t, ansi.Strip(dumb.String()), dumb.String(), "TERM=dumb gets no escapes at all")
+	assert.Equal(t, cell.Strip(dumb.String()), dumb.String(), "TERM=dumb gets no escapes at all")
 }
 
 // A document with nothing in it prints nothing, not a blank line.
