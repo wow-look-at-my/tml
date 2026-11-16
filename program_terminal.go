@@ -1,3 +1,5 @@
+// program_terminal.go holds enter.
+
 package tml
 
 import (

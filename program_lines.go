@@ -1,3 +1,5 @@
+// program_lines.go holds Println.
+
 package tml
 
 import (

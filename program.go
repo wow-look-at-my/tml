@@ -4,13 +4,9 @@ package tml
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"os"
-	"os/signal"
-	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/wow-look-at-my/tml/cell"
