@@ -234,26 +234,28 @@ func TestEveryScriptedRoleIsDrawable(t *testing.T) {
 	}
 }
 
-func TestProbeDiff(t *testing.T) {
+// The diff card is as tall as the diff draws at the width it is given, so no line of the patch is cut off.
+func TestTheDiffCardHoldsTheWholeDiff(t *testing.T) {
 	m := agent(t)
 	run(t, m, 5)
 	box, err := m.view.Layout(m.Props(), m.width, m.height)
 	require.NoError(t, err)
-	var walk func(b *layout.Box, depth int)
-	walk = func(b *layout.Box, depth int) {
-		if _, ok := b.Native.(*diff); ok || b.Name == "Border" || b.Name == "Scrollbox" || b.Name == "Stack" {
-			w, h := 0, 0
-			if b.Native != nil {
-				w, h = b.Native.Measure(b.Content.W, b.Content.H)
-			}
-			t.Logf("PROBE %*s%s rect=%+v content=%+v measure(content.W)=%d,%d", depth, "", b.Name, b.Rect, b.Content, w, h)
+
+	var found *layout.Box
+	var walk func(b *layout.Box)
+	walk = func(b *layout.Box) {
+		if _, ok := b.Native.(*diff); ok {
+			found = b
 		}
-		for _, c := range b.Children {
-			walk(c, depth+1)
+		for _, child := range b.Children {
+			walk(child)
 		}
 	}
-	walk(box, 0)
-	t.Fail()
+	walk(box)
+	require.NotNil(t, found, "the frame has a diff")
+
+	_, want := found.Native.Measure(found.Content.W, 0)
+	assert.Equal(t, want, found.Content.H, "the diff measures %d rows at width %d", want, found.Content.W)
 }
 
 func golden(t *testing.T, name, got string) {
