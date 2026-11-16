@@ -60,7 +60,7 @@ func TestPrintKeepsInsideAGivenWidth(t *testing.T) {
 // CLICOLOR_FORCE makes the writer treat the buffer as a terminal. The colour then reaches it, and NO_COLOR takes the
 // colour away and leaves the bold.
 func TestPrintFollowsTheTerminalAndNoColor(t *testing.T) {
-	t.Serial()
+	t.Serial("it sets the process's environment")
 	view := loadListing(t)
 	t.Setenv("CLICOLOR_FORCE", "1")
 	t.Setenv("TERM", "xterm-256color")

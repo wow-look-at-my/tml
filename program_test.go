@@ -23,12 +23,9 @@ import (
 var programDoc string
 
 // otherDoc takes the same props as programDoc and draws something else, for a view swap.
-const otherDoc = `<?xml version="1.1" encoding="UTF-8"?>
-<Component xmlns="urn:tml:v1" name="Other">
-	<Property name="title" type="string" required="true"/>
-	<Template><Text>other {title}</Text></Template>
-</Component>
-`
+//
+//go:embed testdata/program-other.xml
+var otherDoc string
 
 const (
 	programWidth  = 40
@@ -141,11 +138,11 @@ type once struct{}
 
 type cancelled struct{}
 
-type result struct{ n int }
+type answer struct{ n int }
 
 // The app hears the size first, then each byte as the key it is, and a key it does not take reaches the ring.
 func TestAProgramRoutesInputThroughTheAppAndTheRing(t *testing.T) {
-	t.Serial()
+	t.Serial("a program registers with the process's inspector")
 	exclusive(t)
 	run := startTyped(t, tml.ProgramOptions{})
 
@@ -169,7 +166,7 @@ func TestAProgramRoutesInputThroughTheAppAndTheRing(t *testing.T) {
 
 // A ctrl+c that nothing took ends the program, so the user always has a way out.
 func TestAnUnconsumedCtrlCInterrupts(t *testing.T) {
-	t.Serial()
+	t.Serial("a program registers with the process's inspector")
 	exclusive(t)
 	run := startTyped(t, tml.ProgramOptions{})
 
@@ -180,7 +177,7 @@ func TestAnUnconsumedCtrlCInterrupts(t *testing.T) {
 
 // Messages from the host's own goroutines and clocks all reach Update.
 func TestAProgramDeliversTheHostsMessages(t *testing.T) {
-	t.Serial()
+	t.Serial("a program registers with the process's inspector")
 	exclusive(t)
 	app := newRecordApp("hello")
 	p, err := tml.NewProgram(loadDoc(t, programDoc), app, quietOptions())
@@ -190,8 +187,8 @@ func TestAProgramDeliversTheHostsMessages(t *testing.T) {
 	p.Send(custom{text: "x"})
 	assert.Equal(t, custom{text: "x"}, waitFor[custom](t, app.got))
 
-	p.Go(func() tml.Msg { return result{n: 42} })
-	assert.Equal(t, result{n: 42}, waitFor[result](t, app.got))
+	p.Go(func() tml.Msg { return answer{n: 42} })
+	assert.Equal(t, answer{n: 42}, waitFor[answer](t, app.got))
 
 	p.After(5*time.Millisecond, once{})
 	waitFor[once](t, app.got)
@@ -213,7 +210,7 @@ func TestAProgramDeliversTheHostsMessages(t *testing.T) {
 
 // A frame that cannot draw ends the program with the reason.
 func TestAProgramEndsOnADrawFailure(t *testing.T) {
-	t.Serial()
+	t.Serial("a program registers with the process's inspector")
 	exclusive(t)
 	p, err := tml.NewProgram(loadDoc(t, programDoc), newRecordApp(""), quietOptions())
 	require.NoError(t, err)
@@ -224,7 +221,7 @@ func TestAProgramEndsOnADrawFailure(t *testing.T) {
 
 // A program runs one time.
 func TestAProgramRunsOneTime(t *testing.T) {
-	t.Serial()
+	t.Serial("a program registers with the process's inspector")
 	exclusive(t)
 	p, err := tml.NewProgram(loadDoc(t, programDoc), newRecordApp("hello"), quietOptions())
 	require.NoError(t, err)
@@ -238,7 +235,7 @@ func TestAProgramRunsOneTime(t *testing.T) {
 
 // SetView puts another view on screen, and a full-screen program holds a printed line until it ends.
 func TestAProgramSwapsItsView(t *testing.T) {
-	t.Serial()
+	t.Serial("a program registers with the process's inspector")
 	exclusive(t)
 	run := startTyped(t, tml.ProgramOptions{})
 	require.Eventually(t, func() bool { return onScreen(run.out.String(), "hello") },
@@ -259,7 +256,7 @@ func TestAProgramSwapsItsView(t *testing.T) {
 
 // An inline program prints above its region, and only the printed lines stay once it ends.
 func TestAnInlineProgramLeavesOnlyItsLines(t *testing.T) {
-	t.Serial()
+	t.Serial("a program registers with the process's inspector")
 	exclusive(t)
 	out := &syncBuffer{}
 	p, err := tml.NewProgram(loadDoc(t, programDoc), newRecordApp("hello"), tml.ProgramOptions{
