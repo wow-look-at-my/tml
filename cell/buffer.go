@@ -124,6 +124,22 @@ func (b *Buffer) Encode(profile Profile) string {
 	return out.String()
 }
 
+// WriteRow writes the cells of row y from column from up to column to, for a screen writer that draws part of a row.
+func (b *Buffer) WriteRow(out *strings.Builder, y, from, to int, profile Profile) {
+	b.encodeRow(out, y, max(0, from), min(b.W, to), profile, false)
+}
+
+// Used is the width of row y without the blanks at its end that show nothing.
+func (b *Buffer) Used(y int) int {
+	for x := b.W; x > 0; x-- {
+		c := b.cells[y*b.W+x-1]
+		if c.Text != " " || c.Style.Bg.IsSet() || c.Style.on&(Underline|Reverse|Strikethrough) != 0 {
+			return x
+		}
+	}
+	return 0
+}
+
 // encodeRow writes the cells of row y from column from up to column to. It leaves the terminal's style reset.
 func (b *Buffer) encodeRow(out *strings.Builder, y, from, to int, profile Profile, placements bool) {
 	current := Style{}

@@ -3,8 +3,7 @@
 package widgets
 
 import (
-	"strings"
-
+	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/widget"
 )
 
@@ -15,7 +14,7 @@ type rule struct {
 	vertical bool
 	char     rune
 	title    string
-	color    string
+	color    cell.Color
 	measure  widget.Measurer
 }
 
@@ -36,7 +35,9 @@ func newRule(ctx widget.Context) (widget.Native, error) {
 	if r.char, err = ctx.Attrs.Rune("char", deflt); err != nil {
 		return nil, err
 	}
-	r.color = ctx.Attrs.String("color", "")
+	if r.color, err = colorAttr(ctx.Attrs, "color"); err != nil {
+		return nil, err
+	}
 	return r, nil
 }
 
@@ -47,21 +48,19 @@ func (r *rule) Measure(maxW, maxH int) (int, int) {
 	return max(r.measure.Width(r.title), maxW), 1
 }
 
-func (r *rule) Render(w, h int) string {
+func (r *rule) Draw(c cell.Canvas) {
+	w, h := c.Size()
 	style := paint(r.color)
 	if r.vertical {
-		lines := make([]string, max(1, h))
-		for i := range lines {
-			lines[i] = style.Render(string(r.char))
-		}
-		return strings.Join(lines, "\n")
+		c.Repeat(0, 0, 1, max(1, h), string(r.char), style)
+		return
 	}
+	c.Repeat(0, 0, w, 1, string(r.char), style)
 	if r.title == "" {
-		return style.Render(repeat(r.char, w))
+		return
 	}
-	// The title sits a single cell in from the left with a space either side, which is what keeps it from touching the line it
+	// The title sits one cell in from the left with a space either side, so it never touches the line it breaks.
 	label := " " + r.title + " "
 	lead := min(1, max(0, w-r.measure.Width(label)))
-	trail := max(0, w-lead-r.measure.Width(label))
-	return style.Render(repeat(r.char, lead)) + label + style.Render(repeat(r.char, trail))
+	c.Text(lead, 0, label, cell.Style{})
 }

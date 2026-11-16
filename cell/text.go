@@ -44,6 +44,19 @@ func (m Measure) Width(s string) int {
 // Width is the widest line of s in cells, by the Unicode default.
 func Width(s string) int { return Measure(nil).Width(s) }
 
+// Strip is s without its escape sequences and control characters. The newlines stay.
+func Strip(s string) string {
+	if !strings.ContainsAny(s, "\x1b\t\r") {
+		return s
+	}
+	lines := Lines(s)
+	plain := make([]string, len(lines))
+	for i, line := range lines {
+		plain[i] = line.String()
+	}
+	return strings.Join(plain, "\n")
+}
+
 // Height is how many lines s has. An empty string is one line.
 func Height(s string) int { return strings.Count(s, "\n") + 1 }
 

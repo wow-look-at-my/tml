@@ -11,6 +11,7 @@ type Canvas struct {
 	w, h    int
 	clip    Rect
 	base    Style
+	ground  Color
 	measure Measure
 }
 
@@ -108,13 +109,30 @@ func (c Canvas) Repeat(x, y, w, h int, glyph string, style Style) {
 	}
 }
 
-// Restyle changes the style of the cells already drawn in a region, and leaves their glyphs alone.
-func (c Canvas) Restyle(x, y, w, h int, change func(Style) Style) {
+// Restyle changes the style of the cells already drawn in a region, and leaves their glyphs alone. change is given
+// each cell and answers with the style it takes.
+func (c Canvas) Restyle(x, y, w, h int, change func(Cell) Style) {
 	visible := c.Visible().Intersect(Rect{X: x, Y: y, W: w, H: h})
 	for row := visible.Y; row < visible.Y+visible.H; row++ {
 		for col := visible.X; col < visible.X+visible.W; col++ {
 			i := (c.y+row)*c.buf.W + c.x + col
-			c.buf.cells[i].Style = change(c.buf.cells[i].Style).drawn()
+			c.buf.cells[i].Style = change(c.buf.cells[i]).drawn()
+		}
+	}
+}
+
+// Grounded returns the canvas with the fill an ancestor painted behind it. Erase puts that fill back.
+func (c Canvas) Grounded(fill Color) Canvas {
+	c.ground = fill
+	return c
+}
+
+// Erase blanks a region back to the ground, glyphs and fills alike. It is how one element covers another.
+func (c Canvas) Erase(x, y, w, h int) {
+	visible := c.Visible().Intersect(Rect{X: x, Y: y, W: w, H: h})
+	for row := visible.Y; row < visible.Y+visible.H; row++ {
+		for col := visible.X; col < visible.X+visible.W; col++ {
+			c.buf.set(c.x+col, c.y+row, Cell{Text: " ", Width: 1, Style: Style{Bg: c.ground}})
 		}
 	}
 }

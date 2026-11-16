@@ -3,6 +3,7 @@
 package widgets
 
 import (
+	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/widget"
 )
 
@@ -25,7 +26,7 @@ var spinnerKinds = []string{"arrow", "bar", "circle", "dot", "dots", "line"}
 type spinner struct {
 	frames  []string
 	frame   int
-	color   string
+	color   cell.Color
 	measure widget.Measurer
 }
 
@@ -37,12 +38,11 @@ func newSpinner(ctx widget.Context) (widget.Native, error) {
 	frames := spinners[kind]
 	// A frame counter only goes up, so the walk through this kind's frames has to wrap here.
 	frame := ((ctx.Frame % len(frames)) + len(frames)) % len(frames)
-	return &spinner{
-		frames:  frames,
-		frame:   frame,
-		color:   ctx.Attrs.String("color", ""),
-		measure: ctx.Measure,
-	}, nil
+	color, err := colorAttr(ctx.Attrs, "color")
+	if err != nil {
+		return nil, err
+	}
+	return &spinner{frames: frames, frame: frame, color: color, measure: ctx.Measure}, nil
 }
 
 // Animating reports that a spinner keeps moving for as long as it is visible.
@@ -52,6 +52,6 @@ func (s *spinner) Measure(_, _ int) (int, int) {
 	return s.measure.Width(s.frames[s.frame]), 1
 }
 
-func (s *spinner) Render(_, _ int) string {
-	return paint(s.color).Render(s.frames[s.frame])
+func (s *spinner) Draw(c cell.Canvas) {
+	c.Text(0, 0, s.frames[s.frame], paint(s.color))
 }

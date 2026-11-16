@@ -3,8 +3,7 @@
 package layout
 
 import (
-	"charm.land/lipgloss/v2"
-
+	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/sema"
 )
 
@@ -61,7 +60,7 @@ func (e *Engine) measureContent(box *Box, inner Constraints) Size {
 	var content Size
 	switch box.Name {
 	case "#text":
-		content = Size{W: e.opts.Measure.Width(box.Text), H: lipgloss.Height(box.Text)}
+		content = Size{W: e.opts.Measure.Width(box.Text), H: cell.Height(box.Text)}
 	case "Text":
 		content = e.measureText(box, inner)
 	case "Spacer":
@@ -80,21 +79,20 @@ func (e *Engine) measureContent(box *Box, inner Constraints) Size {
 
 // measureText reports the height the text needs after wrapping.
 func (e *Engine) measureText(box *Box, inner Constraints) Size {
-	// An empty Text is an empty line, one row tall, as lipgloss.Height says. A blank line in a list of lines must keep its row.
+	// An empty Text is an empty line, one row tall. A blank line in a list of lines must keep its row.
 	if box.Text == "" {
 		return Size{H: 1}
 	}
 	natural := e.opts.Measure.Width(box.Text)
 	if inner.MaxW <= 0 || natural <= inner.MaxW {
-		return Size{W: natural, H: lipgloss.Height(box.Text)}
+		return Size{W: natural, H: cell.Height(box.Text)}
 	}
 	// A clipped Text is as tall as it has lines, however narrow it gets, so a long line cannot push a card's border down.
 	if box.Overflow == OverflowClip || box.Overflow == OverflowEllipsis {
-		return Size{W: inner.MaxW, H: lipgloss.Height(box.Text)}
+		return Size{W: inner.MaxW, H: cell.Height(box.Text)}
 	}
-	// lipgloss.Wrap is the call Style.Render makes to wrap, so this counts the lines the paint will produce.
-	wrapped := lipgloss.Wrap(box.Text, inner.MaxW, "")
-	return Size{W: inner.MaxW, H: lipgloss.Height(wrapped)}
+	// The painter wraps with the same call, so this counts the rows it draws.
+	return Size{W: inner.MaxW, H: len(e.opts.Measure.Wrap(box.Text, inner.MaxW))}
 }
 
 func (e *Engine) measureChildren(box *Box, inner Constraints) Size {

@@ -4,10 +4,8 @@ package widgets
 
 import (
 	"fmt"
-	"strings"
 
-	"charm.land/lipgloss/v2"
-
+	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/sema"
 	"github.com/wow-look-at-my/tml/widget"
 )
@@ -21,10 +19,10 @@ var buttonSlots = []string{"Content"}
 var buttonChrome = map[string]string{"kind": "rounded", "pad": "1", "contentAlign": "center"}
 
 // variants are the looks a button comes in, as a foreground colour for its border and label.
-var variants = map[string]string{
-	"default": "",
-	"primary": "12",
-	"danger":  "9",
+var variants = map[string]cell.Color{
+	"default": {},
+	"primary": cell.Indexed(12),
+	"danger":  cell.Indexed(9),
 }
 
 var variantNames = []string{"danger", "default", "primary"}
@@ -33,7 +31,7 @@ var variantNames = []string{"danger", "default", "primary"}
 type button struct {
 	label    string
 	disabled bool
-	accent   string
+	accent   cell.Color
 	state    widget.State
 	chrome   *frame
 }
@@ -81,15 +79,11 @@ func (b *button) Insets() sema.Thickness { return sema.Thickness{} }
 
 func (b *button) Slots() []string { return buttonSlots }
 
-// Measure and Render are only reached by a button with no border, which the engine never builds.
+// Measure is only reached by a button with no border, which the engine never builds.
 func (b *button) Measure(_, _ int) (int, int) { return 0, 0 }
 
-func (b *button) Render(_, _ int) string { return "" }
-
-// Compose hands back what the border drew.
-func (b *button) Compose(slots widget.Slots, _, _ int) string {
-	return strings.Join(slots.Default(), "\n")
-}
+// Draw paints nothing: the border is the button's whole face, and the engine draws it as the button's child.
+func (b *button) Draw(cell.Canvas) {}
 
 // steer sets the border's look from the button's state. A focused button wears a double border, so the focus is
 // obvious without colour.
@@ -97,31 +91,31 @@ func (b *button) steer() {
 	if b.chrome == nil {
 		return
 	}
-	border := lipgloss.RoundedBorder()
-	color := ""
-	face := lipgloss.NewStyle()
+	border, _ := cell.BorderNamed("rounded")
+	var color cell.Color
+	var face cell.Style
 	switch {
 	case b.disabled:
-		color = "8"
+		color = cell.Indexed(8)
 		face = face.Faint(true)
 	case b.state.Pressed:
 		face = face.Reverse(true)
 	case b.state.Focused:
-		border = lipgloss.DoubleBorder()
+		border, _ = cell.BorderNamed("double")
 		color = b.focusColor()
 		face = face.Bold(true)
 	case b.state.Hovered:
 		face = face.Underline(true)
-	case b.accent != "":
+	case b.accent.IsSet():
 		color = b.accent
-		face = face.Foreground(lipgloss.Color(b.accent))
+		face = face.Foreground(b.accent)
 	}
 	b.chrome.restyle(border, color, face)
 }
 
-func (b *button) focusColor() string {
-	if b.accent != "" {
+func (b *button) focusColor() cell.Color {
+	if b.accent.IsSet() {
 		return b.accent
 	}
-	return "13"
+	return cell.Indexed(13)
 }

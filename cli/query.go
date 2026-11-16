@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"charm.land/lipgloss/v2"
 	"github.com/spf13/cobra"
 
+	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/inspect"
 )
 
@@ -192,7 +192,7 @@ func newFrameCmd() *cobra.Command {
 func widestLine(text string) int {
 	widest := 0
 	for _, line := range strings.Split(text, "\n") {
-		if w := lipgloss.Width(line); w > widest {
+		if w := cell.Width(line); w > widest {
 			widest = w
 		}
 	}
