@@ -196,14 +196,18 @@ func (e *Engine) measureGrid(box *Box, inner Constraints) Size {
 		if child.place.columnSpan == 1 && box.cols[child.place.column].Kind == sema.LengthAuto {
 			box.autoWidths[child.place.column] = max(box.autoWidths[child.place.column], child.desired.W)
 		}
+	}
+	clampAuto(box.cols, box.autoWidths)
+
+	shown := box.visibleColumns(inner.MaxW)
+	e.measureInTracks(box, inner, shown, gap)
+	for _, child := range box.Children {
 		if child.place.rowSpan == 1 && box.rows[child.place.row].Kind == sema.LengthAuto {
 			box.autoHeights[child.place.row] = max(box.autoHeights[child.place.row], child.desired.H)
 		}
 	}
-	clampAuto(box.cols, box.autoWidths)
 	clampAuto(box.rows, box.autoHeights)
 
-	shown := box.visibleColumns(inner.MaxW)
 	content := Size{
 		W: shownSum(box.autoWidths, shown, gap),
 		H: shownSum(box.autoHeights, allShown(len(box.rows)), gap),
@@ -216,6 +220,23 @@ func (e *Engine) measureGrid(box *Box, inner Constraints) Size {
 		content.H = max(content.H, inner.MaxH)
 	}
 	return content
+}
+
+// measureInTracks measures each child again against the columns it sits in, once the grid knows its width. A row's
+// height then comes from text wrapped at the width its cell has, not at the width of the whole grid.
+func (e *Engine) measureInTracks(box *Box, inner Constraints, shown []bool, gap int) {
+	if inner.MaxW <= 0 {
+		return
+	}
+	widths := solveTracks(box.cols, box.autoWidths, shown, inner.MaxW, gap)
+	for _, child := range box.Children {
+		width := span(widths, shown, child.place.column, child.place.columnSpan, gap)
+		// A child in hidden columns has no cells, and no cells is no bound to a measure.
+		if width <= 0 || width == inner.MaxW {
+			continue
+		}
+		e.measure(child, Constraints{MaxW: width, MaxH: inner.MaxH})
+	}
 }
 
 func (e *Engine) arrangeGrid(box *Box) {

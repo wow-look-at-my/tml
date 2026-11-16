@@ -138,6 +138,38 @@ func fillForStars(box *Box, content Size, inner Constraints) Size {
 	return content
 }
 
+// measureStackChildren measures a stack's children. In a row with a known width, a star child is measured against
+// the share of the row. It will get, not against the whole row. Text inside it then wraps where it will be drawn,
+// and the row is as tall as that needs.
+func (e *Engine) measureStackChildren(box *Box, inner Constraints, vertical bool, gap int) {
+	used, weight, placed := 0, 0, 0
+	for _, child := range box.Children {
+		size := e.measure(child, inner)
+		if !stackPlaces(child, vertical) {
+			continue
+		}
+		placed++
+		if !vertical && child.width.Kind == sema.LengthStar {
+			weight += child.width.Weight
+			continue
+		}
+		used += size.W
+	}
+	if vertical || weight == 0 || inner.MaxW <= 0 {
+		return
+	}
+	leftover := max(0, inner.MaxW-used-gap*max(0, placed-1))
+	for _, child := range box.Children {
+		if child.width.Kind != sema.LengthStar || !stackPlaces(child, vertical) {
+			continue
+		}
+		// A share of no cells is no bound to a measure, so a child with no room is left as it was measured.
+		if share := leftover * child.width.Weight / weight; share > 0 {
+			e.measure(child, Constraints{MaxW: share, MaxH: inner.MaxH})
+		}
+	}
+}
+
 func (e *Engine) measureStack(box *Box, inner Constraints) Size {
 	vertical := box.vertical()
 	gap := box.gap()

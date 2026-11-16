@@ -14,6 +14,11 @@ func (e *Engine) arrange(box *Box, rect Rect) {
 		return
 	}
 	box.Rect = rect
+	// A box measured against one width and given another is measured again, so
+	// what is inside it wraps where it is drawn.
+	if stale(box, rect) {
+		e.measure(box, Constraints{MaxW: rect.W, MaxH: box.offered.MaxH})
+	}
 
 	outerW, outerH := box.outer()
 	box.Content = Size{W: max(0, rect.W-outerW), H: max(0, rect.H-outerH)}
@@ -52,6 +57,18 @@ func (e *Engine) arrange(box *Box, rect Rect) {
 			})
 		}
 	}
+}
+
+// stale reports whether a box's measurements belong to a width it did not
+// get. A star-sized box is measured before its share is known.
+func stale(box *Box, rect Rect) bool {
+	if rect.W <= 0 || rect.W == box.offered.MaxW {
+		return false
+	}
+	if box.width.Kind == sema.LengthStar {
+		return true
+	}
+	return rect.W < box.desired.W
 }
 
 func (e *Engine) arrangeStack(box *Box) {
