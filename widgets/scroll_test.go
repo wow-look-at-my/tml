@@ -1,15 +1,16 @@
 package widgets
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/sema"
 	"github.com/wow-look-at-my/tml/widget"
+	"github.com/wow-look-at-my/tml/widget/widgettest"
 )
 
 func lines(n int) []string {
@@ -23,51 +24,59 @@ func lines(n int) []string {
 func TestScrollboxShowsTheWindowTheOffsetSelects(t *testing.T) {
 	box := composer(t, "Scrollbox", map[string]string{"offset": "2", "scrollbar": "never"})
 
-	assert.Equal(t, "c\nd\ne", box.Compose(content(lines(8)...), 1, 3))
+	assert.Equal(t, "c\nd\ne", compose(box, 1, 3, lines(8)...))
+}
+
+// Layout tells the box where the content landed, clamped, and the box draws its scrollbar and fade from that.
+func TestScrollboxLearnsItsScrollFromLayout(t *testing.T) {
+	box := composer(t, "Scrollbox", map[string]string{"offset": "9999"})
+	widgettest.Compose(box, lines(8), 2, 3)
+
+	assert.Equal(t, widget.Scroll{Y: 5, MaxY: 5}, box.(*scrollbox).scroll)
 }
 
 // Scrolling stops at the last screenful.
 func TestScrollboxStopsAtTheEnd(t *testing.T) {
 	box := composer(t, "Scrollbox", map[string]string{"offset": "9999", "scrollbar": "never"})
 
-	assert.Equal(t, "f\ng\nh", box.Compose(content(lines(8)...), 1, 3))
+	assert.Equal(t, "f\ng\nh", compose(box, 1, 3, lines(8)...))
 }
 
 // Content that fits needs no scrolling, however far a host asks to go.
 func TestScrollboxWithNothingToScrollStaysPut(t *testing.T) {
 	box := composer(t, "Scrollbox", map[string]string{"offset": "4", "scrollbar": "never"})
 
-	assert.Equal(t, "a\nb\nc", box.Compose(content(lines(3)...), 1, 3))
+	assert.Equal(t, "a\nb\nc", compose(box, 1, 3, lines(3)...))
 }
 
 func TestScrollboxScrollsSideways(t *testing.T) {
 	box := composer(t, "Scrollbox", map[string]string{"offsetX": "2", "scrollbar": "never"})
 
-	assert.Equal(t, "cde", box.Compose(content("abcdefgh"), 3, 1))
+	assert.Equal(t, "cde", compose(box, 3, 1, "abcdefgh"))
 }
 
 // A short line still fills the viewport, or the rows below would be ragged and the box's background would show through
 func TestScrollboxPadsShortLines(t *testing.T) {
 	box := composer(t, "Scrollbox", map[string]string{"scrollbar": "never"})
 
-	assert.Equal(t, "ab   ", box.Compose(content("ab"), 5, 1))
+	assert.Equal(t, "ab   ", compose(box, 5, 1, "ab"))
 }
 
 func TestScrollbarTracksTheOffset(t *testing.T) {
 	top := composer(t, "Scrollbox", map[string]string{"offset": "0"})
-	assert.Equal(t, []string{"a█", "b█", "c│", "d│"}, split(top.Compose(content(lines(8)...), 2, 4)))
+	assert.Equal(t, []string{"a█", "b█", "c│", "d│"}, split(compose(top, 2, 4, lines(8)...)))
 
 	bottom := composer(t, "Scrollbox", map[string]string{"offset": "4"})
-	assert.Equal(t, []string{"e│", "f│", "g█", "h█"}, split(bottom.Compose(content(lines(8)...), 2, 4)))
+	assert.Equal(t, []string{"e│", "f│", "g█", "h█"}, split(compose(bottom, 2, 4, lines(8)...)))
 }
 
 // Content that fits needs no thumb. Auto leaves the column blank rather than dropping it, because reflowing the moment
 func TestScrollbarIsBlankWhenEverythingFits(t *testing.T) {
 	auto := composer(t, "Scrollbox", nil)
-	assert.Equal(t, []string{"a ", "b "}, split(auto.Compose(content(lines(2)...), 2, 2)))
+	assert.Equal(t, []string{"a ", "b "}, split(compose(auto, 2, 2, lines(2)...)))
 
 	always := composer(t, "Scrollbox", map[string]string{"scrollbar": "always"})
-	assert.Equal(t, []string{"a│", "b│"}, split(always.Compose(content(lines(2)...), 2, 2)))
+	assert.Equal(t, []string{"a│", "b│"}, split(compose(always, 2, 2, lines(2)...)))
 }
 
 func TestScrollboxGutter(t *testing.T) {
