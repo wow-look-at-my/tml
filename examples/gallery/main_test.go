@@ -231,6 +231,18 @@ func TestClickingAListRowSelectsIt(t *testing.T) {
 	assert.Contains(t, cell.Strip(m.frameOf()), "> scheduler", "the cursor moved to the row that was clicked")
 }
 
+// A table's rows start below its header and the rule under it, and a click lands on the row it is over.
+func TestClickingATableRowSelectsIt(t *testing.T) {
+	m := gallery(t)
+	m.tab = "data"
+	require.NotContains(t, m.frameOf(), "tml: ")
+
+	table := control(t, m, "steps")
+	press(t, m, program(t, m), table.Rect.X+1, table.Rect.Y+4)
+
+	assert.Equal(t, 2, m.step, "the third row, under the header and its rule")
+}
+
 // press clicks and releases over a single point, which is what activates a
 // control.
 func press(t *testing.T, m *model, p *tml.Program, x, y int) {

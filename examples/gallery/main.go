@@ -113,9 +113,9 @@ func (m *model) event(event tml.Event) {
 			m.selected = clamp(event.Y, 0, len(services)-1)
 			return
 		}
-		// A table's header takes the first line, so its rows start below the y a click reports.
+		// A borderless table's header and the rule under it take the first a couple of lines.
 		if event.ID == "steps" && event.Y >= 0 {
-			m.step = clamp(event.Y-1, 0, len(steps)-1)
+			m.step = clamp(event.Y-2, 0, len(steps)-1)
 			return
 		}
 		if event.Action != "" && !m.act(event.Action) {

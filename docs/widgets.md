@@ -123,11 +123,11 @@ Both take focus, and both leave the selection to the host. `selected` is a row i
 
 The row a keystroke acts on is the host's state. It stays picked while a filter box holds the ring. The header is not a row anyone can select, and `selected="-1"` marks nothing.
 
-Which row a click landed on arrives the same way a `List`'s does, in the event's own coordinates. A table draws its header first, so its rows start a line below:
+Which row a click landed on arrives the same way a `List`'s does, in the event's own coordinates. A borderless table draws its header and the rule under it first, so its rows start a couple of lines below. A bordered table adds its top border to that:
 
 ```go
 if event.ID == "steps" && event.Y >= 0 {
-    m.step = clamp(event.Y-1, 0, len(steps)-1)
+    m.step = clamp(event.Y-2, 0, len(steps)-1)
 }
 ```
 

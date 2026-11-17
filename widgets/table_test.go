@@ -38,11 +38,11 @@ func TestABorderedTableRulesItsCells(t *testing.T) {
 	}, rows(table, 0, 0))
 }
 
-// A borderless table keeps a blank line under its header, where the rule would be.
-func TestABorderlessTableLeavesABlankLineUnderItsHeader(t *testing.T) {
+// A borderless table keeps the rule under its header, drawn as wide as the table.
+func TestABorderlessTableRulesItsHeaderOff(t *testing.T) {
 	table := build(t, "Table", map[string]string{"columns": "A,B", "rows": "1|2", "border": "false"})
 
-	assert.Equal(t, []string{"A B", "", "1 2"}, trimmed(rows(table, 0, 0)))
+	assert.Equal(t, []string{"A B", "───", "1 2"}, trimmed(rows(table, 0, 0)))
 }
 
 // A table offered more room than it needs shares the room out between its columns.
@@ -129,7 +129,7 @@ func TestATableCanKeepEveryRowToOneLine(t *testing.T) {
 
 	const narrow = 14
 	assert.Greater(t, len(rows(wrapped, narrow, 0)), len(rows(cut, narrow, 0)))
-	assert.Equal(t, []string{"path", "", "/a/long/path/…", "/another/long…"}, trimmed(rows(cut, narrow, 0)),
+	assert.Equal(t, []string{"path", "──────────────", "/a/long/path/…", "/another/long…"}, trimmed(rows(cut, narrow, 0)),
 		"a header, the rule under it, and a line for each row, each cut cell saying it was cut")
 }
 
@@ -169,7 +169,7 @@ func TestTableRejectsACollapseColumnItDoesNotHave(t *testing.T) {
 	assert.Contains(t, err.Error(), "named twice")
 }
 
-// rule="false" makes the header one more line of the listing. A tool whose output an agent reads wants no blank line under it.
+// rule="false" makes the header one more line of the listing. A tool whose output an agent reads wants no line under it.
 func TestABorderlessTableCanDropTheRuleUnderItsHeader(t *testing.T) {
 	attrs := map[string]string{"columns": "A,B", "rows": "1|2", "border": "false"}
 	ruled := build(t, "Table", attrs)
@@ -242,7 +242,7 @@ func TestABorderedTableMarksCellsNotRules(t *testing.T) {
 	assert.False(t, buf.At(2, 3).Style.Has(cell.Reverse), "the rule between the columns")
 }
 
-// A table nobody has selected a row of draws undecorated, headers included. A negative selection must not land on the
+// A table nobody has selected a row of marks no row, the header included. A negative selection must not land on the
 // header, which is the row before the first.
 func TestAnUnselectedTableMarksNothing(t *testing.T) {
 	unselected := build(t, "Table", map[string]string{"columns": "Name", "rows": "a,b", "border": "false"})
@@ -250,9 +250,19 @@ func TestAnUnselectedTableMarksNothing(t *testing.T) {
 	buf := widgettest.Draw(unselected, 10, 0)
 	for y := range buf.H {
 		for x := range buf.W {
-			assert.True(t, buf.At(x, y).Style.IsZero(), "cell %d,%d", x, y)
+			assert.False(t, buf.At(x, y).Style.Has(cell.Reverse), "cell %d,%d", x, y)
 		}
 	}
+}
+
+// The rule under a borderless header is faint, so the header and the rows stand out against it.
+func TestTheRuleUnderABorderlessHeaderIsFaint(t *testing.T) {
+	table := build(t, "Table", map[string]string{"columns": "Name", "rows": "a", "border": "false"})
+
+	buf := widgettest.Draw(table, 10, 0)
+	assert.Equal(t, "─", buf.At(0, 1).Text)
+	assert.True(t, buf.At(0, 1).Style.Has(cell.Faint))
+	assert.False(t, buf.At(0, 0).Style.Has(cell.Faint), "the header")
 }
 
 func TestDisabledTableIsFaintAndMarksNothing(t *testing.T) {

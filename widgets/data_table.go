@@ -234,6 +234,7 @@ func (t *dataTable) Draw(c cell.Canvas) {
 		t.drawRule(c, y, s, "├", "─", "┼", "┤")
 		y++
 	} else if t.rule {
+		c.Repeat(0, y, t.total(s.widths), 1, "─", cell.Style{}.Faint(true))
 		y++
 	}
 	for i, row := range t.rows {
