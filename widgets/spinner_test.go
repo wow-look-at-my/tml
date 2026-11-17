@@ -6,7 +6,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/widget"
+	"github.com/wow-look-at-my/tml/widget/widgettest"
 )
 
 // spinnerAt builds a Spinner the way the engine does, on the animation frame it is on.
@@ -21,14 +23,20 @@ func spinnerAt(t *testing.T, frame int, pairs map[string]string) widget.Native {
 
 // The frame is the engine's, so the widget only has to draw the one it was handed.
 func TestSpinnerDrawsTheFrameTheEngineIsOn(t *testing.T) {
-	assert.Equal(t, "|", spinnerAt(t, 0, map[string]string{"kind": "line"}).Render(1, 1))
-	assert.Equal(t, "-", spinnerAt(t, 2, map[string]string{"kind": "line"}).Render(1, 1))
+	assert.Equal(t, "|", widgettest.Text(spinnerAt(t, 0, map[string]string{"kind": "line"}), 1, 1))
+	assert.Equal(t, "-", widgettest.Text(spinnerAt(t, 2, map[string]string{"kind": "line"}), 1, 1))
 }
 
 // A frame counter only goes up, so the walk through this kind's frames wraps here.
 func TestSpinnerWrapsTheFrameCounter(t *testing.T) {
-	assert.Equal(t, "/", spinnerAt(t, 5, map[string]string{"kind": "line"}).Render(1, 1))
-	assert.Equal(t, "\\", spinnerAt(t, -1, map[string]string{"kind": "line"}).Render(1, 1))
+	assert.Equal(t, "/", widgettest.Text(spinnerAt(t, 5, map[string]string{"kind": "line"}), 1, 1))
+	assert.Equal(t, "\\", widgettest.Text(spinnerAt(t, -1, map[string]string{"kind": "line"}), 1, 1))
+}
+
+func TestSpinnerTakesAColour(t *testing.T) {
+	spin := spinnerAt(t, 0, map[string]string{"kind": "line", "color": "12"})
+
+	assert.Equal(t, cell.Indexed(12), widgettest.Draw(spin, 0, 0).At(0, 0).Style.Fg)
 }
 
 // A Spinner is what the engine counts frames for. Animator is how a widget says so.

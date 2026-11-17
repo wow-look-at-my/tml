@@ -271,10 +271,10 @@ func (s *Server) frame(req Request) Response {
 			info := FrameInfo{
 				Seq: f.Seq, At: f.At.UTC().Format(time.RFC3339Nano),
 				Width: f.Width, Height: f.Height,
-				Text: stripANSI(f.ANSI),
+				Text: f.Plain(),
 			}
 			if req.ANSI {
-				info.ANSI = f.ANSI
+				info.ANSI = f.Styled()
 			}
 			return Response{Frame: &info}
 		}

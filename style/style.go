@@ -1,37 +1,15 @@
-// Package style resolves TML style attributes into a lipgloss.Style. The cascade lives here rather than in lipgloss.
+// Package style resolves TML style attributes into what the painter draws with: a cell style, a box model and an
+// alignment. The cascade of named styles lives here.
 package style
 
 import (
 	"fmt"
 	"maps"
-	"sort"
 	"strings"
-
-	"charm.land/lipgloss/v2"
 
 	"github.com/wow-look-at-my/tml/sema"
 	"github.com/wow-look-at-my/tml/syntax"
 )
-
-// Resolved is a single element's finished styling. Margin is kept out of the lipgloss.Style on purpose.
-type Resolved struct {
-	Style  lipgloss.Style
-	Margin sema.Thickness
-	Align  lipgloss.Position
-	VAlign lipgloss.Position
-}
-
-// Frame is the space padding and borders take from the content box.
-func (r Resolved) Frame() (horizontal, vertical int) {
-	return r.Style.GetHorizontalFrameSize(), r.Style.GetVerticalFrameSize()
-}
-
-// ContentOffset is the distance from a box's outer top-left corner to the leading cell of its content.
-func (r Resolved) ContentOffset() (x, y int) {
-	x = r.Margin.Left + r.Style.GetPaddingLeft() + r.Style.GetBorderLeftSize()
-	y = r.Margin.Top + r.Style.GetPaddingTop() + r.Style.GetBorderTopSize()
-	return x, y
-}
 
 // Sheet holds the named styles declared across every theme in scope, with each extends chain already flattened.
 type Sheet struct {
@@ -137,140 +115,4 @@ func (s *Sheet) Resolve(named string, inline map[string]string) (Resolved, error
 	}
 	maps.Copy(attrs, inline)
 	return build(attrs)
-}
-
-// build turns a flattened attribute map into a lipgloss style.
-func build(attrs map[string]string) (Resolved, error) {
-	resolved := Resolved{Style: lipgloss.NewStyle(), Align: lipgloss.Left, VAlign: lipgloss.Top}
-
-	for name, raw := range attrs {
-		var err error
-		switch name {
-		case "fg":
-			resolved.Style = resolved.Style.Foreground(lipgloss.Color(raw))
-		case "bg":
-			resolved.Style = resolved.Style.Background(lipgloss.Color(raw))
-		case "bold", "italic", "underline", "strikethrough", "faint", "reverse":
-			err = applyTextFlag(&resolved, name, raw)
-		case "padding":
-			var thick sema.Thickness
-			if thick, err = sema.ParseThickness(raw); err == nil {
-				resolved.Style = resolved.Style.Padding(thick.Top, thick.Right, thick.Bottom, thick.Left)
-			}
-		case "margin":
-			resolved.Margin, err = sema.ParseThickness(raw)
-		case "border":
-			err = applyBorder(&resolved, raw)
-		case "borderColor":
-			resolved.Style = resolved.Style.BorderForeground(lipgloss.Color(raw))
-		case "align":
-			resolved.Align, err = parseHorizontal(raw)
-			if err == nil {
-				resolved.Style = resolved.Style.AlignHorizontal(resolved.Align)
-			}
-		case "valign":
-			resolved.VAlign, err = parseVertical(raw)
-			if err == nil {
-				resolved.Style = resolved.Style.AlignVertical(resolved.VAlign)
-			}
-		default:
-			err = fmt.Errorf("unknown style attribute %q", name)
-		}
-		if err != nil {
-			return Resolved{}, err
-		}
-	}
-	return resolved, nil
-}
-
-func applyTextFlag(resolved *Resolved, name, raw string) error {
-	on, err := parseBool(raw)
-	if err != nil {
-		return fmt.Errorf("%s: %w", name, err)
-	}
-	switch name {
-	case "bold":
-		resolved.Style = resolved.Style.Bold(on)
-	case "italic":
-		resolved.Style = resolved.Style.Italic(on)
-	case "underline":
-		resolved.Style = resolved.Style.Underline(on)
-	case "strikethrough":
-		resolved.Style = resolved.Style.Strikethrough(on)
-	case "faint":
-		resolved.Style = resolved.Style.Faint(on)
-	case "reverse":
-		resolved.Style = resolved.Style.Reverse(on)
-	}
-	return nil
-}
-
-// borders are named rather than described, so a template never spells out box drawing characters.
-var borders = map[string]func() lipgloss.Border{
-	"normal":  lipgloss.NormalBorder,
-	"rounded": lipgloss.RoundedBorder,
-	"thick":   lipgloss.ThickBorder,
-	"double":  lipgloss.DoubleBorder,
-	"hidden":  lipgloss.HiddenBorder,
-	"block":   lipgloss.BlockBorder,
-	"ascii":   lipgloss.ASCIIBorder,
-}
-
-func applyBorder(resolved *Resolved, raw string) error {
-	if raw == "none" {
-		return nil
-	}
-	border, ok := borders[raw]
-	if !ok {
-		return fmt.Errorf("unknown border %q; want none, %s", raw, strings.Join(borderNames(), ", "))
-	}
-	resolved.Style = resolved.Style.Border(border())
-	return nil
-}
-
-// borderNames is sorted so the diagnostic is stable rather than map-ordered.
-func borderNames() []string {
-	names := make([]string, 0, len(borders))
-	for name := range borders {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	return names
-}
-
-func parseHorizontal(raw string) (lipgloss.Position, error) {
-	switch raw {
-	case "left":
-		return lipgloss.Left, nil
-	case "center":
-		return lipgloss.Center, nil
-	case "right":
-		return lipgloss.Right, nil
-	default:
-		return 0, fmt.Errorf("align must be left, center or right, got %q", raw)
-	}
-}
-
-func parseVertical(raw string) (lipgloss.Position, error) {
-	switch raw {
-	case "top":
-		return lipgloss.Top, nil
-	case "middle":
-		return lipgloss.Center, nil
-	case "bottom":
-		return lipgloss.Bottom, nil
-	default:
-		return 0, fmt.Errorf("valign must be top, middle or bottom, got %q", raw)
-	}
-}
-
-func parseBool(raw string) (bool, error) {
-	switch raw {
-	case "true":
-		return true, nil
-	case "false":
-		return false, nil
-	default:
-		return false, fmt.Errorf("expected true or false, got %q", raw)
-	}
 }

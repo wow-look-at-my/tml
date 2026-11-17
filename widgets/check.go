@@ -3,8 +3,7 @@
 package widgets
 
 import (
-	"charm.land/lipgloss/v2"
-
+	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/widget"
 )
 
@@ -61,8 +60,8 @@ func (c *check) body() string {
 
 func (c *check) Measure(_, _ int) (int, int) { return c.measure.Width(c.body()), 1 }
 
-func (c *check) Render(_, _ int) string {
-	style := lipgloss.NewStyle()
+func (c *check) Draw(canvas cell.Canvas) {
+	var style cell.Style
 	switch {
 	case c.disabled:
 		style = style.Faint(true)
@@ -73,5 +72,5 @@ func (c *check) Render(_, _ int) string {
 	case c.state.Hovered:
 		style = style.Underline(true)
 	}
-	return style.Render(c.body())
+	canvas.Text(0, 0, c.body(), style)
 }

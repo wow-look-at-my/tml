@@ -3,24 +3,22 @@
 package widgets
 
 import (
-	"strings"
-
-	"charm.land/lipgloss/v2"
+	"github.com/wow-look-at-my/tml/cell"
+	"github.com/wow-look-at-my/tml/widget"
 )
 
-// paint builds a style from an optional colour, so a widget can colour a single part of itself without the element's own
-func paint(color string) lipgloss.Style {
-	style := lipgloss.NewStyle()
-	if color == "" {
-		return style
-	}
-	return style.Foreground(lipgloss.Color(color))
-}
+// paint builds a style from an optional colour, so a widget can colour a single part of itself.
+func paint(color cell.Color) cell.Style { return cell.Style{Fg: color} }
 
-// repeat draws n copies of r, guarding the negative counts that arithmetic on a too-small box produces.
-func repeat(r rune, n int) string {
-	if n <= 0 {
-		return ""
+// colorAttr reads an optional colour attribute. A value that is not a colour fails the build of the widget.
+func colorAttr(attrs widget.Attrs, name string) (cell.Color, error) {
+	raw := attrs.String(name, "")
+	if raw == "" {
+		return cell.Color{}, nil
 	}
-	return strings.Repeat(string(r), n)
+	color, err := cell.ParseColor(raw)
+	if err != nil {
+		return cell.Color{}, attrs.Errorf(name, "%v", err)
+	}
+	return color, nil
 }

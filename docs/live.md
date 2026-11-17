@@ -15,14 +15,14 @@ err := live.Stop()            // pending lines print, the region goes, the curso
 
 ## What the host supplies
 
-- **The view.** Any loaded `*tml.View`. The region lays it out with `View.RenderFit`. As a result, it takes only the rows its content uses. `LiveOptions.MaxHeight` caps it. The default cap is the terminal's height.
+- **The view.** Any loaded `*tml.View`. The region lays it out with `View.DrawFit`. As a result, it takes only the rows its content uses. `LiveOptions.MaxHeight` caps it. The default cap is the terminal's height.
 - **The props function.** The region calls it on its own goroutine at each repaint, every `LiveOptions.Interval` (100 ms by default). Workers keep their state as they like, for example in atomics. The function reads a snapshot. Nothing else calls it. `Refresh` repaints before the next interval.
-- **The lines.** `Println`, `Printf` and `Write` are safe from any goroutine. `Write` holds a partial line until its newline arrives. It drops carriage returns, so a child that draws its own progress cannot break a line in pieces. The lines print in the order they arrive, at the next repaint.
+- **The lines.** `Write` holds a partial line until its newline arrives. It drops carriage returns, so a child that draws its own progress cannot break a line in pieces. The lines print in the order they arrive, at the next repaint.
 
 ## How it ends
 
 - `Stop` prints the lines still pending, including a partial line, removes the region, and shows the cursor again. A second `Stop` returns the same result.
-- **SIGINT** gets the same orderly end. The region takes no input, so ctrl+c stays a signal. A child can also own stdin. `Stop` and `Wait` then report `tml.ErrInterrupted`, and `LiveOptions.OnInterrupt` runs after the terminal is restored. The host decides the exit code there.
+- **SIGINT** gets the same orderly end. The region takes no input, so ctrl+c stays a signal. A child can also own stdin. The host decides the exit code there.
 - **A frame that fails to render** ends the region with that error. The region does not keep its last good frame on screen, because that frame looks like progress that stopped.
 - A line printed after the region ended goes straight to the output. A region that never started prints its lines at `Stop`.
 
@@ -30,7 +30,7 @@ err := live.Stop()            // pending lines print, the region goes, the curso
 
 ## Colour
 
-Style the view with a theme, as with any other view. The region runs on Bubble Tea, and Bubble Tea reduces each colour to what the terminal supports. `NO_COLOR` removes colour and keeps bold and faint. `TERM=dumb` removes all styling.
+Style the view with a theme, as with any other view. The region is an inline `tml.Program`, and the program reduces each colour to what the terminal supports. `NO_COLOR` removes colour and keeps bold and faint. `TERM=dumb` removes all styling.
 
 A styled row usually picks its style from its data. A named style takes an expression, so a state field selects the style:
 

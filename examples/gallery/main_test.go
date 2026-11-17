@@ -2,16 +2,18 @@ package main
 
 import (
 	"flag"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
-	tea "charm.land/bubbletea/v2"
-	"github.com/charmbracelet/x/ansi"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/wow-look-at-my/tml"
+	"github.com/wow-look-at-my/tml/cell"
+	"github.com/wow-look-at-my/tml/input"
 )
 
 var update = flag.Bool("update", false, "rewrite the golden files")
@@ -29,9 +31,49 @@ func gallery(t *testing.T) *model {
 	m, err := newModel()
 	require.NoError(t, err)
 	m.width, m.height = 92, 26
-	m.query = "sched"
+	m.query, m.cursor = "sched", len("sched")
 	m.progress = 62
 	return m
+}
+
+// program is a program around the model. A test steps the loop itself with send, and runs the program only to see
+// whether a quit is queued.
+func program(t *testing.T, m *model) *tml.Program {
+	t.Helper()
+	p, err := tml.NewProgram(m.view, m, tml.ProgramOptions{NoInput: true, Output: io.Discard, Width: m.width, Height: m.height})
+	require.NoError(t, err)
+	return p
+}
+
+// send does what the program's loop does with one message. The model sees it first, the focus ring gets what the
+// model leaves, and the frame is painted again. It reports whether the model consumed the message.
+func send(t *testing.T, m *model, p *tml.Program, msg tml.Msg) bool {
+	t.Helper()
+	consumed := m.Update(p, msg)
+	if !consumed {
+		for _, event := range m.view.UI().Update(msg) {
+			m.Update(p, event)
+		}
+	}
+	require.NotContains(t, m.frameOf(), "tml: ", "the view failed to render")
+	return consumed
+}
+
+// quits runs the program and reports whether it ends by itself, which it does only when a quit is already queued. A
+// program that keeps running is told to quit, so the test does not leak it.
+func quits(t *testing.T, p *tml.Program) bool {
+	t.Helper()
+	done := make(chan error, 1)
+	go func() { done <- p.Run() }()
+	select {
+	case err := <-done:
+		require.NoError(t, err)
+		return true
+	case <-time.After(time.Second):
+		p.Quit()
+		require.NoError(t, <-done)
+		return false
+	}
 }
 
 // Every widget the library ships is in some of these sections, so the goldens are the library's own regression
@@ -55,7 +97,7 @@ func TestEverySectionRenders(t *testing.T) {
 
 			out := m.frameOf()
 			require.NotContains(t, out, "tml: ", "the view failed to render")
-			golden(t, file, ansi.Strip(out))
+			golden(t, file, cell.Strip(out))
 		})
 	}
 }
@@ -96,10 +138,10 @@ func TestClickingATabSwitchesSection(t *testing.T) {
 	require.NotContains(t, m.frameOf(), "tml: ")
 
 	target := control(t, m, "tab-media")
-	press(m, target.Rect.X+1, target.Rect.Y+1)
+	press(t, m, program(t, m), target.Rect.X+1, target.Rect.Y+1)
 
 	assert.Equal(t, "media", m.tab)
-	assert.Contains(t, ansi.Strip(m.frameOf()), "Media ─", "the media section is the one drawn")
+	assert.Contains(t, cell.Strip(m.frameOf()), "Media ─", "the media section is the one drawn")
 }
 
 // Typing belongs to the field while the field has focus, so the ring's own keys and the quit key both have to stand
@@ -107,14 +149,17 @@ func TestTypingGoesToTheFocusedField(t *testing.T) {
 	m := gallery(t)
 	require.NotContains(t, m.frameOf(), "tml: ")
 	require.True(t, m.view.UI().Focus("search"))
+	p := program(t, m)
 
 	for _, r := range "qq" {
-		m.Update(tea.KeyPressMsg{Code: r})
+		assert.False(t, send(t, m, p, input.ParseKey(string(r))), "q is a letter while the field has the keyboard")
 	}
 	assert.Equal(t, "schedqq", m.query)
+	assert.Equal(t, len("schedqq"), m.cursor)
 
-	m.Update(tea.KeyPressMsg{Code: tea.KeyBackspace})
+	send(t, m, p, input.ParseKey("backspace"))
 	assert.Equal(t, "schedq", m.query)
+	assert.False(t, quits(t, p), "typing q into the field does not quit")
 }
 
 func TestQuitKeysOnlyBindOutsideAField(t *testing.T) {
@@ -122,21 +167,25 @@ func TestQuitKeysOnlyBindOutsideAField(t *testing.T) {
 	require.NotContains(t, m.frameOf(), "tml: ")
 	require.True(t, m.view.UI().Focus("save"))
 
-	_, cmd := m.Update(tea.KeyPressMsg{Code: 'q'})
-	assert.NotNil(t, cmd, "q quits when the keyboard is not in a field")
+	p := program(t, m)
+	assert.True(t, send(t, m, p, input.ParseKey("q")))
+	assert.True(t, quits(t, p), "q quits when the keyboard is not in a field")
 }
 
 // Escape backs out of the popup before it backs out of the program: a modal that quits the whole thing on the key
 func TestEscapeClosesThePopupFirst(t *testing.T) {
 	m := gallery(t)
 	m.confirming = true
+	require.NotContains(t, m.frameOf(), "tml: ")
 
-	_, cmd := m.Update(tea.KeyPressMsg{Code: tea.KeyEscape})
+	p := program(t, m)
+	assert.True(t, send(t, m, p, input.ParseKey("esc")))
 	assert.False(t, m.confirming)
-	assert.Nil(t, cmd)
+	assert.False(t, quits(t, p), "closing the popup does not quit")
 
-	_, cmd = m.Update(tea.KeyPressMsg{Code: tea.KeyEscape})
-	assert.NotNil(t, cmd, "with nothing left to dismiss it quits")
+	p = program(t, m)
+	assert.True(t, send(t, m, p, input.ParseKey("esc")))
+	assert.True(t, quits(t, p), "with nothing left to dismiss it quits")
 }
 
 // Activating Quit and then Yes leaves through the popup.
@@ -144,14 +193,16 @@ func TestConfirmingQuitEndsTheProgram(t *testing.T) {
 	m := gallery(t)
 	require.NotContains(t, m.frameOf(), "tml: ")
 
+	p := program(t, m)
 	quit := control(t, m, "quit")
-	press(m, quit.Rect.X+1, quit.Rect.Y+1)
+	press(t, m, p, quit.Rect.X+1, quit.Rect.Y+1)
 	require.True(t, m.confirming)
-	require.NotContains(t, m.frameOf(), "tml: ")
+	assert.False(t, m.quitting, "Quit only asks")
 
 	yes := control(t, m, "yes")
-	_, cmd := press(m, yes.Rect.X+1, yes.Rect.Y+1)
-	assert.NotNil(t, cmd)
+	press(t, m, p, yes.Rect.X+1, yes.Rect.Y+1)
+	assert.True(t, m.quitting)
+	assert.True(t, quits(t, p))
 }
 
 // The log is a scrolling region, not a tab stop.
@@ -161,10 +212,10 @@ func TestTheWheelScrollsTheLog(t *testing.T) {
 	require.NotContains(t, m.frameOf(), "tml: ")
 
 	log := control(t, m, "log")
-	m.Update(tea.MouseWheelMsg{X: log.Rect.X + 1, Y: log.Rect.Y + 1, Button: tea.MouseWheelDown})
+	send(t, m, program(t, m), input.Mouse{X: log.Rect.X + 1, Y: log.Rect.Y + 1, Button: input.WheelDown, Action: input.Wheel})
 
 	assert.Equal(t, 1, m.offset)
-	assert.NotContains(t, ansi.Strip(m.frameOf()), "step 1 finished", "the first line has scrolled off")
+	assert.NotContains(t, cell.Strip(m.frameOf()), "step 1 finished", "the first line has scrolled off")
 }
 
 // A list is a single control to the ring, so clicking a row is the host reading the event's own coordinates.
@@ -174,17 +225,30 @@ func TestClickingAListRowSelectsIt(t *testing.T) {
 	require.NotContains(t, m.frameOf(), "tml: ")
 
 	list := control(t, m, "services")
-	press(m, list.Rect.X+2, list.Rect.Y+3)
+	press(t, m, program(t, m), list.Rect.X+2, list.Rect.Y+3)
 
 	assert.Equal(t, 3, m.selected)
-	assert.Contains(t, ansi.Strip(m.frameOf()), "> scheduler", "the cursor moved to the row that was clicked")
+	assert.Contains(t, cell.Strip(m.frameOf()), "> scheduler", "the cursor moved to the row that was clicked")
+}
+
+// A table's rows start below its header and the rule under it, and a click lands on the row it is over.
+func TestClickingATableRowSelectsIt(t *testing.T) {
+	m := gallery(t)
+	m.tab = "data"
+	require.NotContains(t, m.frameOf(), "tml: ")
+
+	table := control(t, m, "steps")
+	press(t, m, program(t, m), table.Rect.X+1, table.Rect.Y+4)
+
+	assert.Equal(t, 2, m.step, "the third row, under the header and its rule")
 }
 
 // press clicks and releases over a single point, which is what activates a
 // control.
-func press(m *model, x, y int) (tea.Model, tea.Cmd) {
-	m.Update(tea.MouseClickMsg{X: x, Y: y, Button: tea.MouseLeft})
-	return m.Update(tea.MouseReleaseMsg{X: x, Y: y, Button: tea.MouseLeft})
+func press(t *testing.T, m *model, p *tml.Program, x, y int) {
+	t.Helper()
+	send(t, m, p, input.Mouse{X: x, Y: y, Button: input.ButtonLeft, Action: input.Press})
+	send(t, m, p, input.Mouse{X: x, Y: y, Button: input.ButtonLeft, Action: input.Release})
 }
 
 func control(t *testing.T, m *model, id string) tml.Target {

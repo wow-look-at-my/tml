@@ -252,7 +252,7 @@ func parseStyle(path string, el *validator.Element) (*Style, error) {
 
 	style := &Style{Name: name, Pos: pos}
 	style.Extends, _ = attr(el, "extends")
-	// Every remaining attribute is a style property. They are validated by the style package against the lipgloss
+	// Every remaining attribute is a style property. They are validated by the style package against the style
 	for _, a := range el.Attrs {
 		if isNamespaceDecl(a) || a.Name == "name" || a.Name == "extends" {
 			continue

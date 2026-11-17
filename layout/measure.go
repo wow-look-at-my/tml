@@ -3,13 +3,13 @@
 package layout
 
 import (
-	"charm.land/lipgloss/v2"
-
+	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/sema"
 )
 
 // measure computes each box's desired outer size within the given constraints.
 func (e *Engine) measure(box *Box, c Constraints) Size {
+	box.offered = c
 	// A collapsed element gives its slot back before anything is measured, so its parent lays out without it.
 	if box.Visibility == Collapsed {
 		box.desired = Size{}
@@ -61,7 +61,7 @@ func (e *Engine) measureContent(box *Box, inner Constraints) Size {
 	var content Size
 	switch box.Name {
 	case "#text":
-		content = Size{W: e.opts.Measure.Width(box.Text), H: lipgloss.Height(box.Text)}
+		content = Size{W: e.opts.Measure.Width(box.Text), H: cell.Height(box.Text)}
 	case "Text":
 		content = e.measureText(box, inner)
 	case "Spacer":
@@ -80,21 +80,20 @@ func (e *Engine) measureContent(box *Box, inner Constraints) Size {
 
 // measureText reports the height the text needs after wrapping.
 func (e *Engine) measureText(box *Box, inner Constraints) Size {
-	// An empty Text is an empty line, one row tall, as lipgloss.Height says. A blank line in a list of lines must keep its row.
+	// An empty Text is an empty line, one row tall. A blank line in a list of lines must keep its row.
 	if box.Text == "" {
 		return Size{H: 1}
 	}
 	natural := e.opts.Measure.Width(box.Text)
 	if inner.MaxW <= 0 || natural <= inner.MaxW {
-		return Size{W: natural, H: lipgloss.Height(box.Text)}
+		return Size{W: natural, H: cell.Height(box.Text)}
 	}
 	// A clipped Text is as tall as it has lines, however narrow it gets, so a long line cannot push a card's border down.
 	if box.Overflow == OverflowClip || box.Overflow == OverflowEllipsis {
-		return Size{W: inner.MaxW, H: lipgloss.Height(box.Text)}
+		return Size{W: inner.MaxW, H: cell.Height(box.Text)}
 	}
-	// lipgloss.Wrap is the call Style.Render makes to wrap, so this counts the lines the paint will produce.
-	wrapped := lipgloss.Wrap(box.Text, inner.MaxW, "")
-	return Size{W: inner.MaxW, H: lipgloss.Height(wrapped)}
+	// The painter wraps with the same call, so this counts the rows it draws.
+	return Size{W: inner.MaxW, H: len(e.opts.Measure.Wrap(box.Text, inner.MaxW))}
 }
 
 func (e *Engine) measureChildren(box *Box, inner Constraints) Size {
@@ -140,14 +139,48 @@ func fillForStars(box *Box, content Size, inner Constraints) Size {
 	return content
 }
 
+// measureStackChildren measures a stack's children. In a row with a known width, a star child is measured against
+// the share of the row. It will get, not against the whole row. Text inside it then wraps where it will be drawn,
+// and the row is as tall as that needs.
+func (e *Engine) measureStackChildren(box *Box, inner Constraints, vertical bool, gap int) {
+	used, weight, placed := 0, 0, 0
+	for _, child := range box.Children {
+		size := e.measure(child, inner)
+		if !stackPlaces(child, vertical) {
+			continue
+		}
+		placed++
+		if !vertical && child.width.Kind == sema.LengthStar {
+			weight += child.width.Weight
+			continue
+		}
+		used += size.W
+	}
+	if vertical || weight == 0 || inner.MaxW <= 0 {
+		return
+	}
+	leftover := max(0, inner.MaxW-used-gap*max(0, placed-1))
+	for _, child := range box.Children {
+		if child.width.Kind != sema.LengthStar || !stackPlaces(child, vertical) {
+			continue
+		}
+		// A share of no cells is no bound to a measure, so a child with no room is left as it was measured.
+		if share := leftover * child.width.Weight / weight; share > 0 {
+			e.measure(child, Constraints{MaxW: share, MaxH: inner.MaxH})
+		}
+	}
+}
+
 func (e *Engine) measureStack(box *Box, inner Constraints) Size {
 	vertical := box.vertical()
 	gap := box.gap()
 
+	e.measureStackChildren(box, inner, vertical, gap)
+
 	var content Size
 	placed := false
 	for _, child := range box.Children {
-		size := e.measure(child, inner)
+		size := child.desired
 		if !stackPlaces(child, vertical) {
 			continue
 		}

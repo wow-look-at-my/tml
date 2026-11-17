@@ -4,10 +4,10 @@ import (
 	"strings"
 	"testing"
 
-	"charm.land/lipgloss/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/layout"
 	"github.com/wow-look-at-my/tml/sema"
 	"github.com/wow-look-at-my/tml/style"
@@ -56,7 +56,7 @@ func TestOverflowingContentIsClippedNotWrapped(t *testing.T) {
 	out := renderTree(t, el("Box", map[string]string{"width": "12"}, row), 40, 6)
 
 	for _, line := range strings.Split(out, "\n") {
-		assert.LessOrEqual(t, lipgloss.Width(line), 12, "no line may exceed the box it was given")
+		assert.LessOrEqual(t, cell.Width(line), 12, "no line may exceed the box it was given")
 	}
 	assert.NotContains(t, out, "bbbbbbbbbb", "the overflow is cut off, not folded onto another line")
 }
@@ -104,9 +104,9 @@ func TestTextStillWrapsWithinItsOwnBox(t *testing.T) {
 	stack := el("Stack", nil, text("the quick brown fox"))
 	out := renderTree(t, stack, 9, 6)
 
-	assert.Greater(t, lipgloss.Height(out), 1, "text wraps rather than being clipped")
+	assert.Greater(t, cell.Height(strings.TrimRight(out, " \n")), 1, "text wraps rather than being clipped")
 	for _, line := range strings.Split(out, "\n") {
-		assert.LessOrEqual(t, lipgloss.Width(line), 9)
+		assert.LessOrEqual(t, cell.Width(line), 9)
 	}
 }
 

@@ -5,6 +5,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/wow-look-at-my/tml/cell"
+	"github.com/wow-look-at-my/tml/widget/widgettest"
 )
 
 func TestSparklinePlotsAgainstItsLargestValue(t *testing.T) {
@@ -13,20 +16,26 @@ func TestSparklinePlotsAgainstItsLargestValue(t *testing.T) {
 	w, h := line.Measure(0, 0)
 	assert.Equal(t, 4, w)
 	assert.Equal(t, 1, h)
-	assert.Equal(t, "▁▂▄█", line.Render(4, 1))
+	assert.Equal(t, "▁▂▄█", widgettest.Text(line, 4, 1))
 }
 
 func TestSparklineScalesAgainstADeclaredMaximum(t *testing.T) {
 	line := build(t, "Sparkline", map[string]string{"values": "0,4", "max": "8"})
 
-	assert.Equal(t, "▁▄", line.Render(2, 1))
+	assert.Equal(t, "▁▄", widgettest.Text(line, 2, 1))
 }
 
 // A series longer than the space keeps its most recent points, because that is the end of a series anybody is reading.
 func TestSparklineKeepsTheMostRecentPoints(t *testing.T) {
 	line := build(t, "Sparkline", map[string]string{"values": "8,8,0,8"})
 
-	assert.Equal(t, "▁█", line.Render(2, 1))
+	assert.Equal(t, "▁█", widgettest.Text(line, 2, 1))
+}
+
+func TestSparklineTakesAColour(t *testing.T) {
+	line := build(t, "Sparkline", map[string]string{"values": "1,2", "color": "#ff0000"})
+
+	assert.Equal(t, cell.RGB(255, 0, 0), widgettest.Draw(line, 0, 0).At(1, 0).Style.Fg)
 }
 
 func TestSparklineRejectsAValueThatIsNotANumber(t *testing.T) {

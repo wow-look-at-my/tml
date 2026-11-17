@@ -29,7 +29,7 @@ type Constraints struct{ MaxW, MaxH int }
 type Overflow string
 
 const (
-	// OverflowWrap continues the line on the next row, which is lipgloss's own behavior and the default here.
+	// OverflowWrap continues the line on the next row. It is the default.
 	OverflowWrap Overflow = "wrap"
 	// OverflowClip cuts the line at the edge.
 	OverflowClip Overflow = "clip"
@@ -85,6 +85,8 @@ type Box struct {
 	attrs   map[string]string
 	slot    string
 	desired Size
+	// offered is the space the box was last measured against. Arrange measures again when it gives a different width.
+	offered Constraints
 	width   sema.Length
 	height  sema.Length
 
@@ -109,7 +111,7 @@ type Options struct {
 	Dark bool
 	// Interaction carries focus and pointer state across frames. A nil value means nothing is focusable.
 	Interaction Interaction
-	// Measure is how wide a string is, in cells; nil means lipgloss.Width. See widget.Measurer.
+	// Measure is how wide a grapheme cluster is, in cells. Nil is the Unicode default. See widget.Measurer.
 	Measure widget.Measurer
 	// Override supplies attributes that replace what the document wrote, for the element carrying the given id.
 	Override func(id string) map[string]string
@@ -435,7 +437,7 @@ func lengthAttr(node *sema.Node, attrs map[string]string, name string) (sema.Len
 	return length, nil
 }
 
-// outer is the space a box consumes beyond its content: margin plus the frame lipgloss draws (padding and border).
+// outer is the space a box consumes beyond its content: margin, border and padding.
 func (b *Box) outer() (w, h int) {
 	frameW, frameH := b.Style.Frame()
 	return frameW + b.Style.Margin.Horizontal(), frameH + b.Style.Margin.Vertical()

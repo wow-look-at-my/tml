@@ -1,14 +1,15 @@
-// capture drives each shot in a real terminal -- ttyd serving a PTY, xterm.js in Chromium -- and writes a PNG of it.
-import { spawn } from "node:child_process";
+// capture runs each shot in Ghostty, on a virtual display, and writes a PNG of the window.
+import { execFile, spawn } from "node:child_process";
 import { existsSync } from "node:fs";
-import { mkdir, writeFile } from "node:fs/promises";
-import net from "node:net";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import process from "node:process";
-
-import { chromium } from "playwright";
+import { promisify } from "node:util";
 
 import { shots } from "./shots.mjs";
+
+const run = promisify(execFile);
 
 // The terminal every shot is taken in, unless it asks for its own.
 const terminal = { cols: 96, rows: 30 };
@@ -18,20 +19,18 @@ const out = path.join(repo, "build/shots");
 // The site the pictures are published to.
 const site = "https://sites.pazer.build/tml";
 
-// The browser to drive: a Chromium already on the machine, or the Playwright
-// installs for itself. /usr/bin/chromium-browser is deliberately.
-const candidates = [
-	process.env.CHROME,
-	"/opt/pw-browsers/chromium",
-	"/usr/bin/chromium",
-	"/usr/bin/google-chrome",
-].filter(Boolean);
+// The X class of a Ghostty window, which is how the capture finds it.
+const windowClass = "com.mitchellh.ghostty";
 
-// browserPath is undefined when none of them is there, which leaves Playwright to find its own. `npx playwright install chromium` is the other way to have one, and how CI gets it.
-function browserPath() {
-	const found = candidates.find((path) => existsSync(path));
-	console.log(found ? `browser: ${found}` : "browser: Playwright's own");
-	return found;
+// need fails by name when a tool the capture runs is not on the machine.
+async function need(tools) {
+	const missing = [];
+	for (const tool of tools) {
+		await run("which", [tool]).catch(() => missing.push(tool));
+	}
+	if (missing.length > 0) {
+		throw new Error(`not installed: ${missing.join(", ")}. docs/screenshots.md says what the capture needs.`);
+	}
 }
 
 const goos = { linux: "linux", darwin: "darwin", win32: "windows" }[process.platform] ?? process.platform;
@@ -46,33 +45,71 @@ function binary(name) {
 	return found;
 }
 
-async function freePort() {
-	const server = net.createServer();
-	await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
-	const { port } = server.address();
-	await new Promise((resolve) => server.close(resolve));
-	return port;
+// display starts a virtual X display. The server picks a free number and writes it to the descriptor it was given.
+async function display() {
+	const server = spawn("Xvfb", ["-displayfd", "3", "-screen", "0", "2400x1600x24", "-nolisten", "tcp"], {
+		stdio: ["ignore", "ignore", "ignore", "pipe"],
+	});
+	const number = await new Promise((resolve, reject) => {
+		server.stdio[3].once("data", (chunk) => resolve(String(chunk).trim()));
+		server.once("error", reject);
+		server.once("exit", (code) => reject(new Error(`Xvfb exited with ${code} before it named a display`)));
+	});
+	return { name: `:${number}`, stop: () => server.kill("SIGTERM") };
 }
 
-// serve starts ttyd on the command, in the DOM renderer so the terminal's
-// text is in the page. The capture waits on what was drawn rather than on a
-// timer, and a canvas would leave it with nothing to look at.
-async function serve(shot) {
-	const port = await freePort();
-	const ttyd = spawn("ttyd", [
-		"-p", String(port),
-		"-W",
-		"-t", "rendererType=dom",
-		"-t", "fontSize=15",
-		"-t", "fontFamily=DejaVu Sans Mono,monospace",
-		"-t", "theme={\"background\":\"#12131a\"}",
-		binary(shot.command),
-		...(shot.args ?? []),
-	], { cwd: repo, stdio: "ignore" });
+// open starts Ghostty on the shot's command, in a window of exactly cols x rows. Ghostty reads no file of the
+// machine's, so the picture depends on these options alone. The program's inspection socket is at a path the capture
+// chose, which is how it reads what the program painted.
+function open(shot, env, socket) {
+	const ghostty = spawn("ghostty", [
+		"--config-default-files=false",
+		"--gtk-single-instance=false",
+		"--window-decoration=none",
+		`--window-width=${shot.cols ?? terminal.cols}`,
+		`--window-height=${shot.rows ?? terminal.rows}`,
+		"--window-padding-x=0",
+		"--window-padding-y=0",
+		"--font-size=11",
+		"--background=#12131a",
+		"--confirm-close-surface=false",
+		"--resize-overlay=never",
+		"--cursor-style-blink=false",
+		"-e", binary(shot.command), ...(shot.args ?? []),
+	], { cwd: repo, env: { ...env, TML_INSPECT_SOCKET: socket }, stdio: ["ignore", "ignore", "pipe"] });
 
-	await waitFor(() => fetch(`http://127.0.0.1:${port}/`).then((r) => r.ok, () => false), `ttyd on ${port}`);
-	return { port, stop: () => ttyd.kill("SIGTERM") };
+	let log = "";
+	ghostty.stderr.on("data", (chunk) => { log += chunk; });
+	const exited = new Promise((resolve) => ghostty.once("exit", resolve));
+	return {
+		log: () => log.trim().split("\n").slice(-12).join("\n"),
+		stop: async () => {
+			ghostty.kill("SIGTERM");
+			await exited;
+		},
+	};
 }
+
+// frame is what the program has painted, as its own inspector reports it. Null is a program that has not painted.
+async function frame(socket) {
+	try {
+		const { stdout } = await run(binary("tml"), ["frame", "--socket", socket]);
+		return JSON.parse(stdout);
+	} catch {
+		return null;
+	}
+}
+
+// type sends the shot's keys to the focused window. One character is typed. A longer name is an X keysym, like Return.
+async function type(env, keys) {
+	for (const key of keys) {
+		const args = [...key].length === 1 ? ["type", "--delay", "0", key] : ["key", key];
+		await run("xdotool", args, { env });
+		await sleep(60);
+	}
+}
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function waitFor(check, what, timeout = 15000) {
 	const deadline = Date.now() + timeout;
@@ -80,81 +117,63 @@ async function waitFor(check, what, timeout = 15000) {
 		if (await check()) {
 			return;
 		}
-		await new Promise((r) => setTimeout(r, 100));
+		await sleep(100);
 	}
 	throw new Error(`timed out waiting for ${what}`);
 }
 
-// size makes the terminal exactly cols x rows. xterm sizes itself to the window.
-// The window is what has to be worked out: measure a cell, measure what the page
-// puts around the terminal, then resize to fit. Anything else leaves the picture
-// at whatever size the browser happened to open at, and a layout that fills its
-// terminal would differ every run.
-async function size(page, cols, rows) {
-	const metrics = async () => page.evaluate(() => {
-		const measure = document.querySelector(".xterm-char-measure-element");
-		const screen = document.querySelector(".xterm-screen");
-		const rows = document.querySelector(".xterm-rows");
-		return {
-			cellW: measure.getBoundingClientRect().width / measure.textContent.length,
-			cellH: measure.getBoundingClientRect().height,
-			screenW: screen.getBoundingClientRect().width,
-			viewW: window.innerWidth,
-			viewH: window.innerHeight,
-			rows: rows.children.length,
-		};
-	});
-
-	const before = await metrics();
-	await page.setViewportSize({
-		width: Math.ceil(cols * before.cellW) + (before.viewW - before.screenW) + 1,
-		height: Math.ceil(rows * before.cellH) + 16,
-	});
-	await page.waitForTimeout(700);
-
-	const after = await metrics();
-	const got = Math.floor(after.screenW / after.cellW);
-	if (got !== cols || after.rows !== rows) {
-		throw new Error(`terminal came out ${got}x${after.rows}, wanted ${cols}x${rows}`);
-	}
+// photograph writes the window to file and reports how many colours the picture holds.
+async function photograph(env, window, file) {
+	await run("import", ["-window", window, file], { env });
+	const { stdout } = await run("identify", ["-format", "%k", file], { env });
+	return Number(stdout);
 }
 
-// capture takes one picture. It waits for the program to have painted -- a
-// terminal that has not drawn yet is a black rectangle. A fixed sleep is a
-// guess that goes stale on a slower machine.
-async function capture(browser, shot) {
+// capture takes one picture. It waits on what the program painted, read through the program's own inspector. A
+// program that died on its arguments answers nothing, and the shot fails rather than photograph an empty terminal.
+async function capture(env, work, shot) {
 	if (!shot.expect) {
 		throw new Error(`shot ${shot.name} has no expect: there would be nothing to check the picture against`);
 	}
-	const { port, stop } = await serve(shot);
-	const page = await browser.newPage({ viewport: { width: 1200, height: 700 }, deviceScaleFactor: 2 });
-	// xterm pads a row with non-breaking spaces, which read as ordinary spaces and match nothing.
-	const screen = async () => (await page.locator(".xterm-rows").innerText()).replaceAll("\u00a0", " ");
+	const cols = shot.cols ?? terminal.cols;
+	const rows = shot.rows ?? terminal.rows;
+	const socket = path.join(work, `${shot.name}.sock`);
+	const ghostty = open(shot, env, socket);
 	try {
-		await page.goto(`http://127.0.0.1:${port}/`);
-		await page.waitForSelector(".xterm-rows");
-		await waitFor(async () => (await screen()).trim().length > 0, `${shot.name} to draw`);
-		await size(page, shot.cols ?? terminal.cols, shot.rows ?? terminal.rows);
-
-		for (const key of shot.keys ?? []) {
-			await page.keyboard.press(key);
-			await page.waitForTimeout(60);
-		}
-		// The examples animate on a tick, so a spinner is mid-frame whenever the picture is taken.
-		await page.waitForTimeout(400);
+		// These layouts fill their terminal, so a window of another size is another picture.
+		let painted = null;
 		try {
-			await waitFor(async () => (await screen()).includes(shot.expect), shot.expect, 5000);
+			await waitFor(async () => {
+				painted = await frame(socket);
+				return painted?.width === cols && painted?.height === rows;
+			}, `${shot.name} to draw`);
 		} catch {
-			throw new Error(`${shot.name} never showed ${JSON.stringify(shot.expect)}; the terminal held:\n${await screen()}`);
+			const got = painted ? `the terminal came out ${painted.width}x${painted.height}` : "the program painted nothing";
+			throw new Error(`${shot.name} wanted ${cols}x${rows} and ${got}. Ghostty said:\n${ghostty.log()}`);
 		}
+
+		const { stdout } = await run("xdotool", ["search", "--onlyvisible", "--class", windowClass], { env });
+		const window = stdout.trim().split("\n").pop();
+		// No window manager runs here, so nothing gives the window the keyboard unless the capture does.
+		await run("xdotool", ["mousemove", "2390", "1590"], { env });
+		await run("xdotool", ["windowfocus", window], { env });
+		await type(env, shot.keys ?? []);
+
+		try {
+			await waitFor(async () => (await frame(socket))?.text.includes(shot.expect), shot.expect, 5000);
+		} catch {
+			const held = (await frame(socket))?.text ?? "";
+			throw new Error(`${shot.name} never showed ${JSON.stringify(shot.expect)}; the program had painted:\n${held}`);
+		}
+		// The program has painted it. Ghostty draws what it read on its next frame.
+		await sleep(400);
 
 		const file = path.join(out, `${shot.name}.png`);
-		await page.locator(".xterm-screen").screenshot({ path: file });
+		await waitFor(async () => await photograph(env, window, file) > 8, `${shot.name} to appear in the terminal`);
 		console.log(`wrote ${path.relative(repo, file)}`);
 		return { ...shot, file: `${shot.name}.png` };
 	} finally {
-		await page.close();
-		stop();
+		await ghostty.stop();
 	}
 }
 
@@ -196,7 +215,7 @@ function index(taken, branch) {
 </style>
 <header>
 	<h1>tml screenshots</h1>
-	<p>Every picture is the example running in a real terminal -- ttyd serving a PTY, xterm.js in Chromium --
+	<p>Every picture is the example running in Ghostty, on a virtual display,
 	captured by <a href="https://github.com/wow-look-at-my/tml/blob/master/tools/shots/capture.mjs">tools/shots</a>.</p>
 </header>
 ${figures}
@@ -205,15 +224,30 @@ ${figures}
 }
 
 const branch = process.env.SHOTS_BRANCH ?? "";
+await need(["ghostty", "Xvfb", "xdotool", "import", "identify"]);
 await mkdir(out, { recursive: true });
-const browser = await chromium.launch({ executablePath: browserPath(), args: ["--no-sandbox"] });
+const work = await mkdtemp(path.join(os.tmpdir(), "tml-shots-"));
+const screen = await display();
+// Ghostty draws with OpenGL, which Mesa answers in software where there is no GPU. A scale of draws every cell at
+// twice its size, which is the sharpness a picture on a dense screen needs.
+const env = {
+	...process.env,
+	DISPLAY: screen.name,
+	GDK_BACKEND: "x11",
+	GDK_SCALE: "2",
+	GTK_A11Y: "none",
+	LIBGL_ALWAYS_SOFTWARE: "1",
+	XDG_CONFIG_HOME: path.join(work, "config"),
+	XDG_RUNTIME_DIR: work,
+};
 try {
 	const taken = [];
 	for (const shot of shots) {
-		taken.push(await capture(browser, shot));
+		taken.push(await capture(env, work, shot));
 	}
 	await writeFile(path.join(out, "index.html"), index(taken, branch));
 	console.log(`wrote ${path.relative(repo, path.join(out, "index.html"))}`);
 } finally {
-	await browser.close();
+	screen.stop();
+	await rm(work, { recursive: true, force: true });
 }

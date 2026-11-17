@@ -1,10 +1,10 @@
 # tml — Terminal Markup Language
 
-XML-based declarative language for defining reusable terminal components: typed properties, slots, layout panels and themes. XAML-flavoured. Compiles to a laid-out tree rendered with Lip Gloss and dropped into a Bubble Tea `View()`.
+XML-based declarative language for defining reusable terminal components: typed properties, slots, layout panels and themes. XAML-flavoured. Compiles to a laid-out tree, painted on a grid of cells by TML's own renderer. Run on the terminal by TML's own program loop.
 
-TML solves layout constraints and produces rects. Lip Gloss owns styling and compositing. TML emits no ANSI and does no text wrapping.
+TML owns the whole path: layout produces rects, `render` paints cells from them, and `term` writes the cells that changed. There is no Bubble Tea, no Lip Gloss and no string compositing. See docs/renderer.md and docs/program.md.
 
-Width is `Options.Measure`, defaulting to `lipgloss.Width`. A terminal draws a ZWJ emoji in multiple cells or in a higher count, which depends on whether it agreed to mode 2027. A host that had that conversation supplies its own answer. This view's geometry then agrees with the rest of its screen. The measure governs layout. Lip Gloss still measures internally while it paints.
+Width is `Options.Measure`, defaulting to the Unicode width of a grapheme cluster. A terminal draws a ZWJ emoji in multiple cells or in a higher count, which depends on whether it agreed to mode 2027. A host that had that conversation supplies its own answer. This view's geometry then agrees with the rest of its screen. The measure governs layout and paint alike.
 
 ## Build & Test
 
@@ -14,13 +14,12 @@ go-toolchain
 
 Handles module tidying, vet, tests with coverage, and the build. Never run a bare `go` command, and never pipe or redirect `go-toolchain` output.
 
-## Charm dependencies
+## Dependencies
 
-Target the v2 line via the `charm.land/*` module paths, not `github.com/charmbracelet/*`. The old paths still resolve on the proxy but declare a different module path and fail the build. Requires Go >= 1.25.0.
+The renderer and the runtime are first-party. Do not add a Charm module (`charm.land/*`, `github.com/charmbracelet/*`) back, for a test either: `internal/vt` is the terminal a test replays output through.
 
-- `charm.land/lipgloss/v2` — styling, measurement, compositing
-- `charm.land/bubbletea/v2` — `Model.View()` returns a `tea.View`, not a string
-- `charm.land/bubbles/v2` — every component is `Update(tea.Msg) (Model, tea.Cmd)` + `View() string` + `SetWidth(int)`
+- `github.com/clipperhouse/displaywidth` — grapheme clusters and their widths, behind `cell.Measure`
+- `golang.org/x/sys` — raw mode, the window size and the input poll, behind `term`
 
 ## Language
 
@@ -28,21 +27,21 @@ Target the v2 line via the `charm.land/*` module paths, not `github.com/charmbra
 - Strict XML 1.1 — every file opens with the XML declaration. Inherited from xml-validator.
 - `<Slot>` declares and marks the insertion point in one element. Its children are fallback content.
 - Call sites fill named slots with XAML property-element syntax: `<Card.actions>…</Card.actions>`.
-- Expressions are `{name}`, `{name.path}`, `{theme.token}`, `{not name}`, interpolated in text and attribute values. Unknown names are a hard error at analysis time. No arithmetic, no calls.
+- Unknown names are a hard error at analysis time. No arithmetic, no calls.
 - `itemsSource`/`itemTemplate` on any element repeat a `<DataTemplate>` over a list the host supplies. A repeated thing is therefore a widget rather than a line somebody else already drew. An item's fields are the template's property values, by name. A field nobody declared is an error rather than a blank cell.
 - See docs/language.md for the full grammar and the built-in element reference.
 
 ## Layout
 
-Two-pass measure/arrange. Implemented panels: `Stack`, `Grid`, `Canvas`, `Box`, `Text`, `Spacer`. Sizing is `auto`, fixed cells, or `*` star share, and a star size propagates upward so an auto-sized ancestor cannot collapse it.
+Two-pass measure/arrange. Implemented panels. Sizing is `auto`, fixed cells, or `*` star share, and a star size propagates upward so an auto-sized ancestor cannot collapse it.
 
-`Grid` declares tracks and each child declares placement through attached properties (`Grid.row`, `Grid.column`, and the span variants). Track solving is fixed, then auto, then star. Grid children are composited through lipgloss layers rather than joined, since they sit at coordinates.
+`Grid` declares tracks and each child declares placement through attached properties (`Grid.row`, `Grid.column`, and the span variants). Track solving is fixed, then auto, then star. Grid children sit at coordinates, and a later child covers an earlier one where their cells overlap.
 
 A `Grid` track takes a range (`*[8..32]`), and `collapse` names the columns that give way, in order, when the grid is too narrow. A hidden column takes no width and no gap, and `render` skips a grid child with no area. See docs/language.md.
 
-`Canvas` positions children freely through `Canvas.x`, `Canvas.y` and `Canvas.anchor`, and fills whatever it is offered rather than shrinking. A widget can name its own default anchor, which is how `<Popup>` centres itself.
+`Canvas` positions children freely, and fills whatever it is offered rather than shrinking. A widget can name its own default anchor, which is how `<Popup>` centres itself.
 
-`Text` wraps by default, and `overflow="clip"` or `overflow="ellipsis"` cuts each line at the width instead. A clipped Text keeps its line count however narrow it gets. A card that holds a log tail therefore keeps its height when one line runs long. Clipping happens in `render`, because `MaxWidth` cuts without marking the cut.
+`Text` wraps by default, and `overflow="clip"` or `overflow="ellipsis"` cuts each line at the width instead. A clipped Text keeps its line count however narrow it gets. A card that holds a log tail therefore keeps its height when one line runs long. Layout counts a wrapped Text's rows with the same `cell.Measure.Wrap` call the painter draws with.
 
 `Dock` is NOT implemented. It is deliberately absent from `sema.Builtins`, so using it is an unknown-element error rather than a silent blank. Add a panel to that list only once it lays out.
 
@@ -57,7 +56,9 @@ Containers go through the public `widget.Composer`/`Arranger` seam, not through 
 
 ## Interaction
 
-Any element takes an `id` and an `action`. `view.UI().Update(msg)` turns a Bubble Tea message into an `Activated`, `FocusMoved` or `Scrolled` event that carries that id and action. Layout asks the UI for each element's state before it measures. It then publishes where everything landed. A click therefore resolves against the frame the user looks at.
+Any element takes an `id` and an `action`. Layout asks the UI for each element's state before it measures. It then publishes where everything landed. A click therefore resolves against the frame the user looks at.
+
+A focused widget that implements `widget.Keyed` takes keys before the ring does. A `Textbox` edits itself this way and holds nothing: the edit comes back as a `Changed` event. The host hands the value and the cursor back as attributes.
 
 The focus ring is the widgets that take focus. The pointer also reaches anything else with an id, which is what lets the wheel find a `Scrollbox`. A widget that implements `Focusable` and refuses is disabled and reachable by neither.
 
@@ -73,36 +74,47 @@ A list of data-template items too long to lay out scrolls through `tml.Window` (
 
 Delegated to `github.com/wow-look-at-my/xml-validator`: strict XML 1.1, namespace validation, UTF-8/BOM rejection, and line and column positions on elements and attributes alike. An attribute-scoped diagnostic therefore points at the attribute, not at the element several columns to its left. TML contains no XML parser.
 
-`tml.schema.xsd` is the grammar of a file's DECLARATIONS — `<Component>`, `<Property>`, `<Import>`, `<DataTemplate>`, `<Theme>`, `<Token>`, `<Style>` — for an editor, and gated by the `validate-xml` job. The `<Template>` body is deliberately unchecked. It names components the file imported and widgets the host bound. This validator allows only `processContents="strict"`, which demands a global declaration for every element it matches. `sema/` is the authority on the whole file. Other rules the schema cannot reach: a root in the incorrect namespace, and a style attribute's vocabulary when a `{theme.token}` supplies the value.
+The `<Template>` body is deliberately unchecked. It names components the file imported and widgets the host bound. This validator allows only `processContents="strict"`, which demands a global declaration for every element it matches. `sema/` is the authority on the whole file. Other rules the schema cannot reach: a root in the incorrect namespace, and a style attribute's vocabulary when a `{theme.token}` supplies the value.
 
-## Gotchas that decide the design
+## Rendering
 
-- `Style.Inherit` skips padding and margin. As a result, the style cascade lives in TML's own model, not in Lip Gloss.
-- Layer z-index is global, not parent-scoped, and equal z values sort unstably — the renderer hands out distinct increasing z in document order.
-- docs/lipgloss-contract.md covers both in full, pinned by `render/lipgloss_contract_test.go`.
+- `cell/` is the drawing model.
+- `render.Paint` draws every box on the rect layout gave it, so the screen and the published geometry cannot disagree. Text style is inherited, `bg` fills the padding box, and a `Canvas` or `Grid` child covers what is beneath it.
+- A widget draws on a `cell.Canvas` (`widget.Native.Draw`). The engine paints a composer's children itself, clipped to the composer's insets. Never return a string from a widget.
+- `term.Screen` diffs frames and writes inside one synchronized update. `term.Decoder` reads keys, the pointer and pastes.
+- docs/renderer.md covers the model. `widget/widgettest` draws a widget alone for a test.
+
+## The program
+
+`tml.Program` (`program.go`) owns the terminal and the loop. An input value goes to the app first, then to the focus ring, and the ring's `Event`s come back through `Update`. The program steps animations itself and stops its clock when nothing moves. An unconsumed ctrl+c ends it with `ErrInterrupted`. See docs/program.md.
 
 ## Project structure
 
-The root is the importable package, so a Bubble Tea app imports `github.com/wow-look-at-my/tml` directly and the binary lives under `cmd/`.
+The root is the importable package, so a host imports `github.com/wow-look-at-my/tml` directly and the binary lives under `cmd/`.
 
-- `tml.go` — the façade: `Load`, `View`, `Props`, `Options`
+- `tml.go` — the façade
+- `program.go` — `Program`, the loop that owns the terminal, and the `App` a host implements
 - `ui.go` — the focus ring, the pointer, and the events a host reads
+- `cell/` — styles, colours, the cell buffer, the canvas, text measure and wrap, the SGR encoder
+- `term/` — raw mode and size, the input decoder, the frame-diffing screen writer
+- `input/` — the key, pointer, paste and resize values
+- `internal/vt/` — the small terminal a test replays output through
 - `syntax/` — AST, loader, `<Import>` resolution, diagnostics
 - `sema/` — property types, values, expressions, slot and component analysis, expansion
 - `layout/` — constraints, measure/arrange, the panels
-- `style/` — theme tokens, named styles, resolution to `lipgloss.Style`
-- `render/` — composition of a laid-out tree into terminal output
-- `widget/` — the widget seam: registry, typed attributes, the bubbles adapter
+- `style/` — theme tokens, named styles, resolution to a cell style and a box model
+- `render/` — the painter: a laid-out tree onto a cell buffer
+- `widget/` — the widget seam: registry, typed attributes, the `View() string` adapter, and `widgettest`
 - `widgets/` — the built-in widget library
-- `cli/` — cobra commands, one self-registering command per file: file commands (`check`, `tree`, `render`, `inspect`) and live-program commands (`query`, `ids`, `list`, `serve`, …)
+- `cli/` — cobra commands, one self-registering command per file: file commands and live-program commands
 - `cmd/tml/` — the CLI binary
 - `inspect/` — the per-element inspection protocol, its socket and HTTP transports, and the browser inspector's page
-- `examples/dashboard/` — a Bubble Tea program whose whole view is TML
+- `examples/dashboard/` — a program whose whole view is TML and whose host is a few lines of state
 - `examples/gallery/` — every library widget on one interactive screen
 - `examples/downloads/` — a mock download manager on a `tml.Live` region, with goldens at widths
-- `live.go` — `Live`, the inline region
+- `region.go` — `Live`, the inline region
 - `examples/agent/` — a mock coding agent, the proving ground. See docs/agent.md for what it loads on and what it proved
-- `tools/shots/` — the ttyd screenshot capture, its shot list, and the index page the site serves
+- `tools/shots/` — the Ghostty screenshot capture, its shot list, and the index page the site serves
 - `tools/inspector-check/` — the CI check that drives the inspector against a running program, over the socket and in a browser
 
 ## Inspection
@@ -111,9 +123,9 @@ Answers questions about the frame `Render` painted, one element at a time: recta
 
 A view that cannot be served fails `Load` rather than running unreachable. `tml query` finds the program by dialling what is in that directory (`tml list` names them all).
 
-`tml.NewProgram` is the thing a host does. Driving needs a running `*tea.Program`, which cannot exist before the host builds it. A program built with `tea.NewProgram` is readable and not drivable. `drivable.go` takes such a program down after `DriveGrace`, rather than leave the debugger half working. `testdata/undrivable` is the program that proves the guard still fires. A model that caches its frame must invalidate on `tml.RepaintMsg`.
+`tml.NewProgram` is the thing a host does. Driving needs a running `*tml.Program`. A host that paints from a loop of its own, with `View.Render`, is readable and not drivable. `drivable.go` takes such a program down after `DriveGrace`, rather than leave the debugger half working. `testdata/undrivable` is the program that proves the guard still fires. An app that caches what `Props` returns must drop that cache on `tml.RepaintMsg`.
 
-That is the one line a host writes. A restyle fails by name when it is missing. `tml serve` opens a browser inspector on the same protocol. There a click selects, and a drag rewrites the element's attributes as a real layout override. `tml capture` writes that same page over a frozen frame as one self-contained HTML file. The frame comes from a running program, or from a document laid out at a given size.
+A restyle fails by name when no new frame follows it. `tml serve` opens a browser inspector on the same protocol. There a click selects, and a drag rewrites the element's attributes as a real layout override. `tml capture` writes that same page over a frozen frame as one self-contained HTML file. The frame comes from a running program, or from a document laid out at a given size.
 
 `inspect.Snapshot` asks the questions the page asks on load. A capture cannot report what the inspector does not. The driving controls are absent there, because a keystroke and a restyle both need the program. See docs/inspector.md.
 
@@ -123,7 +135,7 @@ A test waits on the screen rather than sleeping. `query --await REGEX` and `--aw
 
 ## Live regions
 
-`tml.Live` (`live.go`) is an inline Bubble Tea program with no input. It pins a view below the log and repaints it from a props function on an interval. `Println`/`Printf`/`Write` queue lines above it. At most one print is in flight, and `tea.Sequence` orders it, so lines keep their order. SIGINT becomes an orderly close through a program filter. `View.RenderFit` lays a view out as tall as its content.
+`tml.Live` (`region.go`) is an inline `tml.Program` with no input. It pins a view below the log and repaints it from a props function on an interval. `Println`/`Printf`/`Write` queue lines above it. The loop's own goroutine writes them, in the order they were queued, before the frame that follows. SIGINT becomes an orderly close that reports `ErrInterrupted`. `View.DrawFit` lays a view out as tall as its content.
 
 `View.Print` (`print.go`) writes a view to a stream as a document: plain on a pipe, and outside the drivable guard. See docs/live.md.
 
@@ -143,6 +155,6 @@ Golden files live in `testdata/`. An empty golden seeds itself from the run and 
 
 Either example renders one frame without a terminal with `-frame`, which is how they are checked headlessly. The gallery's goldens are the widget library's regression net. They are stripped of colour to stay readable. The test pins the terminal to one with no graphics protocol, so the image lands on half-blocks wherever it runs.
 
-`tools/shots` photographs the examples in a REAL terminal: ttyd on a PTY, xterm.js in Chromium. CI publishes the pictures per branch to a buildhost site the README embeds. Goldens are the mechanical check. The pictures cover what a string cannot show, like which image protocol the terminal took. See docs/screenshots.md.
+`tools/shots` photographs the examples in a REAL terminal: Ghostty on a virtual display, read back through the inspection socket. CI publishes the pictures per branch to a buildhost site the README embeds. Goldens are the mechanical check. The pictures cover what a string cannot show, like which image protocol the terminal took. See docs/screenshots.md.
 
-`tools/inspector-check/check.mjs` is the end-to-end net for the inspection layer. It runs `build/agent` under a pty, then queries and drives it through `tml`. It then drives the browser inspector with a pointer, and reads the result back off the socket. CI runs it after the screenshots, on the browser that step already installed.
+`tools/inspector-check/check.mjs` is the end-to-end net for the inspection layer. It runs `build/agent` under a pty, then queries and drives it through `tml`. It then drives the browser inspector with a pointer, and reads the result back off the socket. CI runs it after the screenshots, on a Chromium that Playwright installs.

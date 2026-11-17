@@ -6,7 +6,10 @@
 // typed into the real terminal afterwards, which is what proves the input path
 // works outside a test harness.
 //
-// `expect` is text the terminal has to be showing before the picture counts. A
+// `keys` holds one entry for each key. One character is typed. A longer entry
+// is an X keysym name, like Return.
+//
+// `expect` is text the program has to have painted before the picture counts. A
 // program that died on its arguments still leaves a terminal to screenshot. A
 // black rectangle published as a screenshot is worse than a failed build.
 export const shots = [
@@ -31,7 +34,7 @@ export const shots = [
 	{
 		name: "gallery-media",
 		title: "Media",
-		caption: "An image on its half-block fallback, a rule, badges and a spinner.",
+		caption: "An image drawn through the terminal's graphics protocol, a rule, badges and a spinner.",
 		command: "gallery",
 		args: ["-tab", "media", "-focus", "tab-media"],
 		rows: 26,
@@ -66,7 +69,7 @@ export const shots = [
 		name: "agent-typing",
 		expect: "make it faster",
 		title: "Typing at the prompt",
-		caption: "Typed into the running terminal rather than set from a flag: the keys go through ttyd, the PTY and the focus ring.",
+		caption: "Typed into the running terminal rather than set from a flag: the keys go through Ghostty, the PTY and the focus ring.",
 		command: "agent",
 		args: ["-steps", "5", "-focus", "prompt"],
 		keys: [..."make it faster"],

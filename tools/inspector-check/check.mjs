@@ -51,8 +51,8 @@ async function settled(read) {
 	}
 }
 
-// A pty is not optional: bubbletea opens /dev/tty. The layout is sized from
-// the window, so without one there is no frame to inspect.
+// A pty is not optional. The program puts its terminal in raw mode and sizes
+// the layout from the window, so without one there is no frame to inspect.
 function startAgent() {
 	// No -inspect flag: the socket is TML_INSPECT_SOCKET, which Load reads. The
 	// agent says nothing about being inspectable, which is the point.

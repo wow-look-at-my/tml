@@ -1,0 +1,10 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<Component xmlns="urn:tml:v1" name="Program">
+	<Property name="title" type="string" required="true"/>
+	<Template>
+		<Stack>
+			<Text>{title}</Text>
+			<Button id="go" action="go" label="Go"/>
+		</Stack>
+	</Template>
+</Component>

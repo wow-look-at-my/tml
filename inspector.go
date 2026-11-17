@@ -9,6 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/inspect"
 	"github.com/wow-look-at-my/tml/layout"
 )
@@ -87,7 +88,7 @@ func (i *Inspector) repaint() error {
 	fn := i.onPnt
 	i.mu.Unlock()
 	if fn == nil {
-		return fmt.Errorf("this program cannot be asked to redraw: build it with tml.NewProgram or tml.Run rather than tea.NewProgram")
+		return fmt.Errorf("this program cannot be asked to redraw: run it with tml.NewProgram or tml.Run rather than a loop of its own")
 	}
 	before, _ := i.currentView().lastFrame()
 	if err := fn(); err != nil {
@@ -124,7 +125,7 @@ func (i *Inspector) Key(key string) error {
 	fn := i.onKey
 	i.mu.Unlock()
 	if fn == nil {
-		return fmt.Errorf("this program can be read and not driven: build it with tml.NewProgram or tml.Run rather than tea.NewProgram")
+		return fmt.Errorf("this program can be read and not driven: run it with tml.NewProgram or tml.Run rather than a loop of its own")
 	}
 	return fn(key)
 }
@@ -135,7 +136,7 @@ func (i *Inspector) Click(x, y int) error {
 	fn := i.onClk
 	i.mu.Unlock()
 	if fn == nil {
-		return fmt.Errorf("this program can be read and not driven: build it with tml.NewProgram or tml.Run rather than tea.NewProgram")
+		return fmt.Errorf("this program can be read and not driven: run it with tml.NewProgram or tml.Run rather than a loop of its own")
 	}
 	return fn(x, y)
 }
@@ -192,7 +193,7 @@ func (v *View) recordFrames(on bool) {
 
 // record stores the frame painted. It is called from Render, so the cost on a
 // program with no inspector attached
-func (v *View) record(box *layout.Box, ansi string, width, height int) {
+func (v *View) record(box *layout.Box, screen *cell.Buffer, width, height int) {
 	if v.frames == nil || !v.frames.on.Load() {
 		return
 	}
@@ -200,7 +201,7 @@ func (v *View) record(box *layout.Box, ansi string, width, height int) {
 	v.frames.mu.Lock()
 	v.frames.frame = inspect.Frame{
 		Seq: seq, At: time.Now(), Width: width, Height: height,
-		Box: box, State: inspect.StateOf(v.ui.Targets()), ANSI: ansi,
+		Box: box, State: inspect.StateOf(v.ui.Targets()), Screen: screen,
 	}
 	hook := v.frames.hook
 	v.frames.mu.Unlock()

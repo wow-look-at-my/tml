@@ -3,8 +3,8 @@
  ────────────────────────────────────────────────────────────────────────────────────────────── 
                                                                                                 
  ┌ Context ─────────┐  ┌ Session ─────────────────────────────────────────────────────────────┐ 
- │   cmd/report.go  │  │ │ +        return json.NewEncoder(os.Stdout).Encode(rows)         ││ │ 
- │   report/table.… │  │ │ +    }                                                          ││ │ 
+ │   cmd/report.go  │  │ │ +    }                                                          ││ │ 
+ │   report/table.… │  │ │ +    return table.Write(os.Stdout, rows)                        ││ │ 
  │ > report/json.go │  │ └─────────────────────────────────────────────────────────────────┘│ │ 
  │   report/report… │  │                                                                    │ │ 
  │                  │  │      allowed: go test ./...                                        │ │ 
@@ -13,7 +13,7 @@
  │                  │  │                                                                    │ │ 
  │                  │  │ ┌ go test ./... ──────────────────────────────────────────────────┐│ │ 
  │                  │  │ │ package      tests result                                       ││ │ 
- │                  │  │ │                                                                 ││ │ 
+ │                  │  │ │ ─────────────────────────                                       ││ │ 
  │                  │  │ │ report       12    ok                                           │█ │ 
  │                  │  │ │ report/table 8     ok                                           │█ │ 
  │                  │  │ │ report/json  4     ok                                           │█ │ 
