@@ -114,7 +114,7 @@ The root is the importable package, so a host imports `github.com/wow-look-at-my
 - `examples/downloads/` — a mock download manager on a `tml.Live` region, with goldens at widths
 - `region.go` — `Live`, the inline region
 - `examples/agent/` — a mock coding agent, the proving ground. See docs/agent.md for what it loads on and what it proved
-- `tools/shots/` — the ttyd screenshot capture, its shot list, and the index page the site serves
+- `tools/shots/` — the Ghostty screenshot capture, its shot list, and the index page the site serves
 - `tools/inspector-check/` — the CI check that drives the inspector against a running program, over the socket and in a browser
 
 ## Inspection
@@ -155,6 +155,6 @@ Golden files live in `testdata/`. An empty golden seeds itself from the run and 
 
 Either example renders one frame without a terminal with `-frame`, which is how they are checked headlessly. The gallery's goldens are the widget library's regression net. They are stripped of colour to stay readable. The test pins the terminal to one with no graphics protocol, so the image lands on half-blocks wherever it runs.
 
-`tools/shots` photographs the examples in a REAL terminal: ttyd on a PTY, xterm.js in Chromium. CI publishes the pictures per branch to a buildhost site the README embeds. Goldens are the mechanical check. The pictures cover what a string cannot show, like which image protocol the terminal took. See docs/screenshots.md.
+`tools/shots` photographs the examples in a REAL terminal: Ghostty on a virtual display, read back through the inspection socket. CI publishes the pictures per branch to a buildhost site the README embeds. Goldens are the mechanical check. The pictures cover what a string cannot show, like which image protocol the terminal took. See docs/screenshots.md.
 
-`tools/inspector-check/check.mjs` is the end-to-end net for the inspection layer. It runs `build/agent` under a pty, then queries and drives it through `tml`. It then drives the browser inspector with a pointer, and reads the result back off the socket. CI runs it after the screenshots, on the browser that step already installed.
+`tools/inspector-check/check.mjs` is the end-to-end net for the inspection layer. It runs `build/agent` under a pty, then queries and drives it through `tml`. It then drives the browser inspector with a pointer, and reads the result back off the socket. CI runs it after the screenshots, on a Chromium that Playwright installs.

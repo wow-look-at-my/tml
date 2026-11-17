@@ -1,14 +1,26 @@
 # Screenshots
 
-`tools/shots` runs each example in a real terminal and takes a picture of it. ttyd serves the program on a PTY. Chromium renders it through xterm.js. The picture shows that terminal. `tools/shots/shots.mjs` lists what to run and what state to get it into. `capture.mjs` is the machinery.
+`tools/shots` runs each example in a real terminal and takes a picture of it. The terminal is Ghostty, on a virtual X display, and the picture is its window. `tools/shots/shots.mjs` lists what to run and what state to get it into. `capture.mjs` is the machinery.
 
 ```bash
 go-toolchain                                   # build the examples first
-npm install --prefix tools/shots
 node tools/shots/capture.mjs                   # -> build/shots/*.png and index.html
 ```
 
-The tool needs `ttyd` and a Chromium on the machine. It looks for the browser in a few usual places, and says which ones it tried. `CHROME=/path/to/chrome` overrides that.
+The tool needs these on the machine, and names the ones it cannot find:
+
+```bash
+sudo add-apt-repository -y ppa:mkasberg/ghostty-ubuntu
+sudo apt-get install -y ghostty xvfb xdotool imagemagick libgl1 libgl1-mesa-dri libegl1
+```
+
+Ghostty draws with OpenGL. Mesa answers that in software, so no GPU is needed. No window opens on the machine's own screen.
+
+## Why Ghostty
+
+Ghostty draws box, block and braille characters itself, at the size of the cell. A terminal that takes those glyphs from a font leaves gaps where borders meet, and seams inside a bar. Ghostty also speaks the kitty graphics protocol, so the `<Image>` shot shows a real image. It carries its own font. The pictures do not depend on the fonts of the machine.
+
+The capture starts Ghostty with no configuration file. The options in `capture.mjs` are everything the picture depends on.
 
 ## Why a terminal and not a frame
 
@@ -21,11 +33,13 @@ So the screenshots cover what the goldens cannot, and typed keys drive one of th
 ## What a shot declares
 
 - `args` put the program in a state before the terminal is attached.
-- `keys` are typed into the running terminal afterwards.
-- `expect` is text the terminal has to be showing before the picture counts. A program that died on its arguments still leaves a terminal to photograph. A black rectangle published as a screenshot is worse than a failed build.
+- `keys` are typed into the running terminal afterwards, with `xdotool`.
+- `expect` is text the program has to have painted before the picture counts. A program that died on its arguments still leaves a terminal to photograph. A black rectangle published as a screenshot is worse than a failed build.
 - `rows` is the terminal to shoot in. These layouts fill the terminal they are given. A page shot in more rows than it has content for is mostly empty space. One shot in fewer rows drops whatever was pinned to the bottom.
 
-The terminal is sized exactly. The tool measures a cell and the page's own chrome, then resizes the window to fit. It fails when the terminal does not come out the size it asked for. Without that, every picture is whatever size the browser opened at.
+The capture reads what the program painted through the program's own inspection socket, with `tml frame`. That answers both questions a picture depends on. The frame's size is the size the terminal gave the program. The capture fails when that is not the size it asked for. The frame's text is what `expect` is matched against. A program that never painted answers nothing, and the shot fails.
+
+The inspector reports the program, not the terminal. So the capture also counts the colours in the picture, and refuses one that shows an empty window.
 
 ## Publishing
 
@@ -42,4 +56,4 @@ A branch build's index page shows each picture beside master's copy of it. What 
 
 The site is published with `public: true`. tml is a private repo. GitHub's image proxy cannot fetch a picture it needs a credential for. Without `public: true` the README shows nothing. What lands there is pictures of example programs, and the index page that lists them. That directory is the whole privacy boundary. Nothing else may be written into it.
 
-There is deliberately no pixel comparison. Font rasterisation differs between machines. A pixel gate therefore fails on where it ran, not on what changed. The goldens are the mechanical check. These pictures are for the eye.
+There is deliberately no pixel comparison. Software rendering differs between Mesa versions. A pixel gate therefore fails on where it ran, not on what changed. The goldens are the mechanical check. These pictures are for the eye.

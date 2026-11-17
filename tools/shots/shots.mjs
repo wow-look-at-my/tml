@@ -6,7 +6,10 @@
 // typed into the real terminal afterwards, which is what proves the input path
 // works outside a test harness.
 //
-// `expect` is text the terminal has to be showing before the picture counts. A
+// `keys` holds one entry for each key. One character is typed. A longer entry
+// is an X keysym name, like Return.
+//
+// `expect` is text the program has to have painted before the picture counts. A
 // program that died on its arguments still leaves a terminal to screenshot. A
 // black rectangle published as a screenshot is worse than a failed build.
 export const shots = [
