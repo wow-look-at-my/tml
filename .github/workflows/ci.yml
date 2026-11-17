@@ -59,15 +59,14 @@ jobs:
         with:
           cosmo-platforms: linux/amd64,linux/arm64,darwin/arm64,windows/amd64
 
-      # The screenshots are taken from the binaries this job just built, in a real terminal -- see docs/screenshots.md
-      - name: Install ttyd
-        run: sudo apt-get update && sudo apt-get install -y ttyd
-      - name: Install the capture tool
-        run: npm install --no-audit --no-fund
-        working-directory: tools/shots
-      - name: Install the browser
-        run: npx playwright install --with-deps chromium
-        working-directory: tools/shots
+      # The screenshots are taken from the binaries this job just built, in Ghostty -- see docs/screenshots.md
+      - name: Install Ghostty and a virtual display
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          sudo add-apt-repository -y ppa:mkasberg/ghostty-ubuntu
+          sudo apt-get update
+          sudo apt-get install -y ghostty xvfb xdotool imagemagick libgl1 libgl1-mesa-dri libegl1
       - name: Capture the screenshots
         run: node tools/shots/capture.mjs
         env:
@@ -76,6 +75,9 @@ jobs:
       # The inspector check proves a running program's own drawn output -- see docs/inspector.md
       - name: Install the inspector check
         run: npm install --no-audit --no-fund
+        working-directory: tools/inspector-check
+      - name: Install the browser
+        run: npx playwright install --with-deps chromium
         working-directory: tools/inspector-check
       - name: Check the inspector against a running program
         run: node tools/inspector-check/check.mjs

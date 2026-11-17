@@ -31,7 +31,7 @@ export const shots = [
 	{
 		name: "gallery-media",
 		title: "Media",
-		caption: "An image on its half-block fallback, a rule, badges and a spinner.",
+		caption: "An image drawn through the terminal's graphics protocol, a rule, badges and a spinner.",
 		command: "gallery",
 		args: ["-tab", "media", "-focus", "tab-media"],
 		rows: 26,
@@ -66,7 +66,7 @@ export const shots = [
 		name: "agent-typing",
 		expect: "make it faster",
 		title: "Typing at the prompt",
-		caption: "Typed into the running terminal rather than set from a flag: the keys go through ttyd, the PTY and the focus ring.",
+		caption: "Typed into the running terminal rather than set from a flag: the keys go through Ghostty, the PTY and the focus ring.",
 		command: "agent",
 		args: ["-steps", "5", "-focus", "prompt"],
 		keys: [..."make it faster"],
