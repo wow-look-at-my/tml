@@ -8,7 +8,7 @@
                                                                                             
  ┌ Data ──────────────────────────────────────────────────────────────────────────────────┐ 
  │ > api           step   when  state    09:05 deploy step 1 finished                   █ │ 
- │   web           ────────────────────  09:10 deploy step 2 finished                   █ │
+ │   web           ────────────────────  09:10 deploy step 2 finished                   █ │ 
  │   worker        build  09:05 done     09:15 deploy step 3 finished                   █ │ 
  │   scheduler     test   09:12 done     09:20 deploy step 4 finished                   █ │ 
  │   database      deploy 09:20 running  09:25 deploy step 5 finished                   │ │ 
