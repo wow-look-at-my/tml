@@ -71,6 +71,8 @@ type ProgramOptions struct {
 	Width, Height int
 	// Env reads the environment that says what the terminal can show. Nil is os.Getenv.
 	Env func(string) string
+	// HostSignals leaves SIGINT and SIGTERM to the host. The program does not end on them.
+	HostSignals bool
 }
 
 // Without a size from the terminal, a program draws at these.

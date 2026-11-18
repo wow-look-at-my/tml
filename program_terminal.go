@@ -54,7 +54,9 @@ func (p *Program) enter() (stops []func(), err error) {
 	}
 
 	signals := make(chan os.Signal, 4)
-	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
+	if !p.opts.HostSignals {
+		signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
+	}
 	resizes := make(chan os.Signal, 1)
 	stopResize := term.NotifyResize(resizes)
 	quit := make(chan struct{})
