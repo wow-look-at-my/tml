@@ -22,6 +22,8 @@ type LiveOptions struct {
 	MaxHeight int
 	// OnInterrupt runs after SIGINT took the region down and the terminal is restored.
 	OnInterrupt func()
+	// HostSignals leaves SIGINT and SIGTERM to the host, so the region stays up until Stop. OnInterrupt never runs.
+	HostSignals bool
 	// Width and Height fix the size the region draws at. Zero follows the terminal.
 	Width, Height int
 	// Env reads the environment that says what the terminal can show. Nil is os.Getenv.
@@ -66,6 +68,8 @@ func NewLive(view *View, props func() Props, opts LiveOptions) *Live {
 		Width:  opts.Width,
 		Height: opts.Height,
 		Env:    opts.Env,
+
+		HostSignals: opts.HostSignals,
 	})
 	return &Live{program: program, opts: opts, inspect: err, done: make(chan struct{})}
 }
