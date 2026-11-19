@@ -117,6 +117,10 @@ func paintText(box *layout.Box, c cell.Canvas) {
 
 	var lines []cell.Line
 	switch box.Overflow {
+	case layout.OverflowPath:
+		for _, line := range measure.Lines(box.Text) {
+			lines = append(lines, line.TruncatePath(width, "…"))
+		}
 	case layout.OverflowClip, layout.OverflowEllipsis:
 		tail := ""
 		if box.Overflow == layout.OverflowEllipsis {

@@ -209,6 +209,20 @@ func TestMeasureWrapHandlesEveryLine(t *testing.T) {
 	assert.Equal(t, []string{"aa", "bb", "", "cc"}, texts(Measure(nil).Wrap("aa bb\n\ncc", 2)))
 }
 
+func TestTruncatePathCutsBeforeTheLastElement(t *testing.T) {
+	line := Lines("src/videos/2026/holiday-4k.mov")[0]
+	assert.Equal(t, "src/videos/2026/holiday-4k.mov", line.TruncatePath(40, "…").String(), "a path that fits is left alone")
+	assert.Equal(t, "src/vide…/holiday-4k.mov", line.TruncatePath(24, "…").String(), "the start stays as long as it fits")
+	assert.Equal(t, "…/holiday-4k.mov", line.TruncatePath(16, "…").String())
+	assert.Equal(t, "…holiday-4k.mov", line.TruncatePath(15, "…").String(), "the name keeps the mark before the separator")
+	assert.Equal(t, "holiday-…", line.TruncatePath(9, "…").String(), "a name wider than the row loses its own end")
+	assert.Equal(t, `C:\Users\…\notes.txt`, Lines(`C:\Users\me\Documents\notes.txt`)[0].TruncatePath(20, "…").String())
+	assert.Equal(t, "plainna…", Lines("plainname.txt")[0].TruncatePath(8, "…").String(), "no separator is a plain cut")
+	for width := 0; width < line.Width(); width++ {
+		assert.LessOrEqual(t, line.TruncatePath(width, "…").Width(), width, "width %d", width)
+	}
+}
+
 func TestTruncateMarksTheCut(t *testing.T) {
 	line := Lines("hello world")[0]
 	assert.Equal(t, "hello w…", line.Truncate(8, "…").String())

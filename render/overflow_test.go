@@ -58,7 +58,29 @@ func TestOverflow_RejectsAnUnknownMode(t *testing.T) {
 	require.NoError(t, err)
 	_, err = view.Render(tml.Props{"mode": stringValue("scroll")}, 40, 10)
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "not wrap, clip or ellipsis")
+	assert.Contains(t, err.Error(), "not wrap, clip, ellipsis or path")
+}
+
+func TestOverflow_PathKeepsTheStartAndTheLastElement(t *testing.T) {
+	doc := `<?xml version="1.1" encoding="UTF-8"?>
+<Component xmlns="urn:tml:v1" name="Card">
+	<Template>
+		<Box width="20">
+			<Stack orientation="vertical">
+				<Text overflow="path">photos/2026/summer/beach.raw</Text>
+				<Text>after</Text>
+			</Stack>
+		</Box>
+	</Template>
+</Component>`
+	view, err := tml.Load(docFS(t, "card.tml", doc), "card.tml", tml.Options{})
+	require.NoError(t, err)
+	out, err := view.Render(nil, 40, 10)
+	require.NoError(t, err)
+	lines := nonEmptyLines(out)
+	require.GreaterOrEqual(t, len(lines), 2)
+	assert.Equal(t, "photos/20…/beach.raw", strings.TrimRight(lines[0], " "), "the path keeps one row")
+	assert.Equal(t, "after", strings.TrimSpace(lines[1]))
 }
 
 func docFS(t *testing.T, name, body string) fs.FS {
