@@ -62,17 +62,7 @@ func TestOverflow_RejectsAnUnknownMode(t *testing.T) {
 }
 
 func TestOverflow_PathKeepsTheStartAndTheLastElement(t *testing.T) {
-	doc := `<?xml version="1.1" encoding="UTF-8"?>
-<Component xmlns="urn:tml:v1" name="Card">
-	<Template>
-		<Box width="20">
-			<Stack orientation="vertical">
-				<Text overflow="path">photos/2026/summer/beach.raw</Text>
-				<Text>after</Text>
-			</Stack>
-		</Box>
-	</Template>
-</Component>`
+	doc := testOverflow_PathKeepsTheStartAndTheLastElementXml
 	view, err := tml.Load(docFS(t, "card.tml", doc), "card.tml", tml.Options{})
 	require.NoError(t, err)
 	out, err := view.Render(nil, 40, 10)
@@ -99,3 +89,6 @@ func nonEmptyLines(s string) []string {
 	}
 	return out
 }
+
+//go:embed testdata/test-overflow-path-keeps-the-start-and-the-last-element.xml
+var testOverflow_PathKeepsTheStartAndTheLastElementXml string
