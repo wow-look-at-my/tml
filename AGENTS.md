@@ -41,7 +41,7 @@ A `Grid` track takes a range (`*[8..32]`), and `collapse` names the columns that
 
 `Canvas` positions children freely, and fills whatever it is offered rather than shrinking. A widget can name its own default anchor, which is how `<Popup>` centres itself.
 
-`Text` wraps by default, and `overflow="clip"` or `overflow="ellipsis"` cuts each line at the width instead. A clipped Text keeps its line count however narrow it gets. A card that holds a log tail therefore keeps its height when one line runs long. Layout counts a wrapped Text's rows with the same `cell.Measure.Wrap` call the painter draws with.
+`path` cuts in the middle and keeps the last path element. A clipped Text keeps its line count however narrow it gets. A card that holds a log tail therefore keeps its height when one line runs long. Layout counts a wrapped Text's rows with the same `cell.Measure.Wrap` call the painter draws with.
 
 `Dock` is NOT implemented. It is deliberately absent from `sema.Builtins`, so using it is an unknown-element error rather than a silent blank. Add a panel to that list only once it lays out.
 
