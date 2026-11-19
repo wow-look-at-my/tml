@@ -1,0 +1,11 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<Component xmlns="urn:tml:v1" name="Card">
+	<Template>
+		<Box width="20">
+			<Stack orientation="vertical">
+				<Text overflow="path">photos/2026/summer/beach.raw</Text>
+				<Text>after</Text>
+			</Stack>
+		</Box>
+	</Template>
+</Component>

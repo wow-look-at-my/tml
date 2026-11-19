@@ -322,6 +322,38 @@ func (l Line) Truncate(width int, tail string) Line {
 	return out
 }
 
+// TruncatePath cuts a path to width in its middle. The start of the path stays as long as it fits, the last element
+// always stays. The mark takes the place of what was cut before the last separator. A last element wider than width
+// loses its own end instead.
+func (l Line) TruncatePath(width int, mark string) Line {
+	if l.Width() <= width {
+		return l
+	}
+	sep := -1
+	for i, g := range l {
+		if g.Text == "/" || g.Text == `\` {
+			sep = i
+		}
+	}
+	if sep < 0 {
+		return l.Truncate(width, mark)
+	}
+	dots := Lines(mark)[0]
+	tail := l[sep:]
+	style := l[sep].Style
+	if room := width - dots.Width() - tail.Width(); room >= 0 {
+		head := l[:sep].Cut(0, room)
+		out := append(Line{}, head...)
+		out = append(out, dots.Styled(style)...)
+		return append(out, tail...)
+	}
+	base := l[sep+1:]
+	if base.Width()+dots.Width() <= width {
+		return append(append(Line{}, dots.Styled(style)...), base...)
+	}
+	return base.Truncate(width, mark)
+}
+
 func (g Glyph) space() bool {
 	r := []rune(g.Text)[0]
 	return unicode.IsSpace(r) && r != nbsp

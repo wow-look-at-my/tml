@@ -35,7 +35,14 @@ const (
 	OverflowClip Overflow = "clip"
 	// OverflowEllipsis cuts it earlier and marks the cut.
 	OverflowEllipsis Overflow = "ellipsis"
+	// OverflowPath cuts a path in its middle: the start and the last element stay, and a mark replaces the rest.
+	OverflowPath Overflow = "path"
 )
+
+// singleLine reports whether the overflow keeps each line on its own row.
+func (o Overflow) singleLine() bool {
+	return o == OverflowClip || o == OverflowEllipsis || o == OverflowPath
+}
 
 // Visibility is what an element does with the slot layout would give it, spelled by the `state` attribute.
 type Visibility uint8
@@ -389,11 +396,11 @@ func overflowAttr(node *sema.Node, attrs map[string]string) (Overflow, error) {
 		raw = value.String()
 	}
 	switch Overflow(raw) {
-	case OverflowWrap, OverflowClip, OverflowEllipsis:
+	case OverflowWrap, OverflowClip, OverflowEllipsis, OverflowPath:
 		return Overflow(raw), nil
 	default:
 		return "", &syntax.Error{Pos: node.Pos, Message: fmt.Sprintf(
-			"<Text> overflow: %q is not wrap, clip or ellipsis", raw)}
+			"<Text> overflow: %q is not wrap, clip, ellipsis or path", raw)}
 	}
 }
 

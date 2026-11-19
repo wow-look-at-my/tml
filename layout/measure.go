@@ -89,7 +89,7 @@ func (e *Engine) measureText(box *Box, inner Constraints) Size {
 		return Size{W: natural, H: cell.Height(box.Text)}
 	}
 	// A clipped Text is as tall as it has lines, however narrow it gets, so a long line cannot push a card's border down.
-	if box.Overflow == OverflowClip || box.Overflow == OverflowEllipsis {
+	if box.Overflow.singleLine() {
 		return Size{W: inner.MaxW, H: cell.Height(box.Text)}
 	}
 	// The painter wraps with the same call, so this counts the rows it draws.

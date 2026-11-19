@@ -173,7 +173,7 @@ Panels:
 - `Stack` — `orientation="vertical|horizontal"` (vertical is the default) and `gap`
 - `Canvas` — free positioning: children sit where they are put, and overlap
 - `Box` — a single-child decorator for border, padding, background and alignment
-- `Text` — character data, wrapped to the width it is given. `overflow="clip"` cuts each line at that width instead, and `overflow="ellipsis"` marks the cut. A clipped Text is as tall as it has lines, however narrow it gets. That keeps a fixed-height card fixed when one line inside it runs long
+- `Text` — character data, wrapped to the width it is given. `overflow="clip"` cuts each line at that width instead, and `overflow="ellipsis"` marks the cut. `overflow="path"` cuts a path in its middle. The start stays as long as it fits. The last element always stays, and `…` takes the place of what was cut before the last separator. A clipped Text is as tall as it has lines, however narrow it gets. That keeps a fixed-height card fixed when one line inside it runs long
 - `Spacer` — occupies space and draws nothing
 
 `Dock` is **not implemented yet**. It is deliberately absent from the builtin list, so using it is reported as an unknown element rather than silently rendering nothing.
