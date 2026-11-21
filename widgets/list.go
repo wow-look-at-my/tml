@@ -3,6 +3,7 @@
 package widgets
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/wow-look-at-my/tml/cell"
@@ -37,6 +38,14 @@ func newList(ctx widget.Context) (widget.Native, error) {
 }
 
 func (l *list) AcceptsFocus() bool { return !l.disabled && len(l.items) > 0 }
+
+// Part names the item on line y as "item:N". Every item takes one line.
+func (l *list) Part(_, y int) string {
+	if y < 0 || y >= len(l.items) {
+		return ""
+	}
+	return "item:" + strconv.Itoa(y)
+}
 
 func (l *list) SetState(state widget.State) { l.state = state }
 

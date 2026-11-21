@@ -48,6 +48,14 @@ if event.ID == "services" && event.Y >= 0 {
 }
 ```
 
+A widget that knows its own parts names them, and the name arrives as `event.Part`. A `Table` answers `header:N` over the heading of column N and `row:N` over data row N. A `List` answers `item:N`. A widget gets this by implementing `widget.Parted`. The point it is asked about is measured from the widget's whole box. A table scrolled halfway out of its viewport still names the right row.
+
+`event.Mod` carries the modifier keys held with the pointer, so ctrl+click and shift+click reach the host.
+
+A right click raises `tml.Menu` on the element under the pointer. It moves neither the focus nor the press, and its release is no click. A host opens its context menu there: a `Canvas` child placed at `Canvas.x` and `Canvas.y`.
+
+The left button on a `Scrollbox`'s scrollbar holds it. A press on the thumb holds it where it was pressed, and a press on the track jumps the thumb under the pointer. While the button is held, moving the pointer reports `tml.Scrolled` with `Delta` set to the rows the content has to move. A host that scrolls on the wheel therefore scrolls on the bar with no new code. Releasing the button ends the drag, and is no click.
+
 ### Reading the frame back
 
 `view.UI().Target(id)` is where an element ended up in the last frame: its rect, and for a scrolling region, how far it actually scrolled.

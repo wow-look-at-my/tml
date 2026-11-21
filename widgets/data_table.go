@@ -29,6 +29,8 @@ type dataTable struct {
 	collapse []int
 	state    widget.State
 	measure  widget.Measurer
+	// drawn is the width the table last drew at, which is the shape Part reads a point against.
+	drawn int
 }
 
 func newTable(ctx widget.Context) (widget.Native, error) {
@@ -77,6 +79,50 @@ func newTable(ctx widget.Context) (widget.Native, error) {
 		t.rows = append(t.rows, cells)
 	}
 	return t, nil
+}
+
+// Part names a point of the table. "header:N" over the heading of column N, counted among every column the table
+// declares, and "row:N" over data row N. A border, a rule or the gap between a pair of headings is no part.
+func (t *dataTable) Part(x, y int) string {
+	s := t.shapeAt(t.drawn)
+	top := 0
+	if t.bordered {
+		top = 1
+	}
+	if y < top {
+		return ""
+	}
+	header := t.rowHeight(t.columns, s)
+	if y < top+header {
+		if col, ok := t.columnAt(x, s); ok {
+			return "header:" + strconv.Itoa(col)
+		}
+		return ""
+	}
+	at := top + header
+	if t.headerRule() {
+		at++
+	}
+	for i, row := range t.rows {
+		height := t.rowHeight(row, s)
+		if y >= at && y < at+height {
+			return "row:" + strconv.Itoa(i)
+		}
+		at += height
+	}
+	return ""
+}
+
+// columnAt is the declared column whose cells span x.
+func (t *dataTable) columnAt(x int, s shape) (int, bool) {
+	start := t.edges() / 2
+	for i, width := range s.widths {
+		if x >= start && x < start+width {
+			return s.shown[i], true
+		}
+		start += width + t.gap()
+	}
+	return 0, false
 }
 
 // A table with no rows has nothing to land on, so tab passes over it.
@@ -219,6 +265,7 @@ func (t *dataTable) Measure(maxW, _ int) (int, int) {
 
 func (t *dataTable) Draw(c cell.Canvas) {
 	w, _ := c.Size()
+	t.drawn = w
 	if t.disabled {
 		c = c.Styled(cell.Style{}.Faint(true))
 	}

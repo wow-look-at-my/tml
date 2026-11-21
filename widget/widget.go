@@ -83,6 +83,12 @@ type Keyed interface {
 	Key(key input.Key) (Edit, bool)
 }
 
+// Parted is the optional half of a widget that draws several things the
+// pointer.
+type Parted interface {
+	Part(x, y int) string
+}
+
 // Layout is how a composer wants its children measured and placed, for the cases the default does not cover.
 type Layout struct {
 	// FillW and FillH take all the space on offer rather than shrinking to fit the children. A viewport does, and so does anything that scrolls.

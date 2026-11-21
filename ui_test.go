@@ -146,7 +146,22 @@ func TestClickingNothingDoesNothing(t *testing.T) {
 	ring(u, target("save", "save", 0, 0, 8, 1))
 
 	assert.Empty(t, u.Update(input.Mouse{Action: input.Press, X: 30, Y: 30, Button: input.ButtonLeft}))
-	assert.Empty(t, u.Update(input.Mouse{Action: input.Press, X: 1, Y: 0, Button: input.ButtonRight}))
+	assert.Empty(t, u.Update(input.Mouse{Action: input.Press, X: 30, Y: 30, Button: input.ButtonRight}))
+	assert.Empty(t, u.Update(input.Mouse{Action: input.Press, X: 1, Y: 0, Button: input.ButtonMiddle}))
+}
+
+// A right click over a control asks for a menu, and moves neither the focus nor the press.
+func TestARightClickAsksForAMenu(t *testing.T) {
+	u := NewUI()
+	ring(u, target("save", "save", 0, 0, 8, 1), target("quit", "quit", 0, 1, 8, 1))
+
+	events := u.Update(input.Mouse{Action: input.Press, X: 2, Y: 1, Button: input.ButtonRight})
+	require.Len(t, events, 1)
+	assert.Equal(t, Event{Kind: Menu, ID: "quit", Action: "quit", X: 2, Y: 0}, events[0])
+	id, _ := u.Focused()
+	assert.Equal(t, "save", id)
+	assert.Empty(t, u.Update(input.Mouse{Action: input.Release, X: 2, Y: 1, Button: input.ButtonRight}),
+		"the release of a right click is no click")
 }
 
 // Overlapping controls are painted in document order.
