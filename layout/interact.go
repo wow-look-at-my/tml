@@ -19,6 +19,10 @@ type Target struct {
 	Scroll Scroll
 	// Keys is the widget's own key handler, or nil for a widget that leaves every key to the focus ring.
 	Keys widget.Keyed
+	// Box is where the whole widget sits on the screen, before the clip. Rect is the part of it that shows.
+	Box Rect
+	// Part names the part of the widget under a point, or is nil for a widget with no parts.
+	Part widget.Parted
 }
 
 // Scroll is how far a scrolling region's content is shifted, and how far it could be.
@@ -80,7 +84,9 @@ func (p *pass) publish() {
 			continue
 		}
 		keys, _ := box.Native.(widget.Keyed)
-		targets = append(targets, Target{ID: box.ID, Action: box.Action, Focus: box.focus, Rect: rect, Scroll: box.scroll, Keys: keys})
+		part, _ := box.Native.(widget.Parted)
+		targets = append(targets, Target{ID: box.ID, Action: box.Action, Focus: box.focus, Rect: rect, Scroll: box.scroll,
+			Keys: keys, Box: box.Screen, Part: part})
 	}
 	p.e.opts.Interaction.Frame(targets)
 }
