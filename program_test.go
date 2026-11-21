@@ -254,6 +254,20 @@ func TestAProgramSwapsItsView(t *testing.T) {
 		"the alternate screen is gone and the held line printed after it")
 }
 
+func TestAProgramCopiesToTheClipboard(t *testing.T) {
+	t.Serial("the program's view is attached to the single inspector of the process")
+	exclusive(t)
+	run := startTyped(t, tml.ProgramOptions{})
+	require.Eventually(t, func() bool { return onScreen(run.out.String(), "hello") },
+		5*time.Second, 5*time.Millisecond)
+	run.program.Copy("owner/repo")
+	// base64 of "owner/repo", inside a later OSC sequence that sets the clipboard.
+	require.Eventually(t, func() bool { return strings.Contains(run.out.String(), "\x1b]52;c;b3duZXIvcmVwbw==\x07") },
+		5*time.Second, 5*time.Millisecond, "the program writes the clipboard sequence")
+	run.program.Quit()
+	require.NoError(t, waitResult(t, run.result))
+}
+
 // An inline program prints above its region, and only the printed lines stay once it ends.
 func TestAnInlineProgramLeavesOnlyItsLines(t *testing.T) {
 	t.Serial("an inline program takes over the inspector's key, click and repaint handlers for the process")
