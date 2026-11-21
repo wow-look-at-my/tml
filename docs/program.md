@@ -38,7 +38,10 @@ p.After(time.Second, msg)     // once
 p.Every(time.Second, msg)     // until the program ends, or until the returned function is called
 p.Quit()
 p.SetView(view)               // put a reloaded document on screen
+p.Copy(text)                  // set the system clipboard, with OSC 52
 ```
+
+`Copy` writes between a pair of frames, not inside one. A terminal that does not take a later OSC ignores the sequence, and nothing reports that back. A host says what it copied on screen.
 
 There is no command value to return from `Update`. Work that takes time runs on a goroutine and sends its result.
 

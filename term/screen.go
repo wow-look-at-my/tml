@@ -3,6 +3,7 @@
 package term
 
 import (
+	"encoding/base64"
 	"io"
 	"slices"
 	"strconv"
@@ -103,6 +104,12 @@ func (s *Screen) clears() string {
 		}
 	}
 	return strings.Join(seqs, "")
+}
+
+// Clipboard sets the system clipboard to text with a later OSC. The terminal decides whether to honour it.
+func (s *Screen) Clipboard(text string) error {
+	_, err := io.WriteString(s.out, "\x1b]52;c;"+base64.StdEncoding.EncodeToString([]byte(text))+"\x07")
+	return err
 }
 
 // Draw puts a frame on screen.
