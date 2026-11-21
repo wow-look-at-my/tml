@@ -26,6 +26,15 @@ func TestABorderedTableNamesItsParts(t *testing.T) {
 	assert.Empty(t, parted.Part(1, 5), "the bottom border")
 }
 
+// A list names each item by its line.
+func TestAListNamesItsItems(t *testing.T) {
+	parted := build(t, "List", map[string]string{"items": "Restore,Delete"}).(widget.Parted)
+	assert.Equal(t, "item:0", parted.Part(3, 0))
+	assert.Equal(t, "item:1", parted.Part(0, 1))
+	assert.Empty(t, parted.Part(0, 2))
+	assert.Empty(t, parted.Part(0, -1))
+}
+
 // A collapsed column is skipped, so a heading names the column the table declared, not its place on screen.
 func TestAPartNamesTheDeclaredColumn(t *testing.T) {
 	table := build(t, "Table", map[string]string{
