@@ -106,6 +106,7 @@ type Program struct {
 	width, height int
 	tty           bool
 	dirty         bool
+	unchanged     bool
 	stopping      bool
 	err           error
 
@@ -121,6 +122,8 @@ type (
 	interruptMsg struct{}
 	viewMsg      struct{ view *View }
 	copyMsg      struct{ text string }
+	// measureMsg asks for a frame, which is when the program reads the terminal's size.
+	measureMsg struct{}
 )
 
 // NewProgram prepares a program that shows view and is driven by app. Nothing touches the terminal until Run. The
@@ -288,12 +291,14 @@ func (p *Program) loop() {
 		select {
 		case <-p.signal:
 			// A burst of input is one frame, not a frame for each value.
-			p.dirty = true
 			for _, msg := range p.received() {
 				if p.stopping {
 					break
 				}
 				p.dispatch(msg)
+			}
+			if p.linesWait() {
+				p.dirty = true
 			}
 		case <-ticks:
 			p.view.Advance()
@@ -302,15 +307,25 @@ func (p *Program) loop() {
 	}
 }
 
-// dispatch routes one message.
+// Unchanged says that the message Update is handling changed nothing on screen.
+func (p *Program) Unchanged() { p.unchanged = true }
+
+// dispatch routes one message, and asks for a frame unless the app said the message changed nothing.
 func (p *Program) dispatch(msg Msg) {
-	p.dirty = true
+	if !p.route(msg) {
+		p.dirty = true
+	}
+}
+
+// route hands one message on. It reports whether the app took the message and called Unchanged.
+func (p *Program) route(msg Msg) bool {
 	switch msg := msg.(type) {
 	case quitMsg:
 		p.stopping = true
 	case interruptMsg:
 		p.err = ErrInterrupted
 		p.stopping = true
+	case measureMsg:
 	case viewMsg:
 		p.view = msg.view
 		p.screen.Invalidate()
@@ -319,11 +334,11 @@ func (p *Program) dispatch(msg Msg) {
 			p.err = err
 			p.stopping = true
 		}
-	case Resize:
+	case Resize, RepaintMsg:
 		p.app.Update(p, msg)
 	case Key, Mouse, Paste:
-		if p.app.Update(p, msg) {
-			return
+		if p.update(msg) {
+			return p.unchanged
 		}
 		events := p.view.UI().Update(msg)
 		for _, event := range events {
@@ -335,8 +350,16 @@ func (p *Program) dispatch(msg Msg) {
 			p.stopping = true
 		}
 	default:
-		p.app.Update(p, msg)
+		p.update(msg)
+		return p.unchanged
 	}
+	return false
+}
+
+// update is one call of the app's Update, with Unchanged not yet said.
+func (p *Program) update(msg Msg) bool {
+	p.unchanged = false
+	return p.app.Update(p, msg)
 }
 
 // paint prints the queued lines, lays the view out at the screen's size, and draws the frame.

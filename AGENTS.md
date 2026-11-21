@@ -86,7 +86,7 @@ The `<Template>` body is deliberately unchecked. It names components the file im
 
 ## The program
 
-`tml.Program` (`program.go`) owns the terminal and the loop. An input value goes to the app first, then to the focus ring, and the ring's `Event`s come back through `Update`. The program steps animations itself and stops its clock when nothing moves. An unconsumed ctrl+c ends it with `ErrInterrupted`. See docs/program.md.
+`tml.Program` (`program.go`) owns the terminal and the loop. An input value goes to the app first, then to the focus ring, and the ring's `Event`s come back through `Update`. The program steps animations itself and stops its clock when nothing moves. An unconsumed ctrl+c ends it with `ErrInterrupted`. `Update` calls `p.Unchanged()` to skip the frame of a message that changed nothing. See docs/program.md.
 
 ## Project structure
 

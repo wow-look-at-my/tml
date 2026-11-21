@@ -39,6 +39,7 @@ p.Every(time.Second, msg)     // until the program ends, or until the returned f
 p.Quit()
 p.SetView(view)               // put a reloaded document on screen
 p.Copy(text)                  // set the system clipboard, with OSC 52
+p.Unchanged()                 // inside Update: this message changed nothing, so paint no frame
 ```
 
 `Copy` writes between a pair of frames, not inside one. A terminal that does not take a later OSC ignores the sequence, and nothing reports that back. A host says what it copied on screen.
@@ -52,6 +53,8 @@ The program steps the view's animations by itself. Its clock runs at `ProgramOpt
 ## Frames
 
 After each batch of messages the program lays the view out at the screen's size and paints it. The screen writer keeps the last frame and writes only the cells that changed, inside one synchronized update. A burst of input is one frame. See docs/renderer.md.
+
+`Update` calls `p.Unchanged()` when the message it handles changed nothing on screen, and the program paints no frame for that message. A host that passes most keys. On to something else, such as a terminal inside the view, uses it to keep a key from costing a layout. The call speaks for one call of `Update`. An input value that the app leaves to the focus ring always paints, and so do `tml.Resize` and `tml.RepaintMsg`.
 
 A frame that fails to draw ends the program with that error, once the terminal is restored. A program that keeps its last good frame looks like one that stopped.
 
