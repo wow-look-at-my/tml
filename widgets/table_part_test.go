@@ -32,10 +32,10 @@ func TestAPartNamesTheDeclaredColumn(t *testing.T) {
 		"columns": "Name,Wide column,Size", "rows": "a|bbbbbbbbbbbbbb|1",
 		"border": "false", "collapse": "1",
 	})
-	widgettest.Draw(table, 8, 0)
+	widgettest.Draw(table, 9, 0)
 	parted := table.(widget.Parted)
 
 	assert.Equal(t, "header:0", parted.Part(0, 0))
-	assert.Equal(t, "header:2", parted.Part(7, 0))
+	assert.Equal(t, "header:2", parted.Part(8, 0))
 	assert.Equal(t, "row:0", parted.Part(0, 2))
 }
