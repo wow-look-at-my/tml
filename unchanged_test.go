@@ -70,9 +70,9 @@ func startQuiet(t *testing.T) *quiet {
 	require.NoError(t, err)
 	runProgram(t, p)
 	waitFor[tml.Resize](t, app.got)
-	q := &quiet{app: app, program: p, keys: writer}
-	q.paints(t, func() {}, "the first frame")
-	return q
+	require.Eventually(t, func() bool { return app.frames.Load() > 0 }, 5*time.Second, time.Millisecond,
+		"the program painted no first frame")
+	return &quiet{app: app, program: p, keys: writer}
 }
 
 // paints runs a step and waits for the frame that follows it.
