@@ -66,7 +66,7 @@ func (p *Program) enter() (stops []func(), err error) {
 			case <-signals:
 				p.Send(interruptMsg{})
 			case <-resizes:
-				p.wake()
+				p.Send(measureMsg{})
 			case <-quit:
 				return
 			}

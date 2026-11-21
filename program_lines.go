@@ -55,6 +55,13 @@ func (p *Program) wake() {
 	}
 }
 
+// linesWait reports whether a line waits for the frame that prints it.
+func (p *Program) linesWait() bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return len(p.pending) > 0
+}
+
 // take removes the queued lines. The partial line comes too when the program is about to end.
 func (p *Program) take(partial bool) []string {
 	p.mu.Lock()
