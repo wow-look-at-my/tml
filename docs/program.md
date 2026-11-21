@@ -20,7 +20,7 @@ tml.Resize   the screen's size: one before the first frame, one for each change
 tml.Key      one key press:        key.String() is "a", "A", "enter", "ctrl+c", "shift+tab", "space"
 tml.Mouse    one pointer event:    press, release, motion or a wheel notch, at a cell
 tml.Paste    pasted text, as one value
-tml.Event    what the focus ring made of an input value: Activated, FocusMoved, Scrolled, Changed
+tml.Event    what the focus ring made of an input value: Activated, FocusMoved, Scrolled, Changed, Menu
 tml.RepaintMsg  the inspector asking for a new frame
 anything     whatever the host sent with p.Send
 ```

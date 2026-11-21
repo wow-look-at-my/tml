@@ -28,6 +28,8 @@ const (
 	Scrolled
 	// Changed is a key or a paste editing the focused control. Value and Cursor are what the control holds now.
 	Changed
+	// Menu is the right button pressed over a control: the request for a context menu at that point.
+	Menu
 )
 
 func (k EventKind) String() string {
@@ -40,6 +42,8 @@ func (k EventKind) String() string {
 		return "scrolled"
 	case Changed:
 		return "changed"
+	case Menu:
+		return "menu"
 	default:
 		return "invalid"
 	}
@@ -53,6 +57,10 @@ type Event struct {
 	Delta  int
 	// X and Y are where the pointer was inside the control, in cells from its top-left. A widget that draws several
 	X, Y int
+	// Part is what the control drew under the pointer, for a control that names its parts.
+	Part string
+	// Mod is the modifier keys held with a pointer event.
+	Mod input.Mod
 	// Value and Cursor are a Changed control's new value and caret column.
 	Value  string
 	Cursor int
@@ -81,6 +89,10 @@ type UI struct {
 	hover   string
 	press   string
 	targets []layout.Target
+	// drag is the scrolling region whose scrollbar the left button holds, or "" when no bar is held.
+	drag string
+	// dragGrab is the row of the thumb the pointer holds, and dragAt the offset the drag last asked for.
+	dragGrab, dragAt int
 }
 
 // NewUI returns interaction state with the default key map.
@@ -165,19 +177,35 @@ func (u *UI) edit(key input.Key) ([]Event, bool) {
 func (u *UI) pointer(msg input.Mouse) []Event {
 	switch msg.Action {
 	case input.Motion:
+		if u.drag != "" && msg.Button == input.ButtonLeft {
+			return u.dragTo(msg.Y)
+		}
 		u.hover = u.hit(msg.X, msg.Y)
 	case input.Press:
+		target := u.hit(msg.X, msg.Y)
+		u.hover = target
+		if msg.Button == input.ButtonRight {
+			if target == "" {
+				return nil
+			}
+			return u.at(target, Menu, 0, msg)
+		}
 		if msg.Button != input.ButtonLeft {
 			return nil
 		}
-		target := u.hit(msg.X, msg.Y)
+		if u.onBar(target, msg.X, msg.Y) {
+			return u.grab(target, msg.Y)
+		}
 		u.press = target
-		u.hover = target
 		if target == "" {
 			return nil
 		}
 		return u.focusKey(target)
 	case input.Release:
+		if u.drag != "" {
+			u.drag = ""
+			return nil
+		}
 		pressed := u.press
 		u.press = ""
 		target := u.hit(msg.X, msg.Y)
@@ -186,7 +214,7 @@ func (u *UI) pointer(msg input.Mouse) []Event {
 		if pressed == "" || target != pressed {
 			return nil
 		}
-		return u.at(target, Activated, 0, msg.X, msg.Y)
+		return u.at(target, Activated, 0, msg)
 	case input.Wheel:
 		target := u.hit(msg.X, msg.Y)
 		if target == "" {
@@ -194,12 +222,83 @@ func (u *UI) pointer(msg input.Mouse) []Event {
 		}
 		switch msg.Button {
 		case input.WheelUp:
-			return u.at(target, Scrolled, -1, msg.X, msg.Y)
+			return u.at(target, Scrolled, -1, msg)
 		case input.WheelDown:
-			return u.at(target, Scrolled, 1, msg.X, msg.Y)
+			return u.at(target, Scrolled, 1, msg)
 		}
 	}
 	return nil
+}
+
+// bar is the scrollbar a scrolling target draws in its last column.
+type bar struct {
+	top, view, thumb, span int
+}
+
+func (u *UI) barOf(key string) (bar, bool) {
+	index := u.indexOf(key)
+	if index < 0 {
+		return bar{}, false
+	}
+	target := u.targets[index]
+	view := target.Box.H
+	if target.Scroll.MaxY <= 0 || view <= 0 {
+		return bar{}, false
+	}
+	// The same geometry the scrollbox draws its thumb with.
+	thumb := max(1, view*view/(target.Scroll.MaxY+view))
+	b := bar{top: target.Box.Y, view: view, thumb: thumb, span: view - thumb}
+	return b, b.span > 0
+}
+
+// onBar reports whether a point is on the scrollbar of the target under it.
+func (u *UI) onBar(key string, x, y int) bool {
+	index := u.indexOf(key)
+	if index < 0 {
+		return false
+	}
+	box := u.targets[index].Box
+	_, ok := u.barOf(key)
+	return ok && x == box.X+box.W-1 && y >= box.Y && y < box.Y+box.H
+}
+
+// thumbAt is where the thumb of a scrolled target starts, in rows from the top of its bar.
+func (u *UI) thumbAt(key string, b bar) int {
+	scroll := u.targets[u.indexOf(key)].Scroll
+	return min(b.span, max(0, scroll.Y*b.span/scroll.MaxY))
+}
+
+// grab takes hold of a scrollbar. A press on the thumb holds it where it was pressed. A press on the track holds the
+// thumb by its middle, so it jumps under the pointer.
+func (u *UI) grab(key string, y int) []Event {
+	b, _ := u.barOf(key)
+	start := u.thumbAt(key, b)
+	row := y - b.top
+	u.drag, u.dragGrab = key, b.thumb/2
+	if row >= start && row < start+b.thumb {
+		u.dragGrab = row - start
+	}
+	u.dragAt = u.targets[u.indexOf(key)].Scroll.Y
+	return u.dragTo(y)
+}
+
+// dragTo moves the held thumb under the pointer. It reports the move as a Scrolled event whose Delta is the rows
+// the content has to shift. A host that already scrolls on the wheel scrolls on the bar with no new code.
+func (u *UI) dragTo(y int) []Event {
+	b, ok := u.barOf(u.drag)
+	if !ok {
+		u.drag = ""
+		return nil
+	}
+	maxY := u.targets[u.indexOf(u.drag)].Scroll.MaxY
+	start := min(b.span, max(0, y-b.top-u.dragGrab))
+	want := (start*maxY + b.span/2) / b.span
+	delta := want - u.dragAt
+	if delta == 0 {
+		return nil
+	}
+	u.dragAt = want
+	return u.event(u.drag, Scrolled, delta, -1, -1)
 }
 
 func (u *UI) key(stroke string) []Event {
@@ -293,14 +392,20 @@ func (u *UI) activate(key string) []Event {
 	return u.event(key, Activated, 0, -1, -1)
 }
 
-// at is a pointer event, with the screen point turned into an offset inside the control it landed on.
-func (u *UI) at(key string, kind EventKind, delta, screenX, screenY int) []Event {
+// at is a pointer event. That event is with the screen point turned into an offset. This is inside the control it
+// landed on, and the part of the control it landed on.
+func (u *UI) at(key string, kind EventKind, delta int, msg input.Mouse) []Event {
 	index := u.indexOf(key)
 	if index < 0 {
 		return nil
 	}
-	rect := u.targets[index].Rect
-	return u.event(key, kind, delta, screenX-rect.X, screenY-rect.Y)
+	target := u.targets[index]
+	events := u.event(key, kind, delta, msg.X-target.Rect.X, msg.Y-target.Rect.Y)
+	events[0].Mod = msg.Mod
+	if target.Part != nil {
+		events[0].Part = target.Part.Part(msg.X-target.Box.X, msg.Y-target.Box.Y)
+	}
+	return events
 }
 
 func (u *UI) event(key string, kind EventKind, delta, x, y int) []Event {
