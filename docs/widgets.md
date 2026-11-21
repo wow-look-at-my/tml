@@ -52,7 +52,7 @@ A widget that knows its own parts names them, and the name arrives as `event.Par
 
 `event.Mod` carries the modifier keys held with the pointer, so ctrl+click and shift+click reach the host.
 
-It moves neither the focus nor the press, and its release is no click. A host opens its context menu there: a `Canvas` child placed at `Canvas.x` and `Canvas.y`.
+A right click raises `tml.Menu` on the element under the pointer. It moves neither the focus nor the press, and its release is no click. A host opens its context menu there: a `Canvas` child placed at `Canvas.x` and `Canvas.y`.
 
 The left button on a `Scrollbox`'s scrollbar holds it. A press on the thumb holds it where it was pressed, and a press on the track jumps the thumb under the pointer. While the button is held, moving the pointer reports `tml.Scrolled` with `Delta` set to the rows the content has to move. A host that scrolls on the wheel therefore scrolls on the bar with no new code. Releasing the button ends the drag, and is no click.
 
