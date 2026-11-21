@@ -120,6 +120,7 @@ type (
 	quitMsg      struct{}
 	interruptMsg struct{}
 	viewMsg      struct{ view *View }
+	copyMsg      struct{ text string }
 )
 
 // NewProgram prepares a program that shows view and is driven by app. Nothing touches the terminal until Run. The
@@ -223,6 +224,9 @@ func (p *Program) View() *View { return p.view }
 // SetView swaps the view the program shows, which is how a host puts a reloaded document on screen.
 func (p *Program) SetView(view *View) { p.Send(viewMsg{view: view}) }
 
+// Copy puts text on the system clipboard through the terminal, with a later OSC sequence.
+func (p *Program) Copy(text string) { p.Send(copyMsg{text: text}) }
+
 // Done is closed when the program has ended and the terminal is restored.
 func (p *Program) Done() <-chan struct{} { return p.done }
 
@@ -310,6 +314,11 @@ func (p *Program) dispatch(msg Msg) {
 	case viewMsg:
 		p.view = msg.view
 		p.screen.Invalidate()
+	case copyMsg:
+		if err := p.screen.Clipboard(msg.text); err != nil {
+			p.err = err
+			p.stopping = true
+		}
 	case Resize:
 		p.app.Update(p, msg)
 	case Key, Mouse, Paste:
