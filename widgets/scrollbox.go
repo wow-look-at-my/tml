@@ -95,18 +95,10 @@ func (s *scrollbox) Overlay(c cell.Canvas) {
 
 // drawBar is the gutter column: a track with a thumb sized and placed in proportion to what is on screen.
 func (s *scrollbox) drawBar(c cell.Canvas, x, view int) {
-	total := s.scroll.MaxY + view
-	if view <= 0 || total <= view {
-		if s.bar == "always" {
-			c.Repeat(x, 0, 1, view, "│", cell.Style{})
-		}
-		return
+	bar := widget.Scrollbar{View: view, Y: s.scroll.Y, MaxY: s.scroll.MaxY}
+	if _, _, scrolls := bar.Thumb(); scrolls || s.bar == "always" {
+		bar.Draw(c, x, cell.Style{})
 	}
-	c.Repeat(x, 0, 1, view, "│", cell.Style{})
-	thumb := max(1, view*view/total)
-	span := view - thumb
-	start := min(span, max(0, s.scroll.Y*span/s.scroll.MaxY))
-	c.Repeat(x, start, 1, min(thumb, view-start), "█", cell.Style{})
 }
 
 // fadeTall is the viewport height at which an edge fade widens from one row to a band.

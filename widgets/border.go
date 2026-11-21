@@ -118,19 +118,25 @@ func (f *frame) Draw(c cell.Canvas) {
 	f.drawTitle(c, w)
 }
 
-// drawTitle writes the label into the top edge. The corners are not edge, so the label only goes between them.
+// drawTitle writes the label into the top edge.
 func (f *frame) drawTitle(c cell.Canvas, width int) {
-	if f.title == "" {
+	edgeTitle(c, f.measure, f.title, f.titleAlign, width)
+}
+
+// edgeTitle writes a label into the top edge of a box. The corners are not edge, so the label only goes between
+// them, and a label with no room is left out.
+func edgeTitle(c cell.Canvas, measure widget.Measurer, title, align string, width int) {
+	if title == "" {
 		return
 	}
-	text := " " + f.title + " "
+	text := " " + title + " "
 	room := width - 2
-	size := f.measure.Width(text)
+	size := measure.Width(text)
 	if room <= 0 || size > room {
 		return
 	}
 	offset := 1
-	switch f.titleAlign {
+	switch align {
 	case "center":
 		offset = 1 + (room-size)/2
 	case "right":
