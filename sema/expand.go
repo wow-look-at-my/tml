@@ -10,6 +10,7 @@ import (
 
 	"github.com/wow-look-at-my/go-containers/set"
 
+	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/syntax"
 )
 
@@ -126,8 +127,15 @@ func (p *Program) resolveTokens(opts ExpandOptions) (map[string]Value, error) {
 			tokens[name] = StringValue(token.Value)
 		}
 	}
+	// A colour evaluates to a reference, not to its value: only the theme knows the value.
+	for name := range p.colors {
+		tokens[name] = ColorValue(name)
+	}
 	return tokens, nil
 }
+
+// ColorValue is a reference to a theme colour by name. A host hands one to a property that takes a colour.
+func ColorValue(name string) Value { return StringValue(cell.Ref(name)) }
 
 // bindProps turns call-site arguments into an instance scope, applying defaults and enforcing required properties.
 func (p *Program) bindProps(c *compiled, args map[string]Value, tokens map[string]Value, at syntax.Pos) (*evalScope, error) {

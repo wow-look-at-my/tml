@@ -41,10 +41,10 @@ func newProgressBar(ctx widget.Context) (widget.Native, error) {
 	if bar.percent, err = ctx.Attrs.Bool("percent", false); err != nil {
 		return nil, err
 	}
-	if bar.color, err = colorAttr(ctx.Attrs, "color"); err != nil {
+	if bar.color, err = ctx.Color("color"); err != nil {
 		return nil, err
 	}
-	if bar.track, err = colorAttr(ctx.Attrs, "trackColor"); err != nil {
+	if bar.track, err = ctx.Color("trackColor"); err != nil {
 		return nil, err
 	}
 	return bar, nil

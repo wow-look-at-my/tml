@@ -19,7 +19,8 @@ type scrollbox struct {
 	fade             bool
 	moreAbove        bool
 	moreBelow        bool
-	dark             bool
+	// fadeTo is the colour a faded row moves toward. fadeText is the colour of a glyph that names none.
+	fadeTo, fadeText cell.Color
 	// scroll is where layout put the content. The scrollbar and the fade are drawn from it.
 	scroll widget.Scroll
 }
@@ -29,9 +30,16 @@ func newScrollbox(ctx widget.Context) (widget.Native, error) {
 	if err != nil {
 		return nil, err
 	}
-	box := &scrollbox{bar: bar, dark: ctx.Dark}
+	box := &scrollbox{bar: bar}
 	if box.fade, err = ctx.Attrs.Bool("fade", false); err != nil {
 		return nil, err
+	}
+	if box.fade {
+		colors, err := themed(ctx, "fade", "fadeText")
+		if err != nil {
+			return nil, err
+		}
+		box.fadeTo, box.fadeText = colors[0], colors[1]
 	}
 	if box.moreAbove, err = ctx.Attrs.Bool("moreAbove", false); err != nil {
 		return nil, err
@@ -121,29 +129,12 @@ func (s *scrollbox) fadeEdges(c cell.Canvas, width, height int) {
 	// Depth counts inward from the edge, so the row at the edge is the faintest of the band.
 	for i := range rows {
 		if above {
-			fadeRow(c, i, width, rows-i, rows, s.dark)
+			s.fadeRow(c, i, width, rows-i, rows)
 		}
 		if below {
-			fadeRow(c, height-1-i, width, rows-i, rows, s.dark)
+			s.fadeRow(c, height-1-i, width, rows-i, rows)
 		}
 	}
-}
-
-// fadeTarget is what a faded row is blended toward: the background, which is black on a dark theme and white on a
-// light one.
-func fadeTarget(dark bool) cell.Color {
-	if dark {
-		return cell.RGB(0, 0, 0)
-	}
-	return cell.RGB(255, 255, 255)
-}
-
-// defaultForeground approximates the terminal's own foreground, the colour a cell that names none is drawn in.
-func defaultForeground(dark bool) cell.Color {
-	if dark {
-		return cell.RGB(200, 200, 200)
-	}
-	return cell.RGB(60, 60, 60)
 }
 
 // fadePercent is how much of the background a row this deep into a band takes, so an edge reads as a gradient.
@@ -155,7 +146,7 @@ func fadePercent(depth, band int) int {
 }
 
 // fadeRow moves the foreground of every glyph in a drawn row toward the background.
-func fadeRow(c cell.Canvas, row, width, depth, band int, dark bool) {
+func (s *scrollbox) fadeRow(c cell.Canvas, row, width, depth, band int) {
 	percent := fadePercent(depth, band)
 	c.Restyle(0, row, width, 1, func(drawn cell.Cell) cell.Style {
 		style := drawn.Style
@@ -165,9 +156,9 @@ func fadeRow(c cell.Canvas, row, width, depth, band int, dark bool) {
 		}
 		from := style.Fg
 		if !from.IsSet() {
-			from = defaultForeground(dark)
+			from = s.fadeText
 		}
-		style.Fg = from.Blend(fadeTarget(dark), percent)
+		style.Fg = from.Blend(s.fadeTo, percent)
 		return style
 	})
 }

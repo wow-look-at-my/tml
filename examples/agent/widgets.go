@@ -10,14 +10,15 @@ import (
 )
 
 // Both widgets this example binds are the point of it: neither belongs in the language's own library.
+// A role names the theme colour of its label.
 var roles = map[string]struct {
 	label  string
-	colour cell.Color
+	colour string
 }{
-	"you":   {label: "you", colour: cell.Indexed(12)},
-	"agent": {label: "tml", colour: cell.Indexed(10)},
-	"tool":  {label: " ⚙ ", colour: cell.Indexed(11)},
-	"note":  {label: "   ", colour: cell.Indexed(8)},
+	"you":   {label: "you", colour: "accent"},
+	"agent": {label: "tml", colour: "ok"},
+	"tool":  {label: " ⚙ ", colour: "warn"},
+	"note":  {label: "   ", colour: "dim"},
 }
 
 var roleOrder = []string{"you", "agent", "tool", "note"}
@@ -26,6 +27,7 @@ var roleOrder = []string{"you", "agent", "tool", "note"}
 type transcript struct {
 	entries []entry
 	measure widget.Measurer
+	theme   cell.Palette
 }
 
 type entry struct {
@@ -34,7 +36,12 @@ type entry struct {
 }
 
 func newTranscript(ctx widget.Context) (widget.Native, error) {
-	t := &transcript{measure: ctx.Measure}
+	t := &transcript{measure: ctx.Measure, theme: ctx.Theme}
+	for _, name := range roleOrder {
+		if _, err := ctx.Theme.Named(roles[name].colour); err != nil {
+			return nil, err
+		}
+	}
 	for _, raw := range ctx.Attrs.List("entries") {
 		role, text, _ := strings.Cut(raw, "|")
 		if _, known := roles[role]; !known {
@@ -77,7 +84,7 @@ func (t *transcript) Draw(c cell.Canvas) {
 			y++
 		}
 		role := roles[e.role]
-		c.Text(1, y, role.label, cell.Style{Fg: role.colour}.Bold(true))
+		c.Text(1, y, role.label, cell.Style{Fg: t.theme[role.colour]}.Bold(true))
 		for _, line := range t.wrap(e.text, w) {
 			c.Line(gutter, y, line, cell.Style{})
 			y++
@@ -89,10 +96,20 @@ func (t *transcript) Draw(c cell.Canvas) {
 type diff struct {
 	lines   []string
 	measure widget.Measurer
+	// added, removed and hunk are the theme colours of the lines a diff marks.
+	added, removed, hunk cell.Color
 }
 
 func newDiff(ctx widget.Context) (widget.Native, error) {
-	return &diff{lines: ctx.Attrs.List("lines"), measure: ctx.Measure}, nil
+	d := &diff{lines: ctx.Attrs.List("lines"), measure: ctx.Measure}
+	for name, into := range map[string]*cell.Color{"ok": &d.added, "danger": &d.removed, "note": &d.hunk} {
+		color, err := ctx.Theme.Named(name)
+		if err != nil {
+			return nil, err
+		}
+		*into = color
+	}
+	return d, nil
 }
 
 // Measure reports the height the diff draws to, wrapping included. A long line takes more than one row, and a card
@@ -129,11 +146,11 @@ func (d *diff) Draw(c cell.Canvas) {
 func (d *diff) style(line string) cell.Style {
 	switch {
 	case strings.HasPrefix(line, "+"):
-		return cell.Style{Fg: cell.Indexed(10)}
+		return cell.Style{Fg: d.added}
 	case strings.HasPrefix(line, "-"):
-		return cell.Style{Fg: cell.Indexed(9)}
+		return cell.Style{Fg: d.removed}
 	case strings.HasPrefix(line, "@@"):
-		return cell.Style{Fg: cell.Indexed(13)}
+		return cell.Style{Fg: d.hunk}
 	default:
 		return cell.Style{}.Faint(true)
 	}

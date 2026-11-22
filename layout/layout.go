@@ -301,6 +301,7 @@ func (p *pass) build(node *sema.Node) (*Box, error) {
 			FS:      e.opts.FS,
 			Dir:     path.Dir(node.Pos.File),
 			Dark:    e.opts.Dark,
+			Theme:   e.sheet.Palette(),
 			Measure: e.opts.Measure,
 			Frame:   e.phase,
 		})

@@ -4,7 +4,7 @@
 	<Property name="rows" type="string[]" default=""/>
 	<Template>
 		<Stack>
-			<Text fg="#ff0000" bold="true">{head}</Text>
+			<Text fg="{theme.danger}" bold="true">{head}</Text>
 			<For each="{rows}" as="row"><Text>  {row}</Text></For>
 		</Stack>
 	</Template>

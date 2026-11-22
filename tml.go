@@ -49,6 +49,8 @@ func Load(fsys fs.FS, entry string, opts Options) (*View, error) {
 	if err != nil {
 		return nil, err
 	}
+	// The base theme comes first, so a theme of the view can replace one of its colours.
+	unit.Themes = append([]*syntax.Theme{style.Base()}, unit.Themes...)
 	registry := opts.Widgets
 	if !opts.Bare {
 		registry = opts.Widgets.Merge(widgets.Library())
@@ -60,7 +62,7 @@ func Load(fsys fs.FS, entry string, opts Options) (*View, error) {
 	if err != nil {
 		return nil, err
 	}
-	sheet, err := style.NewSheet(unit.Themes, program.Tokens(sema.ExpandOptions{Dark: opts.Dark}))
+	sheet, err := style.NewSheetFor(unit.Themes, program.Tokens(sema.ExpandOptions{Dark: opts.Dark}), opts.Dark)
 	if err != nil {
 		return nil, err
 	}

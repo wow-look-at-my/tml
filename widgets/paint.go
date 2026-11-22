@@ -10,15 +10,15 @@ import (
 // paint builds a style from an optional colour, so a widget can colour a single part of itself.
 func paint(color cell.Color) cell.Style { return cell.Style{Fg: color} }
 
-// colorAttr reads an optional colour attribute. A value that is not a colour fails the build of the widget.
-func colorAttr(attrs widget.Attrs, name string) (cell.Color, error) {
-	raw := attrs.String(name, "")
-	if raw == "" {
-		return cell.Color{}, nil
+// themed reads the theme colours a widget draws with, in the order of the names.
+func themed(ctx widget.Context, names ...string) ([]cell.Color, error) {
+	colors := make([]cell.Color, len(names))
+	for i, name := range names {
+		color, err := ctx.Theme.Named(name)
+		if err != nil {
+			return nil, err
+		}
+		colors[i] = color
 	}
-	color, err := cell.ParseColor(raw)
-	if err != nil {
-		return cell.Color{}, attrs.Errorf(name, "%v", err)
-	}
-	return color, nil
+	return colors, nil
 }

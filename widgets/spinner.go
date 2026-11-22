@@ -38,7 +38,7 @@ func newSpinner(ctx widget.Context) (widget.Native, error) {
 	frames := spinners[kind]
 	// A frame counter only goes up, so the walk through this kind's frames has to wrap here.
 	frame := ((ctx.Frame % len(frames)) + len(frames)) % len(frames)
-	color, err := colorAttr(ctx.Attrs, "color")
+	color, err := ctx.Color("color")
 	if err != nil {
 		return nil, err
 	}

@@ -1,0 +1,11 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<Theme xmlns="urn:tml:v1" name="tml">
+	<Color name="primary" for="the border and the label of a button that is the main action" value="12"/>
+	<Color name="danger" for="the border and the label of a button that destroys something" value="9"/>
+	<Color name="disabled" for="the border of a control that does not answer" value="8"/>
+	<Color name="focus" for="the border of the control that has the keyboard" value="13"/>
+	<Color name="fade" for="the background a scrolling region fades into at its edges" light="#ffffff" dark="#000000"/>
+	<Color name="fadeText" for="text with no colour of its own, where a scrolling region fades" light="#3c3c3c" dark="#c8c8c8"/>
+	<Color name="tooltip" for="the surface of a tooltip" light="#30343f" dark="#f2e9b8"/>
+	<Color name="tooltipText" for="the text of a tooltip" light="#ffffff" dark="#1b1d24"/>
+</Theme>

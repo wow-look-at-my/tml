@@ -70,16 +70,16 @@ func (r Resolved) ContentOffset() (x, y int) {
 var colorAttrs = set.Of[string]("fg", "bg", "borderColor")
 
 // build turns a flattened attribute map into a resolved style.
-func build(attrs map[string]string) (Resolved, error) {
+func build(attrs map[string]string, palette cell.Palette) (Resolved, error) {
 	var resolved Resolved
 
 	for name, raw := range attrs {
 		var err error
 		switch name {
 		case "fg":
-			resolved.Paint.Fg, err = cell.ParseColor(raw)
+			resolved.Paint.Fg, err = palette.Resolve(raw)
 		case "bg":
-			resolved.Paint.Bg, err = cell.ParseColor(raw)
+			resolved.Paint.Bg, err = palette.Resolve(raw)
 		case "bold", "italic", "underline", "strikethrough", "faint", "reverse":
 			err = applyTextFlag(&resolved, name, raw)
 		case "padding":
@@ -89,7 +89,7 @@ func build(attrs map[string]string) (Resolved, error) {
 		case "border":
 			err = applyBorder(&resolved, raw)
 		case "borderColor":
-			resolved.BorderPaint.Fg, err = cell.ParseColor(raw)
+			resolved.BorderPaint.Fg, err = palette.Resolve(raw)
 		case "align":
 			resolved.Align, err = parseHorizontal(raw)
 		case "valign":

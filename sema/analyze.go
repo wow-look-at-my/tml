@@ -27,6 +27,8 @@ type Program struct {
 	slots      map[string][]string
 	components map[string]*compiled
 	tokens     map[string]*syntax.Token
+	// colors are the theme colours. A later theme replaces a colour an earlier one declares.
+	colors map[string]*syntax.Color
 }
 
 // compiled is a component with its declarations parsed and its template expressions pre-parsed, so expansion never
@@ -85,6 +87,7 @@ func Analyze(unit *syntax.Unit, opts Options) (*Program, error) {
 		slots:      opts.Slots,
 		components: make(map[string]*compiled),
 		tokens:     make(map[string]*syntax.Token),
+		colors:     make(map[string]*syntax.Color),
 	}
 	// A theme has no properties and nothing to instantiate, so it is checked for its own sake -- duplicate tokens.
 	if unit.Root.Component != nil {
@@ -100,6 +103,15 @@ func Analyze(unit *syntax.Unit, opts Options) (*Program, error) {
 	for _, theme := range unit.Themes {
 		for _, token := range theme.Tokens {
 			program.tokens[token.Name] = token
+		}
+		for _, color := range theme.Colors {
+			program.colors[color.Name] = color
+		}
+	}
+	for name, color := range program.colors {
+		if token, clash := program.tokens[name]; clash {
+			return nil, &syntax.Error{Pos: token.Pos, Message: fmt.Sprintf(
+				"token %q has the name of the theme colour at %s; a colour is a <Color>, with a for attribute", name, color.Pos)}
 		}
 	}
 
@@ -304,9 +316,9 @@ func attrOf(node *tnode, name string) (string, bool) {
 func (p *Program) checkRefs(c *compiled, expr *Expr, pos syntax.Pos, names map[string]bool) error {
 	for _, ref := range expr.Refs() {
 		if ref.Theme {
-			if _, ok := p.tokens[ref.Name]; !ok {
+			if !p.themed(ref.Name) {
 				return &syntax.Error{Pos: pos, Message: fmt.Sprintf(
-					"unknown theme token %q%s", ref.Name, didYouMean(ref.Name, tokenNames(p.tokens)))}
+					"unknown theme token %q%s", ref.Name, didYouMean(ref.Name, p.themeNames()))}
 			}
 			continue
 		}
@@ -440,9 +452,20 @@ func sortedNames(set map[string]bool) []string {
 	return names
 }
 
-func tokenNames(set map[string]*syntax.Token) []string {
-	names := make([]string, 0, len(set))
-	for name := range set {
+// themed reports whether a theme declares a colour or a token with a name.
+func (p *Program) themed(name string) bool {
+	_, color := p.colors[name]
+	_, token := p.tokens[name]
+	return color || token
+}
+
+// themeNames lists every name a `{theme.x}` reference can take.
+func (p *Program) themeNames() []string {
+	names := make([]string, 0, len(p.tokens)+len(p.colors))
+	for name := range p.tokens {
+		names = append(names, name)
+	}
+	for name := range p.colors {
 		names = append(names, name)
 	}
 	sort.Strings(names)

@@ -7,6 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/wow-look-at-my/tml/cell"
+	"github.com/wow-look-at-my/tml/style"
+
 	"github.com/wow-look-at-my/tml/sema"
 	"github.com/wow-look-at-my/tml/widget"
 	"github.com/wow-look-at-my/tml/widget/widgettest"
@@ -25,7 +28,18 @@ func tryBuild(element string, pairs map[string]string) (widget.Native, error) {
 	if !ok {
 		return nil, assertUnknown(element)
 	}
-	return factory.Build(widget.Context{Attrs: attrsOf(element, pairs)})
+	return factory.Build(widget.Context{Attrs: attrsOf(element, pairs), Theme: theme(false)})
+}
+
+// theme is the base theme's colours, with the colours the tests name.
+func theme(dark bool) cell.Palette {
+	palette, err := style.Palette(nil, dark)
+	if err != nil {
+		panic(err)
+	}
+	palette["accent"] = cell.RGB(255, 0, 0)
+	palette["track"] = cell.RGB(16, 32, 48)
+	return palette
 }
 
 // attrsOf builds the attribute set the engine would hand a factory.

@@ -18,13 +18,7 @@ var buttonSlots = []string{"Content"}
 // buttonChrome is the element a button is drawn as. The label, or whatever is written inside, is its content.
 var buttonChrome = map[string]string{"kind": "rounded", "pad": "1", "contentAlign": "center"}
 
-// variants are the looks a button comes in, as a foreground colour for its border and label.
-var variants = map[string]cell.Color{
-	"default": {},
-	"primary": cell.Indexed(12),
-	"danger":  cell.Indexed(9),
-}
-
+// variantNames are the looks a button comes in.
 var variantNames = []string{"danger", "default", "primary"}
 
 // button is a control the keyboard and the pointer can reach.
@@ -32,8 +26,10 @@ type button struct {
 	label    string
 	disabled bool
 	accent   cell.Color
-	state    widget.State
-	chrome   *frame
+	// off and focus are the theme colours of a disabled button and of a focused one.
+	off, focus cell.Color
+	state      widget.State
+	chrome     *frame
 }
 
 func newButton(ctx widget.Context) (widget.Native, error) {
@@ -45,11 +41,17 @@ func newButton(ctx widget.Context) (widget.Native, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &button{
-		label:    ctx.Attrs.String("label", ""),
-		disabled: disabled,
-		accent:   variants[variant],
-	}, nil
+	colors, err := themed(ctx, "disabled", "focus")
+	if err != nil {
+		return nil, err
+	}
+	b := &button{label: ctx.Attrs.String("label", ""), disabled: disabled, off: colors[0], focus: colors[1]}
+	if variant != "default" {
+		if b.accent, err = ctx.Theme.Named(variant); err != nil {
+			return nil, err
+		}
+	}
+	return b, nil
 }
 
 // AcceptsFocus is false while disabled, which is what keeps tab from stopping on a control that would do nothing.
@@ -96,7 +98,7 @@ func (b *button) steer() {
 	var face cell.Style
 	switch {
 	case b.disabled:
-		color = cell.Indexed(8)
+		color = b.off
 		face = face.Faint(true)
 	case b.state.Pressed:
 		face = face.Reverse(true)
@@ -117,5 +119,5 @@ func (b *button) focusColor() cell.Color {
 	if b.accent.IsSet() {
 		return b.accent
 	}
-	return cell.Indexed(13)
+	return b.focus
 }

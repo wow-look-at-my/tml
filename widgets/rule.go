@@ -35,7 +35,7 @@ func newRule(ctx widget.Context) (widget.Native, error) {
 	if r.char, err = ctx.Attrs.Rune("char", deflt); err != nil {
 		return nil, err
 	}
-	if r.color, err = colorAttr(ctx.Attrs, "color"); err != nil {
+	if r.color, err = ctx.Color("color"); err != nil {
 		return nil, err
 	}
 	return r, nil
