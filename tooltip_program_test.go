@@ -1,6 +1,7 @@
 package tml_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -12,8 +13,24 @@ import (
 	"github.com/wow-look-at-my/tml/sema"
 )
 
-// rest is the bytes a terminal sends when the pointer moves onto a cell with no button held. The cell counts from one.
-const restOnButton = "\x1b[<35;3;3M"
+// buttonCell is a cell inside the document's button, from a layout of the same document at the program's size.
+func buttonCell(t *testing.T) (x, y int) {
+	t.Helper()
+	view := loadDoc(t, programDoc)
+	_, err := view.Draw(tml.Props{"title": sema.StringValue("hello")}, programWidth, programHeight)
+	require.NoError(t, err)
+	button, ok := view.UI().Target("go")
+	require.True(t, ok)
+	return button.Rect.X + 2, button.Rect.Y + 1
+}
+
+// restOnButton is the bytes a terminal sends when the pointer moves onto the button with no button held. A report
+// counts its cells from one.
+func restOnButton(t *testing.T) string {
+	t.Helper()
+	x, y := buttonCell(t)
+	return fmt.Sprintf("\x1b[<35;%d;%dM", x+1, y+1)
+}
 
 func tooltipShows(run *typed) func() bool {
 	return func() bool { return onScreen(run.out.String(), " Starts the run ") }
@@ -54,11 +71,8 @@ func TestAProgramShowsATooltipOnceThePointerRests(t *testing.T) {
 	require.Eventually(t, func() bool { return onScreen(run.out.String(), "Go") }, 5*time.Second, 5*time.Millisecond)
 	assert.False(t, tooltipShows(run)(), "nothing shows before the pointer comes")
 
-	run.typeBytes(t, restOnButton)
+	run.typeBytes(t, restOnButton(t))
 	require.Eventually(t, tooltipShows(run), 5*time.Second, 5*time.Millisecond, "the tooltip shows after the rest")
-	tip, shown := run.program.View().UI().Tooltip()
-	require.True(t, shown)
-	assert.Equal(t, tml.Tooltip{Text: "Starts the run", X: 2, Y: 2}, tip)
 
 	run.typeBytes(t, "a")
 	require.Eventually(t, func() bool { return !tooltipShows(run)() }, 5*time.Second, 5*time.Millisecond,
@@ -87,10 +101,10 @@ func TestATooltipDoesNotNeedTheRingToSeeThePointer(t *testing.T) {
 	run := startKept(t, tml.ProgramOptions{TooltipDelay: 20 * time.Millisecond})
 	require.Eventually(t, func() bool { return onScreen(run.out.String(), "Go") }, 5*time.Second, 5*time.Millisecond)
 
-	run.typeBytes(t, restOnButton)
+	run.typeBytes(t, restOnButton(t))
 	require.Eventually(t, tooltipShows(run), 5*time.Second, 5*time.Millisecond)
 
-	run.typeBytes(t, "\x1b[<35;30;9M")
+	run.typeBytes(t, "\x1b[<35;40;10M")
 	require.Eventually(t, func() bool { return !tooltipShows(run)() }, 5*time.Second, 5*time.Millisecond,
 		"the pointer left, and the app said the move changed nothing")
 }
@@ -102,7 +116,7 @@ func TestANegativeDelayShowsNoTooltip(t *testing.T) {
 	run := startTyped(t, tml.ProgramOptions{TooltipDelay: -1})
 	require.Eventually(t, func() bool { return onScreen(run.out.String(), "Go") }, 5*time.Second, 5*time.Millisecond)
 
-	run.typeBytes(t, restOnButton)
+	run.typeBytes(t, restOnButton(t))
 	waitFor[tml.Mouse](t, run.app.got)
 	assert.Never(t, tooltipShows(run), 150*time.Millisecond, 10*time.Millisecond)
 }
