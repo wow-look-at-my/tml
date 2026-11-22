@@ -21,7 +21,9 @@ func fadedCell(glyph string, style cell.Style, depth, band int, dark bool) cell.
 	buf := cell.NewBuffer(1, 1)
 	c := buf.Canvas(nil)
 	c.Text(0, 0, glyph, style)
-	fadeRow(c, 0, 1, depth, band, dark)
+	palette := theme(dark)
+	box := &scrollbox{fadeTo: palette["fade"], fadeText: palette["fadeText"]}
+	box.fadeRow(c, 0, 1, depth, band)
 	return buf.At(0, 0)
 }
 
@@ -50,9 +52,9 @@ func TestFadeRowResolvesEveryForegroundSpelling(t *testing.T) {
 func TestFadeRowBlendsTowardTheBackground(t *testing.T) {
 	assert.Equal(t, cell.RGB(90, 90, 90), fadedCell("x", cell.Style{}, 1, 1, true).Style.Fg)
 	assert.Equal(t, cell.RGB(167, 167, 167), fadedCell("x", cell.Style{}, 1, 1, false).Style.Fg)
-	assert.Equal(t, fadeTarget(true), cell.RGB(0, 0, 0))
-	assert.Equal(t, fadeTarget(false), cell.RGB(255, 255, 255))
-	assert.Equal(t, defaultForeground(true).Blend(fadeTarget(true), 55), fadedCell("x", cell.Style{}, 1, 1, true).Style.Fg)
+	assert.Equal(t, theme(true)["fade"], cell.RGB(0, 0, 0))
+	assert.Equal(t, theme(false)["fade"], cell.RGB(255, 255, 255))
+	assert.Equal(t, theme(true)["fadeText"].Blend(theme(true)["fade"], 55), fadedCell("x", cell.Style{}, 1, 1, true).Style.Fg)
 }
 
 // The fade moves the foreground and nothing else: a background and the attributes survive it.

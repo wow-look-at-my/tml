@@ -33,7 +33,7 @@ func TestSparklineKeepsTheMostRecentPoints(t *testing.T) {
 }
 
 func TestSparklineTakesAColour(t *testing.T) {
-	line := build(t, "Sparkline", map[string]string{"values": "1,2", "color": "#ff0000"})
+	line := build(t, "Sparkline", map[string]string{"values": "1,2", "color": ref("accent")})
 
 	assert.Equal(t, cell.RGB(255, 0, 0), widgettest.Draw(line, 0, 0).At(1, 0).Style.Fg)
 }

@@ -16,7 +16,7 @@ func spinnerAt(t *testing.T, frame int, pairs map[string]string) widget.Native {
 	t.Helper()
 	factory, ok := Library().Factory("Spinner")
 	require.True(t, ok, "the library ships a Spinner")
-	native, err := factory.Build(widget.Context{Attrs: attrsOf("Spinner", pairs), Frame: frame})
+	native, err := factory.Build(widget.Context{Attrs: attrsOf("Spinner", pairs), Frame: frame, Theme: theme(false)})
 	require.NoError(t, err)
 	return native
 }
@@ -34,7 +34,7 @@ func TestSpinnerWrapsTheFrameCounter(t *testing.T) {
 }
 
 func TestSpinnerTakesAColour(t *testing.T) {
-	spin := spinnerAt(t, 0, map[string]string{"kind": "line", "color": "12"})
+	spin := spinnerAt(t, 0, map[string]string{"kind": "line", "color": ref("primary")})
 
 	assert.Equal(t, cell.Indexed(12), widgettest.Draw(spin, 0, 0).At(0, 0).Style.Fg)
 }

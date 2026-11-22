@@ -38,9 +38,15 @@ func theme(dark bool) cell.Palette {
 		panic(err)
 	}
 	palette["accent"] = cell.RGB(255, 0, 0)
+	palette["onAccent"] = cell.RGB(255, 255, 255)
 	palette["track"] = cell.RGB(16, 32, 48)
+	palette["ok"] = cell.Indexed(2)
+	palette["line"] = cell.Indexed(5)
 	return palette
 }
+
+// ref is how an attribute names a theme colour once the engine has evaluated it.
+func ref(name string) string { return cell.Ref(name) }
 
 // attrsOf builds the attribute set the engine would hand a factory.
 func attrsOf(element string, pairs map[string]string) widget.Attrs {

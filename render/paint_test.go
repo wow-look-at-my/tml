@@ -16,12 +16,19 @@ import (
 // paintTree lays a tree out at a viewport and paints the whole frame.
 func paintTree(t *testing.T, node *sema.Node, w, h int) *cell.Buffer {
 	t.Helper()
-	sheet, err := style.NewSheet(nil, nil)
+	sheet, err := style.NewSheet(primaries, nil)
 	require.NoError(t, err)
 	box, err := layout.New(sheet, layout.Options{}).Layout(node, w, h)
 	require.NoError(t, err)
 	return Frame(box, w, h, nil)
 }
+
+// primaries is a theme with the colours the tests paint with.
+var primaries = []*syntax.Theme{{Name: "t", Colors: []*syntax.Color{
+	{Name: "red", For: "a test", Value: "#ff0000"},
+	{Name: "green", For: "a test", Value: "#00ff00"},
+	{Name: "blue", For: "a test", Value: "#0000ff"},
+}}}
 
 func styledText(attrs map[string]string, content string) *sema.Node {
 	return el("Text", attrs, &sema.Node{Kind: syntax.TextNode, Text: content})
@@ -30,7 +37,7 @@ func styledText(attrs map[string]string, content string) *sema.Node {
 func row(buf *cell.Buffer, y int) string { return buf.Lines()[y] }
 
 func TestADescendantInheritsTheTextStyle(t *testing.T) {
-	buf := paintTree(t, el("Box", map[string]string{"fg": "#ff0000", "bold": "true"},
+	buf := paintTree(t, el("Box", map[string]string{"fg": cell.Ref("red"), "bold": "true"},
 		el("Stack", nil, text("hi")),
 	), 6, 2)
 
@@ -41,8 +48,8 @@ func TestADescendantInheritsTheTextStyle(t *testing.T) {
 }
 
 func TestAChildStyleOverridesTheInheritedOne(t *testing.T) {
-	buf := paintTree(t, el("Box", map[string]string{"fg": "#ff0000", "bold": "true"},
-		styledText(map[string]string{"fg": "#00ff00", "bold": "false"}, "hi"),
+	buf := paintTree(t, el("Box", map[string]string{"fg": cell.Ref("red"), "bold": "true"},
+		styledText(map[string]string{"fg": cell.Ref("green"), "bold": "false"}, "hi"),
 	), 6, 1)
 
 	got := buf.At(0, 0)
@@ -52,7 +59,7 @@ func TestAChildStyleOverridesTheInheritedOne(t *testing.T) {
 
 func TestBackgroundFillsThePaddingAndStaysUnderTheGlyphs(t *testing.T) {
 	blue := cell.MustColor("#0000ff")
-	buf := paintTree(t, el("Box", map[string]string{"bg": "#0000ff", "padding": "1", "width": "5", "height": "3"},
+	buf := paintTree(t, el("Box", map[string]string{"bg": cell.Ref("blue"), "padding": "1", "width": "5", "height": "3"},
 		text("a"),
 	), 8, 4)
 
@@ -126,7 +133,7 @@ func TestTextOverflow(t *testing.T) {
 
 func TestAHiddenElementPaintsNothingAndKeepsItsSpace(t *testing.T) {
 	buf := paintTree(t, el("Stack", nil,
-		el("Box", map[string]string{"state": "hidden", "bg": "#ff0000", "border": "normal", "width": "4", "height": "3"}),
+		el("Box", map[string]string{"state": "hidden", "bg": cell.Ref("red"), "border": "normal", "width": "4", "height": "3"}),
 		text("x"),
 	), 6, 5)
 
@@ -143,7 +150,7 @@ func TestAHiddenElementPaintsNothingAndKeepsItsSpace(t *testing.T) {
 func TestABorderIsDrawnInItsColour(t *testing.T) {
 	green := cell.MustColor("#00ff00")
 	buf := paintTree(t, el("Box", map[string]string{
-		"border": "rounded", "borderColor": "#00ff00", "width": "4", "height": "3",
+		"border": "rounded", "borderColor": cell.Ref("green"), "width": "4", "height": "3",
 	}, text("ab")), 6, 4)
 
 	assert.Equal(t, []string{"╭──╮  ", "│ab│  ", "╰──╯  ", "      "}, buf.Lines())
@@ -155,7 +162,7 @@ func TestABorderIsDrawnInItsColour(t *testing.T) {
 
 func TestAMarginKeepsTheBorderAndFillInside(t *testing.T) {
 	buf := paintTree(t, el("Box", map[string]string{
-		"margin": "1", "border": "normal", "bg": "#0000ff", "width": "6", "height": "5",
+		"margin": "1", "border": "normal", "bg": cell.Ref("blue"), "width": "6", "height": "5",
 	}), 7, 5)
 
 	assert.Equal(t, " ", buf.At(0, 0).Text, "the margin stays blank")

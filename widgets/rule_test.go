@@ -33,11 +33,11 @@ func TestRuleSurvivesTooLittleSpace(t *testing.T) {
 }
 
 func TestRuleColoursItsLineButNotItsTitle(t *testing.T) {
-	buf := widgettest.Draw(build(t, "Rule", map[string]string{"title": "A", "color": "red"}), 6, 1)
+	buf := widgettest.Draw(build(t, "Rule", map[string]string{"title": "A", "color": ref("danger")}), 6, 1)
 
-	assert.Equal(t, cell.MustColor("red"), buf.At(0, 0).Style.Fg)
+	assert.Equal(t, cell.Indexed(9), buf.At(0, 0).Style.Fg)
 	assert.False(t, buf.At(2, 0).Style.Fg.IsSet(), "the title is drawn plain")
-	assert.Equal(t, cell.MustColor("red"), buf.At(5, 0).Style.Fg)
+	assert.Equal(t, cell.Indexed(9), buf.At(5, 0).Style.Fg)
 }
 
 func TestVerticalRuleIsOneColumn(t *testing.T) {
