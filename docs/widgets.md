@@ -52,7 +52,7 @@ A widget that knows its own parts names them, and the name arrives as `event.Par
 
 `event.Mod` carries the modifier keys held with the pointer, so ctrl+click and shift+click reach the host.
 
-A right click raises `tml.Menu` on the element under the pointer. It moves neither the focus nor the press, and its release is no click. A host opens its context menu there: a `Canvas` child placed at `Canvas.x` and `Canvas.y`.
+A right click raises `tml.Menu` on the element under the pointer. It moves neither the focus nor the press, and its release is no click. A host opens its context menu there: a `<Menu>` on a `Canvas`, placed at `Canvas.x` and `Canvas.y`. See [Controls](#controls).
 
 The left button on a `Scrollbox`'s scrollbar holds it. A press on the thumb holds it where it was pressed, and a press on the track jumps the thumb under the pointer. While the button is held, moving the pointer reports `tml.Scrolled` with `Delta` set to the rows the content has to move. A host that scrolls on the wheel therefore scrolls on the bar with no new code. Releasing the button ends the drag, and is no click.
 
@@ -124,6 +124,20 @@ A button's label is sugar for its `Content` slot, so anything can go inside one:
     </Button.Content>
 </Button>
 ```
+
+A `Menu` is a framed column of choices, for a context menu or a drop-down:
+
+```xml
+<Canvas>
+    ...
+    <Menu id="menu" action="menu" title="pane" items="{choices}" selected="{marked}"
+        Canvas.x="{menuX}" Canvas.y="{menuY}" if="{menuOpen}"/>
+</Canvas>
+```
+
+It is as wide as its longest line, the title included, up to `maxWidth`. A longer choice is cut with an ellipsis. A `Canvas` keeps it whole on screen: opened near an edge, it moves back inside. The host hands over the pointer's cell and nothing else. `selected` is the marked choice. The host owns it, as with a `List`.
+
+The mark is the `accent` and `accentText` colours when the element gives them, else reversed video. A click reports `Activated` with `event.Part` set to `item:N`.
 
 ### Data
 
@@ -217,5 +231,8 @@ Then opt into whatever else applies:
 | `Slotted` | Names the regions content can be written into, so a misspelt `<Button.Contnt>` fails when the view loads. |
 | `Templated` | Names another element the engine wraps the children in, the way a WPF control template is a Border around a ContentPresenter. `Bind` hands that element back, so the widget's state can steer how it draws. `Button` is a templated `Border`. |
 | `Anchored` | An opinion about where it sits on a `Canvas`. `Popup` says centre. |
+| `Contained` | A `Canvas` keeps it whole on screen, and moves it back inside when it is placed across an edge. `Menu` asks for this. |
+
+A widget that scrolls content of its own draws the library's scrollbar with `widget.Scrollbar`. `Draw` paints the track and the thumb in one column, `Thumb` says where the thumb is, and `At` turns a pointer row into a position. That `Draw` is for a drag. A `Scrollbox` draws its own bar from the same code.
 
 The language is not a second-class one.

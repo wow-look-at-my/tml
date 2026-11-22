@@ -41,6 +41,27 @@ type dialog struct{ wrapper }
 
 func (d dialog) DefaultAnchor() string { return "center" }
 
+// kept is a widget that asks its canvas to keep it whole on screen.
+type kept struct{ stub }
+
+func (kept) Contained() bool { return true }
+
+// A canvas moves a widget that asks for it back inside, and leaves any other child where it was put.
+func TestCanvasKeepsAContainedChildOnScreen(t *testing.T) {
+	bindings := map[string]widget.Native{"Menu": kept{stub{w: 6, h: 3}}, "Free": stub{w: 6, h: 3}}
+	at := func(element, x, y string) Rect {
+		root := layoutWith(t, bindings, el("Canvas", nil,
+			el(element, map[string]string{"Canvas.x": x, "Canvas.y": y}),
+		), 20, 10)
+		return child(root, 0).Rect
+	}
+
+	assert.Equal(t, Rect{X: 4, Y: 2, W: 6, H: 3}, at("Menu", "4", "2"), "a child that fits stays where it was put")
+	assert.Equal(t, Rect{X: 14, Y: 7, W: 6, H: 3}, at("Menu", "18", "9"), "past the far edges it moves back in")
+	assert.Equal(t, Rect{X: 0, Y: 0, W: 6, H: 3}, at("Menu", "-3", "-1"))
+	assert.Equal(t, Rect{X: 18, Y: 9, W: 6, H: 3}, at("Free", "18", "9"), "a child that did not ask is left alone")
+}
+
 func widgetEngine(t *testing.T, bindings map[string]widget.Native) *Engine {
 	t.Helper()
 	sheet, err := style.NewSheet(nil, nil)

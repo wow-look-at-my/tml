@@ -16,6 +16,7 @@ func Library() *widget.Registry {
 		BindFactory("Checkbox", factory(newCheck("Checkbox"), checkAttrs)).
 		BindFactory("Radio", factory(newCheck("Radio"), checkAttrs)).
 		BindFactory("List", factory(newList, listAttrs)).
+		BindFactory("Menu", factory(newMenu, menuAttrs)).
 		BindFactory("Table", factory(newTable, tableAttrs)).
 		BindFactory("Image", factory(newImage, imageAttrs)).
 		BindFactory("Rule", factory(newRule, ruleAttrs)).

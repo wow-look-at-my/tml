@@ -230,25 +230,25 @@ func (u *UI) pointer(msg input.Mouse) []Event {
 	return nil
 }
 
-// bar is the scrollbar a scrolling target draws in its last column.
+// bar is the scrollbar a scrolling target draws in its last column, and the
+// row of the screen it starts on.
 type bar struct {
-	top, view, thumb, span int
+	top int
+	widget.Scrollbar
 }
 
+// barOf is the bar of a target that has a thumb with room to move.
 func (u *UI) barOf(key string) (bar, bool) {
 	index := u.indexOf(key)
 	if index < 0 {
 		return bar{}, false
 	}
 	target := u.targets[index]
-	view := target.Box.H
-	if target.Scroll.MaxY <= 0 || view <= 0 {
-		return bar{}, false
-	}
-	// The same geometry the scrollbox draws its thumb with.
-	thumb := max(1, view*view/(target.Scroll.MaxY+view))
-	b := bar{top: target.Box.Y, view: view, thumb: thumb, span: view - thumb}
-	return b, b.span > 0
+	b := bar{top: target.Box.Y, Scrollbar: widget.Scrollbar{
+		View: target.Box.H, Y: target.Scroll.Y, MaxY: target.Scroll.MaxY,
+	}}
+	_, size, ok := b.Thumb()
+	return b, ok && size < b.View
 }
 
 // onBar reports whether a point is on the scrollbar of the target under it.
@@ -262,23 +262,17 @@ func (u *UI) onBar(key string, x, y int) bool {
 	return ok && x == box.X+box.W-1 && y >= box.Y && y < box.Y+box.H
 }
 
-// thumbAt is where the thumb of a scrolled target starts, in rows from the top of its bar.
-func (u *UI) thumbAt(key string, b bar) int {
-	scroll := u.targets[u.indexOf(key)].Scroll
-	return min(b.span, max(0, scroll.Y*b.span/scroll.MaxY))
-}
-
 // grab takes hold of a scrollbar. A press on the thumb holds it where it was pressed. A press on the track holds the
 // thumb by its middle, so it jumps under the pointer.
 func (u *UI) grab(key string, y int) []Event {
 	b, _ := u.barOf(key)
-	start := u.thumbAt(key, b)
+	start, size, _ := b.Thumb()
 	row := y - b.top
-	u.drag, u.dragGrab = key, b.thumb/2
-	if row >= start && row < start+b.thumb {
+	u.drag, u.dragGrab = key, size/2
+	if row >= start && row < start+size {
 		u.dragGrab = row - start
 	}
-	u.dragAt = u.targets[u.indexOf(key)].Scroll.Y
+	u.dragAt = b.Y
 	return u.dragTo(y)
 }
 
@@ -290,9 +284,7 @@ func (u *UI) dragTo(y int) []Event {
 		u.drag = ""
 		return nil
 	}
-	maxY := u.targets[u.indexOf(u.drag)].Scroll.MaxY
-	start := min(b.span, max(0, y-b.top-u.dragGrab))
-	want := (start*maxY + b.span/2) / b.span
+	want := b.At(y-b.top, u.dragGrab)
 	delta := want - u.dragAt
 	if delta == 0 {
 		return nil

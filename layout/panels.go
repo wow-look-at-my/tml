@@ -103,6 +103,10 @@ func (e *Engine) arrangeCanvas(box *Box) {
 			x = (box.Content.W-w)/2 + place.x
 			y = (box.Content.H-h)/2 + place.y
 		}
+		if kept, ok := child.Native.(widget.Contained); ok && kept.Contained() {
+			x = max(0, min(x, box.Content.W-w))
+			y = max(0, min(y, box.Content.H-h))
+		}
 		e.arrange(child, Rect{X: x, Y: y, W: w, H: h})
 	}
 }

@@ -123,6 +123,12 @@ type Anchored interface {
 	DefaultAnchor() string
 }
 
+// Contained is a widget that a canvas keeps whole on screen. Placed where it
+// would cross an edge, it is moved back inside.
+type Contained interface {
+	Contained() bool
+}
+
 // Context is what a factory gets to build a single element's widget.
 type Context struct {
 	// Attrs are the element's evaluated attributes.
