@@ -135,10 +135,11 @@ func ParseValue(t Type, raw string) (Value, error) {
 			return Value{}, fmt.Errorf("expected true or false, got %q", raw)
 		}
 	case KindColor:
-		if err := validateColor(raw); err != nil {
+		ref, err := colorRef(raw)
+		if err != nil {
 			return Value{}, err
 		}
-		value.str = raw
+		value.str = ref
 	case KindLength:
 		length, err := ParseLength(raw)
 		if err != nil {
@@ -165,14 +166,20 @@ func ParseValue(t Type, raw string) (Value, error) {
 	return value, nil
 }
 
-// validateColor accepts a reference to a theme colour, and nothing else.
-func validateColor(raw string) error {
+// colorRef reads the value of a colour property as a reference to a theme colour. The value is a reference
+// already, or the plain name of a theme colour. This is how a host that hands every property over as text names
+// one. A hex triplet or a palette index is a colour written in place, and is refused.
+func colorRef(raw string) (string, error) {
 	if raw == "" {
-		return nil
+		return "", nil
 	}
 	if _, ok := cell.RefName(raw); ok {
-		return nil
+		return raw, nil
 	}
-	return fmt.Errorf(
-		"a colour comes from the theme: declare <Color name=\"…\" for=\"…\"> and write {theme.name}, got %q", raw)
+	_, isIndex := strconv.Atoi(raw)
+	if strings.HasPrefix(raw, "#") || isIndex == nil || strings.ContainsAny(raw, " \t{}") {
+		return "", fmt.Errorf(
+			"a colour comes from the theme: declare <Color name=\"…\" for=\"…\"> and write {theme.name}, got %q", raw)
+	}
+	return cell.Ref(raw), nil
 }

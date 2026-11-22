@@ -278,7 +278,7 @@ A colour written in place is an error, on an element, in a style and on a widget
 fg: "#ff0000" is a colour written in place; declare <Color name="…" for="…"> in a theme and write {theme.name}
 ```
 
-A `<Token>` is not a colour. A token that holds a colour value is refused where a colour is asked for. A property of type `color` takes a reference too: `default="{theme.accent}"` in the document, and `sema.ColorValue("accent")` from the host.
+A `<Token>` is not a colour. A token that holds a colour value is refused where a colour is asked for. A property of type `color` takes a reference too: `default="{theme.accent}"` in the document, and `sema.ColorValue("accent")` from the host. A host that hands a property over as text gives the plain name, `accent`. A name no theme declares fails where the colour is drawn.
 
 The library draws with colours of a base theme that every view starts from. A theme of the view replaces one by declaring the same name.
 
