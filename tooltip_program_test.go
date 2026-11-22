@@ -33,7 +33,8 @@ func restOnButton(t *testing.T) string {
 }
 
 func tooltipShows(run *typed) func() bool {
-	return func() bool { return onScreen(run.out.String(), " Starts the run ") }
+	// The replayed rows have no blanks at their ends, so the strip's last cell is not looked for.
+	return func() bool { return onScreen(run.out.String(), " Starts the run") }
 }
 
 // A view draws the tooltip of the control the pointer rests on, with no program around it.
