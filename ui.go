@@ -93,6 +93,7 @@ type UI struct {
 	drag string
 	// dragGrab is the row of the thumb the pointer holds, and dragAt the offset the drag last asked for.
 	dragGrab, dragAt int
+	tips             tooltips
 }
 
 // NewUI returns interaction state with the default key map.
@@ -128,6 +129,7 @@ func (u *UI) Frame(targets []layout.Target) {
 	if index := u.indexOf(u.focus); index < 0 || !targets[index].Focus {
 		u.focus = firstFocusable(targets)
 	}
+	u.settleTooltip()
 }
 
 func firstFocusable(targets []layout.Target) string {
@@ -142,6 +144,7 @@ func firstFocusable(targets []layout.Target) string {
 // Update feeds one input value through the focus ring and reports what the user did. A value that means nothing to
 // the ring reports nothing. A Program calls this for the host. A host with a loop of its own calls it.
 func (u *UI) Update(msg any) []Event {
+	u.Observe(msg)
 	switch msg := msg.(type) {
 	case input.Key:
 		if events, taken := u.edit(msg); taken {

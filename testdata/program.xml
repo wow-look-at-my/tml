@@ -4,7 +4,7 @@
 	<Template>
 		<Stack>
 			<Text>{title}</Text>
-			<Button id="go" action="go" label="Go"/>
+			<Button id="go" action="go" label="Go" tooltip="Starts the run"/>
 		</Stack>
 	</Template>
 </Component>

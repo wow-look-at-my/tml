@@ -73,6 +73,8 @@ type ProgramOptions struct {
 	Env func(string) string
 	// HostSignals leaves SIGINT and SIGTERM to the host. The program does not end on them.
 	HostSignals bool
+	// TooltipDelay is how long the pointer rests on a control before its tooltip shows. Zero is DefaultTooltipDelay.
+	TooltipDelay time.Duration
 }
 
 // Without a size from the terminal, a program draws at these.
@@ -109,6 +111,8 @@ type Program struct {
 	unchanged     bool
 	stopping      bool
 	err           error
+	// stopTooltip cancels the wait for a tooltip, or is nil when nothing waits.
+	stopTooltip func()
 
 	// mu guards the state and the lines waiting to print. Everything else belongs to the loop's goroutine.
 	mu      sync.Mutex
@@ -124,6 +128,8 @@ type (
 	copyMsg      struct{ text string }
 	// measureMsg asks for a frame, which is when the program reads the terminal's size.
 	measureMsg struct{}
+	// tooltipMsg says the wait for a tooltip is over. dwell names the wait, as UI.Dwell gave it.
+	tooltipMsg struct{ dwell int }
 )
 
 // NewProgram prepares a program that shows view and is driven by app. Nothing touches the terminal until Run. The
@@ -138,6 +144,9 @@ func NewProgram(view *View, app App, opts ...ProgramOptions) (*Program, error) {
 	}
 	if p.opts.Env == nil {
 		p.opts.Env = os.Getenv
+	}
+	if p.opts.TooltipDelay == 0 {
+		p.opts.TooltipDelay = DefaultTooltipDelay
 	}
 	p.out = p.opts.Output
 	if p.out == nil {
@@ -336,11 +345,17 @@ func (p *Program) route(msg Msg) bool {
 		}
 	case Resize, RepaintMsg:
 		p.app.Update(p, msg)
+	case tooltipMsg:
+		return !p.view.UI().ShowTooltip(msg.dwell)
 	case Key, Mouse, Paste:
 		if p.update(msg) {
-			return p.unchanged
+			// The ring does not see a value the app kept, and a tooltip still goes away on it.
+			hid := p.view.UI().Observe(msg)
+			p.awaitTooltip()
+			return p.unchanged && !hid
 		}
 		events := p.view.UI().Update(msg)
+		p.awaitTooltip()
 		for _, event := range events {
 			p.app.Update(p, event)
 		}
@@ -354,6 +369,20 @@ func (p *Program) route(msg Msg) bool {
 		return p.unchanged
 	}
 	return false
+}
+
+// awaitTooltip starts the wait for a tooltip again after an input. The pointer has to rest on a control for the
+// whole delay.
+func (p *Program) awaitTooltip() {
+	if p.stopTooltip != nil {
+		p.stopTooltip()
+		p.stopTooltip = nil
+	}
+	dwell, waits := p.view.UI().Dwell()
+	if !waits || p.opts.TooltipDelay < 0 {
+		return
+	}
+	p.stopTooltip = p.After(p.opts.TooltipDelay, tooltipMsg{dwell: dwell})
 }
 
 // update is one call of the app's Update, with Unchanged not yet said.

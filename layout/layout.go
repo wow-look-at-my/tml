@@ -84,6 +84,8 @@ type Box struct {
 	// ID and Action identify an interactive element to the host: ID names it, Action is what it reports when activated.
 	ID     string
 	Action string
+	// Tooltip is the text shown beside the pointer when it rests on the element.
+	Tooltip string
 	// State is how this element renders in this frame -- focused, hovered, held.
 	State widget.State
 
@@ -150,7 +152,7 @@ func (e *Engine) Animating() bool { return e.animating }
 // layoutAttrs are consumed by the engine; every other attribute is styling, unless a widget claims it. Attached
 var layoutAttrs = set.Of(
 	"width", "height", "orientation", "gap", "style", "overflow",
-	"columns", "rows", "collapse", "id", "action",
+	"columns", "rows", "collapse", "id", "action", "tooltip",
 	"offset", "offsetX", "scrollbar",
 	"title", "titleAlign",
 	stateAttr,
@@ -272,8 +274,9 @@ func (p *pass) build(node *sema.Node) (*Box, error) {
 		Pos:    node.Pos,
 		attrs:  attrs,
 		slot:   node.Slot,
-		ID:     attrs["id"],
-		Action: attrs["action"],
+		ID:      attrs["id"],
+		Action:  attrs["action"],
+		Tooltip: attrs["tooltip"],
 	}
 	if box.Visibility, err = visibilityAttr(node, attrs); err != nil {
 		return nil, err
@@ -309,6 +312,11 @@ func (p *pass) build(node *sema.Node) (*Box, error) {
 			return nil, &syntax.Error{Pos: node.Pos, Message: err.Error()}
 		}
 		box.Native = native
+	}
+	if box.Native == nil && box.Tooltip != "" {
+		// The pointer reaches a widget only, so a tooltip anywhere else would never show.
+		return nil, &syntax.Error{Pos: node.Pos, Message: fmt.Sprintf(
+			"<%s> has a tooltip, and only a widget answers the pointer; put the tooltip on the widget around it", node.Name)}
 	}
 	if box.Native != nil {
 		// An animating widget in a painted frame is the whole answer to "does the host still have to paint".

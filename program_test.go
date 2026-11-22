@@ -75,13 +75,25 @@ type typed struct {
 
 func startTyped(t *testing.T, opts tml.ProgramOptions) *typed {
 	t.Helper()
+	return startWith(t, opts, func(app recordApp) tml.App { return app })
+}
+
+// startKept is startTyped with an app that keeps every pointer value.
+func startKept(t *testing.T, opts tml.ProgramOptions) *typed {
+	t.Helper()
+	return startWith(t, opts, func(app recordApp) tml.App { return keeper{app} })
+}
+
+// startWith runs the program with the app a test makes around the recorder.
+func startWith(t *testing.T, opts tml.ProgramOptions, wrap func(recordApp) tml.App) *typed {
+	t.Helper()
 	view := loadDoc(t, programDoc)
 	reader, writer := io.Pipe()
 	t.Cleanup(func() { _ = writer.Close() })
 	out := &syncBuffer{}
 	opts.Input, opts.Output, opts.Width, opts.Height = reader, out, programWidth, programHeight
 	app := newRecordApp("hello")
-	p, err := tml.NewProgram(view, app, opts)
+	p, err := tml.NewProgram(view, wrap(app), opts)
 	require.NoError(t, err)
 	return &typed{program: p, app: app, keys: writer, out: out, result: runProgram(t, p)}
 }
