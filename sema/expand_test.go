@@ -150,11 +150,8 @@ func TestATokenIsNotAColour(t *testing.T) {
 
 func TestATokenCannotTakeTheNameOfAColour(t *testing.T) {
 	_, err := build(t, map[string]string{
-		"app.tml": testTokenIsCheckedAgainstTheTargetTypeXml,
-		"theme.tml": `<Theme xmlns="urn:tml:v1" name="default">
-	<Color name="spacing" for="a test" value="#e0af68"/>
-	<Token name="spacing" value="wide"/>
-</Theme>`,
+		"app.tml":   testTokenIsCheckedAgainstTheTargetTypeXml,
+		"theme.tml": testATokenCannotTakeTheNameOfAColourXml,
 	})
 	require.ErrorContains(t, err, `token "spacing" has the name of the theme colour`)
 }
@@ -330,3 +327,6 @@ var testAnalyzeRejectsXml9 string
 
 //go:embed testdata/test-expand-rejects.xml
 var testExpandRejectsXml string
+
+//go:embed testdata/test-a-token-cannot-take-the-name-of-a-colour.xml
+var testATokenCannotTakeTheNameOfAColourXml string
