@@ -269,11 +269,11 @@ func (p *pass) build(node *sema.Node) (*Box, error) {
 	}
 
 	box := &Box{
-		Name:   node.Name,
-		Style:  resolved,
-		Pos:    node.Pos,
-		attrs:  attrs,
-		slot:   node.Slot,
+		Name:    node.Name,
+		Style:   resolved,
+		Pos:     node.Pos,
+		attrs:   attrs,
+		slot:    node.Slot,
 		ID:      attrs["id"],
 		Action:  attrs["action"],
 		Tooltip: attrs["tooltip"],

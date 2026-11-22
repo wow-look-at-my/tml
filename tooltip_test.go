@@ -152,7 +152,7 @@ func shownAt(t *testing.T, text string, x, y, w, h int) *cell.Buffer {
 func TestATooltipIsAFilledStripUnderThePointer(t *testing.T) {
 	frame := shownAt(t, "Save", 2, 1, 20, 5)
 
-	assert.Equal(t, []string{"", "", "   Save", "", ""}, trimmed(frame))
+	assert.Equal(t, []string{"", "", "   Save", "", ""}, rowsOf(frame))
 	for x := 2; x < 8; x++ {
 		style := frame.At(x, 2).Style
 		assert.Equal(t, cell.RGB(1, 2, 3), style.Bg, "cell %d has the tooltip's surface", x)
@@ -165,13 +165,13 @@ func TestATooltipIsAFilledStripUnderThePointer(t *testing.T) {
 
 func TestATooltipStaysOnTheScreen(t *testing.T) {
 	right := shownAt(t, "Save", 19, 1, 20, 5)
-	assert.Equal(t, "               Save", trimmed(right)[2], "it moves left at the right edge")
+	assert.Equal(t, "               Save", rowsOf(right)[2], "it moves left at the right edge")
 
 	bottom := shownAt(t, "Save", 2, 4, 20, 5)
-	assert.Equal(t, "   Save", trimmed(bottom)[3], "it goes over the pointer at the bottom edge")
+	assert.Equal(t, "   Save", rowsOf(bottom)[3], "it goes over the pointer at the bottom edge")
 
 	long := shownAt(t, strings.Repeat("word ", 20), 0, 0, 30, 8)
-	lines := trimmed(long)
+	lines := rowsOf(long)
 	assert.Equal(t, "", lines[0], "the pointer's own row stays clear")
 	assert.Equal(t, " word word word word word", lines[1], "a long text wraps to the screen")
 	assert.Equal(t, " word word word word word", lines[4])
@@ -179,11 +179,11 @@ func TestATooltipStaysOnTheScreen(t *testing.T) {
 	none := NewUI()
 	blank := cell.NewBuffer(4, 2)
 	none.drawTooltip(blank, cell.Palette{}, nil)
-	assert.Equal(t, []string{"", ""}, trimmed(blank), "with no tooltip nothing is drawn")
+	assert.Equal(t, []string{"", ""}, rowsOf(blank), "with no tooltip nothing is drawn")
 }
 
-// trimmed is the rows of a frame without the blanks at their ends.
-func trimmed(frame *cell.Buffer) []string {
+// rowsOf is the rows of a frame without the blanks at their ends.
+func rowsOf(frame *cell.Buffer) []string {
 	lines := frame.Lines()
 	for i, line := range lines {
 		lines[i] = strings.TrimRight(line, " ")
