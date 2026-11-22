@@ -280,6 +280,20 @@ func TestAProgramCopiesToTheClipboard(t *testing.T) {
 	require.NoError(t, waitResult(t, run.result))
 }
 
+func TestAProgramNamesTheWindow(t *testing.T) {
+	t.Serial("the program's view is attached to the single inspector of the process")
+	exclusive(t)
+	run := startTyped(t, tml.ProgramOptions{})
+	require.Eventually(t, func() bool { return onScreen(run.out.String(), "hello") },
+		5*time.Second, 5*time.Millisecond)
+	// The bell inside the name would end the sequence early.
+	run.program.SetTitle("build \x07running")
+	require.Eventually(t, func() bool { return strings.Contains(run.out.String(), "\x1b]2;build running\x07") },
+		5*time.Second, 5*time.Millisecond, "the program writes the title sequence, with no control character in it")
+	run.program.Quit()
+	require.NoError(t, waitResult(t, run.result))
+}
+
 // An inline program prints above its region, and only the printed lines stay once it ends.
 func TestAnInlineProgramLeavesOnlyItsLines(t *testing.T) {
 	t.Serial("an inline program takes over the inspector's key, click and repaint handlers for the process")

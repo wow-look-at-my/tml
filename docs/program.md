@@ -39,6 +39,7 @@ p.Every(time.Second, msg)     // until the program ends, or until the returned f
 p.Quit()
 p.SetView(view)               // put a reloaded document on screen
 p.Copy(text)                  // set the system clipboard, with OSC 52
+p.SetTitle(text)              // name the terminal's window, with OSC 2
 p.Unchanged()                 // inside Update: this message changed nothing, so paint no frame
 ```
 
