@@ -72,8 +72,11 @@ tml.ProgramOptions{
     Poll      bool                  // repaint on every interval
     Width, Height int               // a fixed size; zero follows the terminal
     Env       func(string) string   // the environment that says what the terminal shows
+    TooltipDelay time.Duration      // the rest before a tooltip shows; zero is one second, negative is never
 }
 ```
+
+The program shows a control's `tooltip` once the pointer rests on the control for `TooltipDelay`. It does this for an app that keeps the pointer values for itself too. See docs/widgets.md §Tooltips.
 
 An inline program is what `tml.Live` is built on. Lines printed with `p.Println` go above it and stay in the scrollback. See docs/live.md.
 

@@ -80,7 +80,7 @@
 				<Stack orientation="horizontal" gap="2" valign="middle">
 					<Textbox id="prompt" value="{prompt}" cursor="{cursor}"
 						placeholder="ask for a change, or press space to step the script" width="*"/>
-					<Button id="send" action="send" label="Send" variant="{sendVariant}"/>
+					<Button id="send" action="send" label="Send" variant="{sendVariant}" tooltip="Sends what the field holds to the agent"/>
 				</Stack>
 
 				<Stack orientation="horizontal" gap="2">
@@ -95,8 +95,8 @@
 					<Text>{ask}</Text>
 					<Text style="muted">a real harness would ask its user exactly here</Text>
 					<Stack orientation="horizontal" gap="2">
-						<Button id="allow" action="allow" label="Allow" variant="primary"/>
-						<Button id="deny" action="deny" label="Deny" variant="danger"/>
+						<Button id="allow" action="allow" label="Allow" variant="primary" tooltip="Lets the agent apply the change"/>
+						<Button id="deny" action="deny" label="Deny" variant="danger" tooltip="Drops the change"/>
 					</Stack>
 				</Stack>
 			</Popup>

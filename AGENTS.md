@@ -28,6 +28,7 @@ The renderer and the runtime are first-party. Do not add a Charm module (`charm.
 - `<Slot>` declares and marks the insertion point in one element. Its children are fallback content.
 - Call sites fill named slots with XAML property-element syntax: `<Card.actions>…</Card.actions>`.
 - Unknown names are a hard error at analysis time. No arithmetic, no calls.
+- A theme is the only place a colour value is written: `<Color name for light dark>`, where `for` says what the colour is used for. A control, a style and a widget refer to it as `{theme.name}`. A colour written in place fails the frame. `style/base.tml` holds the colours the library draws with. See docs/language.md §Colours.
 - `itemsSource`/`itemTemplate` on any element repeat a `<DataTemplate>` over a list the host supplies. A repeated thing is therefore a widget rather than a line somebody else already drew. An item's fields are the template's property values, by name. A field nobody declared is an error rather than a blank cell.
 - See docs/language.md for the full grammar and the built-in element reference.
 
@@ -55,6 +56,8 @@ Containers go through the public `widget.Composer`/`Arranger` seam, not through 
 - docs/images.md — the kitty/iterm/mosaic/link ladder, sizing against cell aspect, transparency.
 
 ## Interaction
+
+A widget takes a `tooltip`. `UI` counts the inputs. The program runs the wait, and `View.paint` draws the strip over the frame. A tooltip is no element: it takes no input and has no target.
 
 Any element takes an `id` and an `action`. Layout asks the UI for each element's state before it measures. It then publishes where everything landed. A click therefore resolves against the frame the user looks at.
 
@@ -102,7 +105,7 @@ The root is the importable package, so a host imports `github.com/wow-look-at-my
 - `syntax/` — AST, loader, `<Import>` resolution, diagnostics
 - `sema/` — property types, values, expressions, slot and component analysis, expansion
 - `layout/` — constraints, measure/arrange, the panels
-- `style/` — theme tokens, named styles, resolution to a cell style and a box model
+- `style/` — theme colours and tokens, the base theme, named styles, resolution to a cell style and a box model
 - `render/` — the painter: a laid-out tree onto a cell buffer
 - `widget/` — the widget seam: registry, typed attributes, the `View() string` adapter, and `widgettest`
 - `widgets/` — the built-in widget library

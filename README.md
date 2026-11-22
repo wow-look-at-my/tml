@@ -134,7 +134,7 @@ A program serves on `$XDG_RUNTIME_DIR/tml/<pid>.sock` with nothing set, and `tml
 
 ## What it does
 
-Typed properties with defaults, slots with fallback content, imports, `if` and `For`. Themes carry light and dark tokens and named styles. The widget library takes keyboard and mouse interaction. `Grid` takes XAML-style attached properties:
+Typed properties with defaults, slots with fallback content, imports, `if` and `For`. Themes carry named styles and every colour: a control names a colour by what it is for. The theme holds the value for light and for dark. The widget library takes keyboard and mouse interaction, and any widget shows a tooltip when the pointer rests on it. `Grid` takes XAML-style attached properties:
 
 ```xml
 <Grid columns="auto,1*,2*" gap="1">
