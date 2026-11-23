@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/wow-look-at-my/tml/cell"
 )
@@ -109,6 +110,19 @@ func (s *Screen) clears() string {
 // Clipboard sets the system clipboard to text with a later OSC. The terminal decides whether to honour it.
 func (s *Screen) Clipboard(text string) error {
 	_, err := io.WriteString(s.out, "\x1b]52;c;"+base64.StdEncoding.EncodeToString([]byte(text))+"\x07")
+	return err
+}
+
+// Title names the terminal's window with a later OSC. A control character
+// in text would end the sequence early, so each is left out.
+func (s *Screen) Title(text string) error {
+	clean := strings.Map(func(r rune) rune {
+		if unicode.IsControl(r) {
+			return -1
+		}
+		return r
+	}, text)
+	_, err := io.WriteString(s.out, "\x1b]2;"+clean+"\x07")
 	return err
 }
 

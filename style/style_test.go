@@ -88,15 +88,27 @@ func TestMarginIsKeptOutOfTheFrame(t *testing.T) {
 	assert.Equal(t, []int{2, 1}, []int{x, y}, "the content starts past the margin")
 }
 
+// colours is a theme that declares the colours the tests name.
+func colours() []*syntax.Theme {
+	return []*syntax.Theme{{Name: "t", Colors: []*syntax.Color{
+		{Name: "alarm", For: "what went wrong", Value: "#ff0000"},
+		{Name: "surface", For: "the surface of a card", Value: "12"},
+		{Name: "edge", For: "the border of a card", Light: "red", Dark: "#00ff00"},
+		// The base theme declares this name, and a later theme wins.
+		{Name: "primary", For: "the main action", Value: "#010203"},
+	}}}
+}
+
 func TestColoursAndTextAttributesLandOnThePaint(t *testing.T) {
-	sheet, err := NewSheet(nil, nil)
+	sheet, err := NewSheet(colours(), nil)
 	require.NoError(t, err)
 
 	resolved, err := sheet.Resolve("", map[string]string{
-		"fg": "#ff0000", "bg": "12", "borderColor": "red", "border": "rounded",
+		"fg": cell.Ref("alarm"), "bg": cell.Ref("surface"), "borderColor": cell.Ref("edge"), "border": "rounded",
 		"bold": "true", "italic": "true", "underline": "false",
 	})
 	require.NoError(t, err)
+	assert.Equal(t, cell.MustColor("red"), resolved.BorderPaint.Fg)
 
 	assert.Equal(t, cell.MustColor("#ff0000"), resolved.Paint.Fg)
 	assert.Equal(t, cell.Indexed(12), resolved.Paint.Bg)
@@ -183,6 +195,35 @@ func TestSheetRejects(t *testing.T) {
 	})
 }
 
+// A style refers to a theme colour by name, and the mode picks the value.
+func TestAStyleTakesItsColoursFromTheTheme(t *testing.T) {
+	themes := colours()
+	themes[0].Styles = []*syntax.Style{namedStyle("card", "", map[string]string{
+		"fg": "{theme.primary}", "borderColor": "{theme.edge}", "bg": "{theme.tooltip}"})}
+
+	light, err := NewSheet(themes, nil)
+	require.NoError(t, err)
+	resolved, err := light.Resolve("card", nil)
+	require.NoError(t, err)
+	assert.Equal(t, cell.RGB(1, 2, 3), resolved.Paint.Fg, "a theme of the view replaces a colour of the base theme")
+	assert.Equal(t, cell.MustColor("red"), resolved.BorderPaint.Fg)
+	assert.True(t, resolved.Paint.Bg.IsSet(), "the base theme supplies the colours the library names")
+
+	dark, err := NewSheetFor(themes, nil, true)
+	require.NoError(t, err)
+	resolved, err = dark.Resolve("card", nil)
+	require.NoError(t, err)
+	assert.Equal(t, cell.RGB(0, 255, 0), resolved.BorderPaint.Fg)
+	assert.Equal(t, cell.RGB(0, 255, 0), dark.Palette()["edge"])
+}
+
+func TestAThemeColourThatIsNotAColourFailsTheSheet(t *testing.T) {
+	_, err := NewSheet([]*syntax.Theme{{Name: "t", Colors: []*syntax.Color{
+		{Name: "alarm", For: "what went wrong", Value: "reddish"}}}}, nil)
+	require.ErrorContains(t, err, `theme colour "alarm"`)
+	require.ErrorContains(t, err, "reddish")
+}
+
 func TestResolveRejects(t *testing.T) {
 	sheet, err := NewSheet(nil, nil)
 	require.NoError(t, err)
@@ -199,9 +240,10 @@ func TestResolveRejects(t *testing.T) {
 		{name: "non-boolean flag", inline: map[string]string{"bold": "yes"}, wantErr: "expected true or false"},
 		{name: "bad alignment", inline: map[string]string{"align": "middle"}, wantErr: "align must be"},
 		{name: "bad vertical alignment", inline: map[string]string{"valign": "center"}, wantErr: "valign must be"},
-		{name: "bad foreground", inline: map[string]string{"fg": "nope"}, wantErr: "fg: "},
-		{name: "bad background", inline: map[string]string{"bg": "nope"}, wantErr: "bg: "},
-		{name: "bad border colour", inline: map[string]string{"borderColor": "nope"}, wantErr: "borderColor: "},
+		{name: "a foreground written in place", inline: map[string]string{"fg": "#ff0000"}, wantErr: "fg: \"#ff0000\" is a colour written in place"},
+		{name: "a background written in place", inline: map[string]string{"bg": "12"}, wantErr: "bg: \"12\" is a colour written in place"},
+		{name: "a border colour written in place", inline: map[string]string{"borderColor": "red"}, wantErr: "declare <Color name="},
+		{name: "a colour no theme declares", inline: map[string]string{"fg": cell.Ref("nope")}, wantErr: `fg: the theme declares no colour "nope"`},
 		{name: "bad padding", inline: map[string]string{"padding": "1 2 3"}, wantErr: "takes 1, 2 or 4 values"},
 	}
 	for _, tc := range tests {

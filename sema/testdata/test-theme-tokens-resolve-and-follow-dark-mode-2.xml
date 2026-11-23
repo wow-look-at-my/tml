@@ -1,3 +1,4 @@
 <Theme xmlns="urn:tml:v1" name="default">
-	<Token name="accent" light="#5f5fd7" dark="#e0af68"/>
+	<Color name="accent" for="what stands out" light="#5f5fd7" dark="#e0af68"/>
+	<Token name="gap" light="1" dark="2"/>
 </Theme>

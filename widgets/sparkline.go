@@ -25,7 +25,7 @@ type sparkline struct {
 
 func newSparkline(ctx widget.Context) (widget.Native, error) {
 	raw := ctx.Attrs.List("values")
-	color, err := colorAttr(ctx.Attrs, "color")
+	color, err := ctx.Color("color")
 	if err != nil {
 		return nil, err
 	}

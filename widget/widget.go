@@ -139,10 +139,26 @@ type Context struct {
 	Dir string
 	// Dark reports whether the view is rendering against a dark theme.
 	Dark bool
+	// Theme is the colours of the view's themes. A widget takes every colour it draws with from here, by name.
+	Theme cell.Palette
 	// Measure is how wide a grapheme cluster is, in cells. Nil is the Unicode default.
 	Measure Measurer
 	// Frame is the animation step the engine is on; a widget that animates draws it, others ignore it.
 	Frame int
+}
+
+// Color reads an attribute that takes a theme colour. An attribute with no value is no colour. A colour written in
+// place fails the build of the widget.
+func (c Context) Color(name string) (cell.Color, error) {
+	raw := c.Attrs.String(name, "")
+	if raw == "" {
+		return cell.Color{}, nil
+	}
+	color, err := c.Theme.Resolve(raw)
+	if err != nil {
+		return cell.Color{}, c.Attrs.Errorf(name, "%v", err)
+	}
+	return color, nil
 }
 
 // Measurer reports the width of a grapheme cluster in display cells. See cell.Measure for why a host supplies one.

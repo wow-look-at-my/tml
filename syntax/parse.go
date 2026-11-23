@@ -196,6 +196,12 @@ func parseTheme(path string, el *validator.Element) (*Theme, error) {
 			return nil, errorf(childPos, "<%s> is in namespace %q, want %q", child.Local, child.Namespace, Namespace)
 		}
 		switch child.Local {
+		case "Color":
+			color, err := parseColor(path, child)
+			if err != nil {
+				return nil, err
+			}
+			theme.Colors = append(theme.Colors, color)
 		case "Token":
 			token, err := parseToken(path, child)
 			if err != nil {
@@ -209,10 +215,44 @@ func parseTheme(path string, el *validator.Element) (*Theme, error) {
 			}
 			theme.Styles = append(theme.Styles, style)
 		default:
-			return nil, errorf(childPos, "unexpected <%s> in <Theme>; expected Token or Style", child.Local)
+			return nil, errorf(childPos, "unexpected <%s> in <Theme>; expected Color, Token or Style", child.Local)
 		}
 	}
 	return theme, nil
+}
+
+// parseColor reads a theme colour. The `for` attribute is required: a colour with no stated use is a bare value.
+func parseColor(path string, el *validator.Element) (*Color, error) {
+	pos := posOf(path, el)
+	if err := checkAttrs(path, el, "name", "for", "value", "light", "dark"); err != nil {
+		return nil, err
+	}
+	name, ok := attr(el, "name")
+	if !ok || name == "" {
+		return nil, errorf(pos, "<Color> requires a name attribute")
+	}
+	use, _ := attr(el, "for")
+	if strings.TrimSpace(use) == "" {
+		return nil, errorf(pos, "<Color> %q requires a for attribute that says what the colour is used for", name)
+	}
+
+	value, hasValue := attr(el, "value")
+	light, hasLight := attr(el, "light")
+	dark, hasDark := attr(el, "dark")
+	color := &Color{Name: name, For: use, Pos: pos}
+	switch {
+	case hasValue && (hasLight || hasDark):
+		return nil, errorf(pos, "<Color> %q sets both value and a light/dark pair; use one or the other", name)
+	case hasValue && value != "":
+		color.Value = value
+	case hasLight && hasDark && light != "" && dark != "":
+		color.Light, color.Dark = light, dark
+	case hasLight || hasDark:
+		return nil, errorf(pos, "<Color> %q sets only one of light and dark; an adaptive colour needs both", name)
+	default:
+		return nil, errorf(pos, "<Color> %q needs either a value or a light/dark pair", name)
+	}
+	return color, nil
 }
 
 func parseToken(path string, el *validator.Element) (*Token, error) {

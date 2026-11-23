@@ -55,7 +55,7 @@ func newFrame(dialog bool) builder {
 		if err != nil {
 			return nil, err
 		}
-		color, err := colorAttr(ctx.Attrs, "color")
+		color, err := ctx.Color("color")
 		if err != nil {
 			return nil, err
 		}

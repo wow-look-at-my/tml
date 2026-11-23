@@ -41,13 +41,13 @@ func newMenu(ctx widget.Context) (widget.Native, error) {
 	if m.maxWidth <= menuChrome {
 		return nil, ctx.Attrs.Errorf("maxWidth", "a menu needs more than %d cells, got %d", menuChrome, m.maxWidth)
 	}
-	if m.color, err = colorAttr(ctx.Attrs, "color"); err != nil {
+	if m.color, err = ctx.Color("color"); err != nil {
 		return nil, err
 	}
-	if m.accent, err = colorAttr(ctx.Attrs, "accent"); err != nil {
+	if m.accent, err = ctx.Color("accent"); err != nil {
 		return nil, err
 	}
-	if m.accentText, err = colorAttr(ctx.Attrs, "accentText"); err != nil {
+	if m.accentText, err = ctx.Color("accentText"); err != nil {
 		return nil, err
 	}
 	return m, nil

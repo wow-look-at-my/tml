@@ -7,17 +7,40 @@ import (
 	"maps"
 	"strings"
 
+	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/sema"
 	"github.com/wow-look-at-my/tml/syntax"
 )
 
 // Sheet holds the named styles declared across every theme in scope, with each extends chain already flattened.
 type Sheet struct {
-	styles map[string]map[string]string
+	styles  map[string]map[string]string
+	palette cell.Palette
 }
 
-// NewSheet flattens the named styles from the given themes. Token references in style attributes are resolved here.
+// Palette is the theme colours the sheet resolves a colour attribute against.
+func (s *Sheet) Palette() cell.Palette { return s.palette }
+
+// NewSheet is NewSheetFor on a light background.
 func NewSheet(themes []*syntax.Theme, tokens map[string]string) (*Sheet, error) {
+	return NewSheetFor(themes, tokens, false)
+}
+
+// NewSheetFor flattens the named styles from the given themes, and reads their colours for a mode. Token references
+// in style attributes are resolved here.
+func NewSheetFor(themes []*syntax.Theme, tokens map[string]string, dark bool) (*Sheet, error) {
+	palette, err := Palette(themes, dark)
+	if err != nil {
+		return nil, err
+	}
+	// A style refers to a colour the same way a control does, with or without a program to supply the tokens.
+	withColors := make(map[string]string, len(tokens)+len(palette))
+	for name := range palette {
+		withColors[name] = cell.Ref(name)
+	}
+	maps.Copy(withColors, tokens)
+	tokens = withColors
+
 	declared := map[string]*syntax.Style{}
 	for _, theme := range themes {
 		for _, style := range theme.Styles {
@@ -29,7 +52,7 @@ func NewSheet(themes []*syntax.Theme, tokens map[string]string) (*Sheet, error) 
 		}
 	}
 
-	sheet := &Sheet{styles: make(map[string]map[string]string, len(declared))}
+	sheet := &Sheet{styles: make(map[string]map[string]string, len(declared)), palette: palette}
 	for name := range declared {
 		if _, err := sheet.flatten(declared, name, tokens, nil); err != nil {
 			return nil, err
@@ -114,5 +137,5 @@ func (s *Sheet) Resolve(named string, inline map[string]string) (Resolved, error
 		maps.Copy(attrs, base)
 	}
 	maps.Copy(attrs, inline)
-	return build(attrs)
+	return build(attrs, s.palette)
 }

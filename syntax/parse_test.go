@@ -78,8 +78,16 @@ func TestParseTheme(t *testing.T) {
 	theme := file.Theme
 	require.NotNil(t, theme)
 	require.Len(t, theme.Tokens, 2)
-	assert.Equal(t, "#e0af68", theme.Tokens[0].Dark)
+	assert.Equal(t, "rounded", theme.Tokens[0].Dark)
 	assert.Equal(t, "1", theme.Tokens[1].Value)
+
+	require.Len(t, theme.Colors, 2)
+	accent, ink := theme.Colors[0], theme.Colors[1]
+	assert.Equal(t, "what stands out", accent.For)
+	assert.Equal(t, "#5f5fd7", accent.In(false))
+	assert.Equal(t, "#e0af68", accent.In(true))
+	assert.Equal(t, "0", ink.In(false))
+	assert.Equal(t, "0", ink.In(true), "a colour with one value has it in both modes")
 
 	require.Len(t, theme.Styles, 2)
 	assert.Equal(t, "card", theme.Styles[1].Extends)
@@ -185,6 +193,36 @@ func TestParseRejects(t *testing.T) {
 			name:    "half an adaptive token",
 			body:    `<Theme xmlns="urn:tml:v1" name="t"><Token name="c" light="#fff"/></Theme>`,
 			wantErr: "only one of light and dark",
+		},
+		{
+			name:    "a colour that does not say what it is for",
+			body:    `<Theme xmlns="urn:tml:v1" name="t"><Color name="c" value="#fff"/></Theme>`,
+			wantErr: `<Color> "c" requires a for attribute that says what the colour is used for`,
+		},
+		{
+			name:    "a colour whose use is blank",
+			body:    `<Theme xmlns="urn:tml:v1" name="t"><Color name="c" for="  " value="#fff"/></Theme>`,
+			wantErr: "requires a for attribute",
+		},
+		{
+			name:    "a colour with no name",
+			body:    `<Theme xmlns="urn:tml:v1" name="t"><Color for="the page" value="#fff"/></Theme>`,
+			wantErr: "<Color> requires a name attribute",
+		},
+		{
+			name:    "half an adaptive colour",
+			body:    `<Theme xmlns="urn:tml:v1" name="t"><Color name="c" for="the page" dark="#fff"/></Theme>`,
+			wantErr: "only one of light and dark",
+		},
+		{
+			name:    "a colour with a value and a pair",
+			body:    `<Theme xmlns="urn:tml:v1" name="t"><Color name="c" for="the page" value="1" light="2" dark="3"/></Theme>`,
+			wantErr: "sets both value and a light/dark pair",
+		},
+		{
+			name:    "a colour with no value at all",
+			body:    `<Theme xmlns="urn:tml:v1" name="t"><Color name="c" for="the page"/></Theme>`,
+			wantErr: "needs either a value or a light/dark pair",
 		},
 		{
 			name:    "token with no value at all",

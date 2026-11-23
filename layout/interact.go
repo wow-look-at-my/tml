@@ -23,6 +23,8 @@ type Target struct {
 	Box Rect
 	// Part names the part of the widget under a point, or is nil for a widget with no parts.
 	Part widget.Parted
+	// Tooltip is the text the element shows when the pointer rests on it.
+	Tooltip string
 }
 
 // Scroll is how far a scrolling region's content is shifted, and how far it could be.
@@ -86,12 +88,12 @@ func (p *pass) publish() {
 		keys, _ := box.Native.(widget.Keyed)
 		part, _ := box.Native.(widget.Parted)
 		targets = append(targets, Target{ID: box.ID, Action: box.Action, Focus: box.focus, Rect: rect, Scroll: box.scroll,
-			Keys: keys, Box: box.Screen, Part: part})
+			Keys: keys, Box: box.Screen, Part: part, Tooltip: box.Tooltip})
 	}
 	p.e.opts.Interaction.Frame(targets)
 }
 
-// track records a widget the user can reach: a widget that takes focus, or a widget that was given an id.
+// track records a widget the user can reach: a widget that takes focus, or a widget that has an id or a tooltip.
 func (p *pass) track(box *Box) error {
 	if box.ID != "" {
 		if first, dup := p.ids[box.ID]; dup {
@@ -110,7 +112,7 @@ func (p *pass) track(box *Box) error {
 			return nil
 		}
 	}
-	if !box.focus && box.ID == "" {
+	if !box.focus && box.ID == "" && box.Tooltip == "" {
 		return nil
 	}
 	p.targets = append(p.targets, box)

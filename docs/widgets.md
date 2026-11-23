@@ -10,6 +10,7 @@ Attributes work on any element:
 
 - `id` names it. An id is how focus survives from one frame to the next. It is also how the host tells one control from another. Elements sharing an id is an error where it is written.
 - `action` is the string the element reports when it is activated. The host matches on it, so its `Update` never learns where anything ended up.
+- `tooltip` is the text the element shows when the pointer rests on it. See [Tooltips](#tooltips).
 
 ```go
 func (m *model) Update(p *tml.Program, msg tml.Msg) bool {
@@ -187,7 +188,36 @@ if view.Animating() { /* keep the ticker */ }     // false means nothing on scre
 
 `Animating` is about what is on screen, not about what exists. An element carrying `state="hidden"` or `state="collapsed"` is not drawn. It counts as nothing animating, and a view whose only animation is hidden reports false. Hiding the element is therefore what stops the repainting, with no switch anywhere. The states are docs/language.md §Visibility.
 
+## Tooltips
+
+```xml
+<Button id="save" action="save" label="Save" tooltip="Writes the file to disk"/>
+```
+
+A widget with a `tooltip` shows the text when the pointer rests on it with no button held. The program waits `ProgramOptions.TooltipDelay`, and a pointer that moves starts the wait again. Any key, press, wheel turn or move takes the tooltip away. A negative delay shows none.
+
+A tooltip is not a menu. It does not look like one. A `Menu` is a bordered box with a title. It takes the pointer. A tooltip is a filled strip with no border, in the theme's `tooltip` and `tooltipText` colours. It sits on the row under the pointer, or over the pointer at the bottom of the screen, and it never takes input.
+
+A theme changes the look by declaring those colours.
+
+The control on top decides. A popup over a button hides the button's tooltip, as it hides the button. `tooltip` on an element that is not a widget is an error: the pointer reaches widgets only.
+
+A host with a loop of its own does what the program does:
+
+```go
+ui := view.UI()
+if hid := ui.Observe(msg); hid { repaint() }   // Update calls Observe itself
+dwell, waits := ui.Dwell()
+if waits {
+    time.AfterFunc(delay, func() { loop <- func() { if ui.ShowTooltip(dwell) { repaint() } } })
+}
+```
+
+`ui.Tooltip()` reads the tooltip on screen.
+
 ## Writing your own
+
+A widget takes every colour it draws with from the theme: `ctx.Color("color")` for an attribute that names one, `ctx.Theme.Named("accent")` for a name it knows. See docs/language.md §Colours.
 
 A widget is a `widget.Native`: measure, then draw on what layout settled on.
 

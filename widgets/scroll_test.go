@@ -142,7 +142,7 @@ func darkScrollbox(t *testing.T, pairs map[string]string) widget.Composer {
 	t.Helper()
 	factory, ok := Library().Factory("Scrollbox")
 	require.True(t, ok)
-	native, err := factory.Build(widget.Context{Dark: true, Attrs: attrsOf("Scrollbox", pairs)})
+	native, err := factory.Build(widget.Context{Dark: true, Attrs: attrsOf("Scrollbox", pairs), Theme: theme(true)})
 	require.NoError(t, err)
 	box, ok := native.(widget.Composer)
 	require.True(t, ok, "<Scrollbox> should wrap its children")

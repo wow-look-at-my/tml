@@ -1,0 +1,4 @@
+<Theme xmlns="urn:tml:v1" name="default">
+	<Color name="spacing" for="a test" value="#e0af68"/>
+	<Token name="spacing" value="wide"/>
+</Theme>

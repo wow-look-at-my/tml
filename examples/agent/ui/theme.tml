@@ -1,15 +1,17 @@
 <?xml version="1.1" encoding="UTF-8"?>
 <Theme xmlns="urn:tml:v1" name="agent">
-	<Token name="accent" light="#3d59a1" dark="#7aa2f7"/>
-	<Token name="ok" light="#1a7f37" dark="#9ece6a"/>
-	<Token name="warn" light="#9a6700" dark="#e0af68"/>
-	<Token name="danger" light="#c4314b" dark="#f7768e"/>
-	<Token name="line" light="#9ca0b0" dark="#3b4261"/>
-	<Token name="dim" light="#6c6f85" dark="#565f89"/>
+	<Color name="accent" for="titles, the progress of the work, and what the user wrote" light="#3d59a1" dark="#7aa2f7"/>
+	<Color name="onAccent" for="text on a surface filled with the accent" value="#10101a"/>
+	<Color name="ok" for="a result that passed, and what the agent wrote" light="#1a7f37" dark="#9ece6a"/>
+	<Color name="warn" for="a change that waits for the user, and a tool that runs" light="#9a6700" dark="#e0af68"/>
+	<Color name="danger" for="a result that failed, and an action that destroys something" light="#c4314b" dark="#f7768e"/>
+	<Color name="note" for="a result that was skipped" value="13"/>
+	<Color name="line" for="rules, tracks and the borders of panels" light="#9ca0b0" dark="#3b4261"/>
+	<Color name="dim" for="text the eye can pass over" light="#6c6f85" dark="#565f89"/>
 
 	<Style name="title" bold="true" fg="{theme.accent}"/>
 	<Style name="muted" faint="true" fg="{theme.dim}"/>
-	<Style name="model" bg="{theme.accent}" fg="#10101a"/>
+	<Style name="model" bg="{theme.accent}" fg="{theme.onAccent}"/>
 	<Style name="page" padding="0 1"/>
 	<Style name="ok" fg="{theme.ok}"/>
 </Theme>

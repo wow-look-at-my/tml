@@ -33,7 +33,7 @@ func TestBorderDrawsAFrameAroundItsChildren(t *testing.T) {
 }
 
 func TestBorderColoursItsEdgeButNotItsContent(t *testing.T) {
-	buf := widgettest.Compose(composer(t, "Border", map[string]string{"color": "5"}), []string{"hi"}, 6, 3)
+	buf := widgettest.Compose(composer(t, "Border", map[string]string{"color": ref("line")}), []string{"hi"}, 6, 3)
 
 	for _, at := range [][2]int{{0, 0}, {3, 0}, {5, 1}, {0, 2}} {
 		assert.Equal(t, cell.Indexed(5), buf.At(at[0], at[1]).Style.Fg, "edge cell %v", at)

@@ -34,21 +34,27 @@ func TestProgressBarClampsOutOfRangeValues(t *testing.T) {
 }
 
 func TestProgressBarColoursItsFillAndItsTrack(t *testing.T) {
-	bar := build(t, "ProgressBar", map[string]string{"value": "0.5", "color": "2", "trackColor": "#102030"})
+	bar := build(t, "ProgressBar", map[string]string{"value": "0.5", "color": ref("ok"), "trackColor": ref("track")})
 	buf := widgettest.Draw(bar, 4, 1)
 
 	assert.Equal(t, cell.Indexed(2), buf.At(0, 0).Style.Fg)
 	assert.Equal(t, cell.RGB(0x10, 0x20, 0x30), buf.At(3, 0).Style.Fg)
 }
 
-// A colour that does not parse is a mistake in the document, so the build fails at the attribute.
+// A colour the theme does not declare is a mistake in the document, so the build fails at the attribute.
 func TestProgressBarRejectsAColourThatIsNotAColour(t *testing.T) {
-	_, err := tryBuild("ProgressBar", map[string]string{"color": "nope"})
+	_, err := tryBuild("ProgressBar", map[string]string{"color": ref("nope")})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "nope")
+}
 
-	_, err = tryBuild("ProgressBar", map[string]string{"trackColor": "#12"})
-	require.Error(t, err)
+// A colour written in place is refused: only a theme holds a colour.
+func TestProgressBarRejectsAColourWrittenInPlace(t *testing.T) {
+	for _, literal := range []string{"#102030", "2", "red"} {
+		_, err := tryBuild("ProgressBar", map[string]string{"trackColor": literal})
+		require.ErrorContains(t, err, "written in place", literal)
+		require.ErrorContains(t, err, "<Color name=", literal)
+	}
 }
 
 func TestProgressBarRejectsAnImpossibleMaximum(t *testing.T) {

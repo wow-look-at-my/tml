@@ -19,9 +19,15 @@ import (
 //go:embed testdata/listing-doc.xml
 var listingDoc string
 
+//go:embed testdata/listing-theme.xml
+var listingTheme string
+
 func loadListing(t *testing.T) *tml.View {
 	t.Helper()
-	view, err := tml.Load(fstest.MapFS{"Listing.tml": {Data: []byte(listingDoc)}}, "Listing.tml", tml.Options{})
+	view, err := tml.Load(fstest.MapFS{
+		"Listing.tml": {Data: []byte(listingDoc)},
+		"theme.tml":   {Data: []byte(listingTheme)},
+	}, "Listing.tml", tml.Options{})
 	require.NoError(t, err)
 	return view
 }

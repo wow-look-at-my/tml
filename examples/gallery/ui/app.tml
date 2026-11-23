@@ -47,9 +47,9 @@
 				<Stack orientation="horizontal" gap="1">
 					<!-- The variant is data, so the section that is showing is the
 					     one drawn in the accent colour. -->
-					<Button id="tab-controls" action="tab:controls" label="Controls" variant="{controlsVariant}"/>
-					<Button id="tab-data" action="tab:data" label="Data" variant="{dataVariant}"/>
-					<Button id="tab-media" action="tab:media" label="Media" variant="{mediaVariant}"/>
+					<Button id="tab-controls" action="tab:controls" label="Controls" variant="{controlsVariant}" tooltip="Buttons, fields, boxes and lists"/>
+					<Button id="tab-data" action="tab:data" label="Data" variant="{dataVariant}" tooltip="Tables, bars and graphs"/>
+					<Button id="tab-media" action="tab:media" label="Media" variant="{mediaVariant}" tooltip="Images and what moves"/>
 				</Stack>
 
 				<Border title="Controls" color="{theme.line}" width="*" if="{controlsTab}">
@@ -106,8 +106,8 @@
 				<Spacer height="*"/>
 
 				<Stack orientation="horizontal" gap="2">
-					<Button id="save" action="save" label="Save" variant="primary"/>
-					<Button id="quit" action="confirm-quit" label="Quit" variant="danger"/>
+					<Button id="save" action="save" label="Save" variant="primary" tooltip="Counts one more save"/>
+					<Button id="quit" action="confirm-quit" label="Quit" variant="danger" tooltip="Asks before it ends the gallery"/>
 					<Button id="locked" label="Locked" disabled="true"/>
 				</Stack>
 			</Stack>

@@ -62,7 +62,7 @@ func TestAMenuMarksTheSelectedChoiceFromBorderToBorder(t *testing.T) {
 	assert.False(t, buf.At(0, 2).Style.Has(cell.Reverse), "the border is not")
 	assert.False(t, buf.At(2, 1).Style.Has(cell.Reverse), "and no other choice is")
 
-	pairs["accent"], pairs["accentText"] = "#ff0000", "#ffffff"
+	pairs["accent"], pairs["accentText"] = ref("accent"), ref("onAccent")
 	_, buf = drawn(t, pairs, 0)
 	marked := buf.At(2, 2).Style
 	assert.False(t, marked.Has(cell.Reverse), "the accent colours take the place of the reversal")

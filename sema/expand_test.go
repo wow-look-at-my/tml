@@ -118,11 +118,15 @@ func TestThemeTokensResolveAndFollowDarkMode(t *testing.T) {
 
 	light, err := program.Expand(nil, ExpandOptions{})
 	require.NoError(t, err)
-	assert.Contains(t, light.Dump(), `fg="#5f5fd7"`)
+	assert.Contains(t, light.Dump(), `gap="1"`)
+	assert.Contains(t, light.Dump(), `fg="theme:accent"`, "a colour stays a reference: only the theme holds its value")
 
 	dark, err := program.Expand(nil, ExpandOptions{Dark: true})
 	require.NoError(t, err)
-	assert.Contains(t, dark.Dump(), `fg="#e0af68"`, "an adaptive token follows the mode")
+	assert.Contains(t, dark.Dump(), `gap="2"`, "an adaptive token follows the mode")
+	assert.Contains(t, dark.Dump(), `fg="theme:accent"`)
+	assert.Equal(t, "theme:accent", program.Tokens(ExpandOptions{})["accent"])
+	assert.Equal(t, "theme:accent", ColorValue("accent").String())
 }
 
 // A theme token is text until it reaches a typed property, where it is re-read as that type.
@@ -132,7 +136,24 @@ func TestTokenIsCheckedAgainstTheTargetType(t *testing.T) {
 		"theme.tml": testTokenIsCheckedAgainstTheTargetTypeXml2,
 	}, nil)
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "hex triplet")
+	assert.Contains(t, err.Error(), "a colour comes from the theme")
+}
+
+// A token that holds a colour is refused where a colour is asked for. The colour has to say what it is for.
+func TestATokenIsNotAColour(t *testing.T) {
+	_, err := expand(t, map[string]string{
+		"app.tml":   testTokenIsCheckedAgainstTheTargetTypeXml,
+		"theme.tml": `<Theme xmlns="urn:tml:v1" name="default"><Token name="spacing" value="#e0af68"/></Theme>`,
+	}, nil)
+	require.ErrorContains(t, err, `declare <Color name="…" for="…">`)
+}
+
+func TestATokenCannotTakeTheNameOfAColour(t *testing.T) {
+	_, err := build(t, map[string]string{
+		"app.tml":   testTokenIsCheckedAgainstTheTargetTypeXml,
+		"theme.tml": testATokenCannotTakeTheNameOfAColourXml,
+	})
+	require.ErrorContains(t, err, `token "spacing" has the name of the theme colour`)
 }
 
 func TestAnalyzeRejects(t *testing.T) {
@@ -306,3 +327,6 @@ var testAnalyzeRejectsXml9 string
 
 //go:embed testdata/test-expand-rejects.xml
 var testExpandRejectsXml string
+
+//go:embed testdata/test-a-token-cannot-take-the-name-of-a-colour.xml
+var testATokenCannotTakeTheNameOfAColourXml string

@@ -91,6 +91,32 @@ func TestATargetCarriesTheKeysOfAKeyedWidget(t *testing.T) {
 	assert.Nil(t, rec.targets[1].Keys, "a plain widget leaves keys to the focus ring")
 }
 
+// A widget with a tooltip answers the pointer with no id, and its target carries the text.
+func TestATargetCarriesItsTooltip(t *testing.T) {
+	sheet, err := style.NewSheet(nil, nil)
+	require.NoError(t, err)
+	registry := widget.NewRegistry().Bind("Plain", stub{w: 3, h: 1})
+	rec := &recorder{}
+	engine := New(sheet, Options{Widgets: registry, Interaction: rec})
+
+	_, err = engine.Layout(el("Stack", nil,
+		el("Plain", map[string]string{"tooltip": "Says what this is"}),
+		el("Plain", nil),
+		el("Plain", map[string]string{"id": "named"}),
+	), 10, 4)
+	require.NoError(t, err)
+
+	require.Len(t, rec.targets, 2, "the widget with nothing to say to the pointer is not a target")
+	assert.Equal(t, "Says what this is", rec.targets[0].Tooltip)
+	assert.Empty(t, rec.targets[0].ID)
+	assert.Equal(t, Rect{X: 0, Y: 0, W: 3, H: 1}, rec.targets[0].Rect)
+	assert.Empty(t, rec.targets[1].Tooltip)
+
+	// The pointer reaches widgets only, so a tooltip on a panel would never show. That is an error, not a blank.
+	_, err = engine.Layout(el("Stack", map[string]string{"tooltip": "never seen"}, el("Plain", nil)), 10, 4)
+	require.ErrorContains(t, err, "<Stack> has a tooltip, and only a widget answers the pointer")
+}
+
 // scrolled is a scrolling composer that keeps what layout told it.
 type scrolled struct {
 	wrapper

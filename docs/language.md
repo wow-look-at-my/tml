@@ -233,11 +233,13 @@ Layout attributes are not forwarded through a component instance: every attribut
 ```xml
 <?xml version="1.1" encoding="UTF-8"?>
 <Theme xmlns="urn:tml:v1" name="default">
-    <Token name="accent" light="#5f5fd7" dark="#e0af68"/>
+    <Color name="accent"   for="the border of a card, and the title of the page" light="#5f5fd7" dark="#e0af68"/>
+    <Color name="onAccent" for="text on a surface filled with the accent" value="#10101a"/>
     <Token name="gutter" value="1"/>
 
     <Style name="card"       border="rounded" borderColor="{theme.accent}" padding="0 1"/>
     <Style name="card.title" extends="card"   bold="true"/>
+    <Style name="chip"       bg="{theme.accent}" fg="{theme.onAccent}"/>
 </Theme>
 ```
 
@@ -247,7 +249,51 @@ Style attributes. Borders are named.
 
 An element picks a named style with `style="card"` and overrides individual attributes inline.
 
-`extends` copies every attribute of the parent style, padding and margin included, and the child's own attributes win. A colour is a palette index, `#rgb`, `#rrggbb` or a terminal colour name such as `red` or `brightBlue`. A value that is not a colour fails the load. An element's `fg` and text attributes reach its descendants, and its `bg` fills its padding box. See docs/renderer.md.
+`extends` copies every attribute of the parent style, padding and margin included, and the child's own attributes win. An element's `fg` and text attributes reach its descendants, and its `bg` fills its padding box. See docs/renderer.md.
+
+### Colours
+
+A theme is the only place a colour value is written. A control, a style and a widget name a colour of the theme. The theme decides what the colour is.
+
+```xml
+<Color name="danger" for="an action that destroys something" light="#c4314b" dark="#f7768e"/>
+<Button label="Delete" variant="danger"/>
+<Text fg="{theme.danger}">This cannot be undone</Text>
+<Rule color="{theme.danger}"/>
+```
+
+- `name` is what a control refers to: `{theme.name}`.
+- `for` says what the colour is used for. It is required, and a `<Color>` with no `for` fails the load. Write the use, not the hue: a reader of the theme has to know what changes when the value does.
+- The value is a palette index, `#rgb`, `#rrggbb` or a terminal colour name such as `red` or `brightBlue`. It is a single `value`, or a `light`/`dark` pair that follows `Options.Dark`.
+
+A colour written in place is an error, on an element, in a style and on a widget:
+
+```xml
+<Text fg="#ff0000">no</Text>
+<Style name="title" fg="12"/>
+<Rule color="red"/>
+```
+
+```text
+fg: "#ff0000" is a colour written in place; declare <Color name="…" for="…"> in a theme and write {theme.name}
+```
+
+A `<Token>` is not a colour. A token that holds a colour value is refused where a colour is asked for. A property of type `color` takes a reference too: `default="{theme.accent}"` in the document, and `sema.ColorValue("accent")` from the host. A host that hands a property over as text gives the plain name, `accent`. A name no theme declares fails where the colour is drawn.
+
+The library draws with colours of a base theme that every view starts from. A theme of the view replaces one by declaring the same name.
+
+```text
+primary      the border and the label of a button that is the main action
+danger       the border and the label of a button that destroys something
+disabled     the border of a control that does not answer
+focus        the border of the control that has the keyboard
+fade         the background a scrolling region fades into at its edges
+fadeText     text with no colour of its own, where a scrolling region fades
+tooltip      the surface of a tooltip
+tooltipText  the text of a tooltip
+```
+
+A widget written in Go takes its colours the same way. `widget.Context.Color("color")` reads an attribute that names a theme colour. `widget.Context.Theme.Named("accent")` reads a colour by name. `View.Theme()` gives a host the same palette.
 
 ## Widgets
 

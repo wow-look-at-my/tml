@@ -36,9 +36,13 @@ type View struct {
 	dark    bool
 	ui      *UI
 	measure widget.Measurer
+	theme   cell.Palette
 	// frames is the last painted frame, kept only while an inspector is attached. A view without an inspector pays a single atomic
 	frames *frameRecord
 }
+
+// Theme is the colours of the view's themes for the mode it was loaded in, by name.
+func (v *View) Theme() cell.Palette { return v.theme }
 
 // UI is the view's interaction state: which element has focus, which element the pointer is over, and what the last
 func (v *View) UI() *UI { return v.ui }
@@ -49,6 +53,8 @@ func Load(fsys fs.FS, entry string, opts Options) (*View, error) {
 	if err != nil {
 		return nil, err
 	}
+	// The base theme comes first, so a theme of the view can replace one of its colours.
+	unit.Themes = append([]*syntax.Theme{style.Base()}, unit.Themes...)
 	registry := opts.Widgets
 	if !opts.Bare {
 		registry = opts.Widgets.Merge(widgets.Library())
@@ -60,11 +66,11 @@ func Load(fsys fs.FS, entry string, opts Options) (*View, error) {
 	if err != nil {
 		return nil, err
 	}
-	sheet, err := style.NewSheet(unit.Themes, program.Tokens(sema.ExpandOptions{Dark: opts.Dark}))
+	sheet, err := style.NewSheetFor(unit.Themes, program.Tokens(sema.ExpandOptions{Dark: opts.Dark}), opts.Dark)
 	if err != nil {
 		return nil, err
 	}
-	view := &View{program: program, dark: opts.Dark, ui: NewUI(), measure: opts.Measure}
+	view := &View{program: program, dark: opts.Dark, ui: NewUI(), measure: opts.Measure, theme: sheet.Palette()}
 	view.engine = layout.New(sheet, layout.Options{
 		Widgets:     registry,
 		FS:          fsys,
@@ -161,6 +167,7 @@ func (v *View) Animating() bool { return v.engine.Animating() }
 
 func (v *View) paint(box *layout.Box, width, height int) *cell.Buffer {
 	frame := render.Frame(box, width, height, v.measure)
+	v.ui.drawTooltip(frame, v.theme, v.measure)
 	v.record(box, frame, width, height)
 	// Readable is half.
 	drives.painted(inspection.isDriven())

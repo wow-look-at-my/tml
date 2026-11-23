@@ -1,5 +1,5 @@
 <Component xmlns="urn:tml:v1" name="App">
 	<Import src="./theme.tml"/>
 	<Property name="accent" type="color" default="{theme.accent}"/>
-	<Template><Box fg="{accent}"/></Template>
+	<Template><Box fg="{accent}" gap="{theme.gap}"/></Template>
 </Component>

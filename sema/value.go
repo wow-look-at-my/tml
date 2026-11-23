@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/wow-look-at-my/tml/cell"
 )
 
 // Value is a typed value: a property after defaulting, an evaluated expression, or a literal attribute.
@@ -133,10 +135,11 @@ func ParseValue(t Type, raw string) (Value, error) {
 			return Value{}, fmt.Errorf("expected true or false, got %q", raw)
 		}
 	case KindColor:
-		if err := validateColor(raw); err != nil {
+		ref, err := colorRef(raw)
+		if err != nil {
 			return Value{}, err
 		}
-		value.str = raw
+		value.str = ref
 	case KindLength:
 		length, err := ParseLength(raw)
 		if err != nil {
@@ -163,29 +166,20 @@ func ParseValue(t Type, raw string) (Value, error) {
 	return value, nil
 }
 
-// validateColor accepts a hex triplet or an ANSI palette index. Names are deliberately not accepted.
-func validateColor(raw string) error {
+// colorRef reads the value of a colour property as a reference to a theme colour. The value is a reference
+// already, or the plain name of a theme colour. This is how a host that hands every property over as text names
+// one. A hex triplet or a palette index is a colour written in place, and is refused.
+func colorRef(raw string) (string, error) {
 	if raw == "" {
-		return nil
+		return "", nil
 	}
-	if hex, ok := strings.CutPrefix(raw, "#"); ok {
-		if len(hex) != 3 && len(hex) != 6 {
-			return fmt.Errorf("hex colour must have 3 or 6 digits, got %q", raw)
-		}
-		for _, r := range hex {
-			if !isHexDigit(r) {
-				return fmt.Errorf("hex colour has a non-hex digit: %q", raw)
-			}
-		}
-		return nil
+	if _, ok := cell.RefName(raw); ok {
+		return raw, nil
 	}
-	n, err := strconv.Atoi(raw)
-	if err != nil || n < 0 || n > 255 {
-		return fmt.Errorf("colour must be a hex triplet such as #e0af68 or an ANSI index 0-255, got %q", raw)
+	_, isIndex := strconv.Atoi(raw)
+	if strings.HasPrefix(raw, "#") || isIndex == nil || strings.ContainsAny(raw, " \t{}") {
+		return "", fmt.Errorf(
+			"a colour comes from the theme: declare <Color name=\"…\" for=\"…\"> and write {theme.name}, got %q", raw)
 	}
-	return nil
-}
-
-func isHexDigit(r rune) bool {
-	return (r >= '0' && r <= '9') || (r >= 'a' && r <= 'f') || (r >= 'A' && r <= 'F')
+	return cell.Ref(raw), nil
 }

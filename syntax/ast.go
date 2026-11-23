@@ -37,12 +37,36 @@ type Property struct {
 	Pos        Pos
 }
 
-// Theme is a set of tokens and named styles.
+// Theme is a set of colours, tokens and named styles.
 type Theme struct {
 	Name   string
+	Colors []*Color
 	Tokens []*Token
 	Styles []*Style
 	Pos    Pos
+}
+
+// Color is a named theme colour. For says what the colour is used for, and a
+// control refers to the colour by Name.
+type Color struct {
+	Name  string
+	For   string
+	Value string
+	Light string
+	Dark  string
+	Pos   Pos
+}
+
+// In is the colour's text for a mode.
+func (c *Color) In(dark bool) string {
+	switch {
+	case c.Value != "":
+		return c.Value
+	case dark:
+		return c.Dark
+	default:
+		return c.Light
+	}
 }
 
 // Token is a named theme value. A token either has a single Value or a light/dark pair, never both.

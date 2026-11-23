@@ -79,13 +79,12 @@
 	</xs:simpleType>
 
 	<!--
-		A colour is a hex triplet, a palette index or a terminal colour name. The style resolver reads the string and
-		rejects a misspelling when the view loads. A token can supply the value, so this states only that the attribute
-		carries something.
+		A colour on a style is a reference to a theme colour, and never a value written in place. The style resolver
+		rejects a reference to a name no theme declares when the view loads.
 	-->
 	<xs:simpleType name="color">
 		<xs:restriction base="xs:token">
-			<xs:minLength value="1"/>
+			<xs:pattern value="\{theme\.[^}]+\}"/>
 		</xs:restriction>
 	</xs:simpleType>
 
@@ -139,6 +138,26 @@
 
 	<!-- ===== 3. The theme ===== -->
 
+	<!--
+		A theme colour is the only place a colour value is written: a hex triplet, a palette index or a terminal colour
+		name. It carries one value, or a light and dark pair. The for attribute says what the colour is used for.
+	-->
+	<xs:complexType name="colorValue">
+		<xs:attribute name="name" type="nonEmpty" use="required"/>
+		<xs:attribute name="for" type="nonEmpty" use="required"/>
+		<xs:attribute name="value" type="nonEmpty" use="required"/>
+		<xs:attribute name="light" use="prohibited"/>
+		<xs:attribute name="dark" use="prohibited"/>
+	</xs:complexType>
+
+	<xs:complexType name="colorPair">
+		<xs:attribute name="name" type="nonEmpty" use="required"/>
+		<xs:attribute name="for" type="nonEmpty" use="required"/>
+		<xs:attribute name="light" type="nonEmpty" use="required"/>
+		<xs:attribute name="dark" type="nonEmpty" use="required"/>
+		<xs:attribute name="value" use="prohibited"/>
+	</xs:complexType>
+
 	<!-- A token carries one value, or a light and dark pair, and never one half of the pair. -->
 	<xs:complexType name="tokenValue">
 		<xs:attribute name="name" type="nonEmpty" use="required"/>
@@ -179,6 +198,10 @@
 
 	<xs:complexType name="theme">
 		<xs:all>
+			<xs:element name="Color" minOccurs="0" maxOccurs="unbounded">
+				<xs:alternative test="@value" type="colorValue"/>
+				<xs:alternative type="colorPair"/>
+			</xs:element>
 			<xs:element name="Token" minOccurs="0" maxOccurs="unbounded">
 				<xs:alternative test="@value" type="tokenValue"/>
 				<xs:alternative type="tokenPair"/>
