@@ -11,7 +11,7 @@ import (
 	"github.com/wow-look-at-my/tml/widget"
 )
 
-var tableAttrs = []string{"columns", "rows", "separator", "border", "rule", "spacing", "selected", "disabled", "wrap", "collapse"}
+var tableAttrs = []string{"columns", "rows", "separator", "border", "rule", "spacing", "selected", "disabled", "wrap", "collapse", "widths"}
 
 // dataTable is a grid of text with headers.
 type dataTable struct {
@@ -27,7 +27,9 @@ type dataTable struct {
 	wrap     bool
 	// collapse is the order the columns give way in when the table is wider than its space, as a Grid's collapse is.
 	collapse []int
-	state    widget.State
+	// widths is the least cells each column takes, whatever the rows hold.
+	widths  []int
+	state   widget.State
 	measure  widget.Measurer
 	// drawn is the width the table last drew at, which is the shape Part reads a point against.
 	drawn int
@@ -70,6 +72,17 @@ func newTable(ctx widget.Context) (widget.Native, error) {
 			return nil, ctx.Attrs.Errorf("collapse", "column %d is named twice", col)
 		}
 		t.collapse = append(t.collapse, col)
+	}
+	widths := ctx.Attrs.List("widths")
+	if len(widths) > len(t.columns) {
+		return nil, ctx.Attrs.Errorf("widths", "names %d widths for %d columns", len(widths), len(t.columns))
+	}
+	for _, raw := range widths {
+		w, convErr := strconv.Atoi(strings.TrimSpace(raw))
+		if convErr != nil || w < 0 {
+			return nil, ctx.Attrs.Errorf("widths", "%q is not a width in cells", raw)
+		}
+		t.widths = append(t.widths, w)
 	}
 	for _, raw := range ctx.Attrs.List("rows") {
 		cells := strings.Split(raw, separator)
@@ -154,11 +167,14 @@ func cellText(row []string, col int) string {
 	return ""
 }
 
-// natural is the widest cell of each shown column.
+// natural is the widest cell of each shown column, and at least the width the host named for it.
 func (t *dataTable) natural(shown []int) []int {
 	widths := make([]int, len(shown))
 	for i, col := range shown {
 		widths[i] = t.measure.Width(t.columns[col])
+		if col < len(t.widths) {
+			widths[i] = max(widths[i], t.widths[col])
+		}
 		for _, row := range t.rows {
 			widths[i] = max(widths[i], t.measure.Width(cellText(row, col)))
 		}

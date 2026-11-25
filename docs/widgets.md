@@ -160,6 +160,8 @@ That arithmetic holds only while a row is a line. A cell too wide for its column
 <Table id="items" columns="DELETED,SIZE,ORIGINAL PATH" rows="{rows}" selected="{selected}" wrap="false"/>
 ```
 
+A table sizes its columns from the rows it holds. A host that hands over only the rows on screen sees the columns change width as it scrolls. `widths` names the least cells each column takes, as a list of numbers. Give it the widest cell of each column over the whole listing, and every screenful draws the same columns.
+
 ### Display
 
 | Element | Attributes | Notes |
