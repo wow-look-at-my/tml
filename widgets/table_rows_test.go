@@ -57,11 +57,12 @@ func scrolled(native widget.Native, w, view, offset int) []string {
 func TestATableScrollsUnderAHeaderThatStays(t *testing.T) {
 	table := sourceTable(t, numbered(100), map[string]string{"columns": "NAME,N", "wrap": "false"})
 
-	top := scrolled(table, 30, 5, 0)
+	// Twenty-one cells is the natural width: the long name, a gap, and both digits of the widest number.
+	top := scrolled(table, 21, 5, 0)
 	assert.Equal(t, "NAME               N", top[0])
 	assert.Equal(t, "a-much-longer-name 0", top[2])
 
-	down := scrolled(table, 30, 5, 50)
+	down := scrolled(table, 21, 5, 50)
 	assert.Equal(t, top[0], down[0], "the header stayed, and in the same place")
 	assert.Equal(t, []string{"r                  50", "r                  51", "r                  52"}, down[2:])
 }
@@ -100,7 +101,7 @@ func TestAWrappedTableScrollsByLine(t *testing.T) {
 	_, full := table.Measure(5, 0)
 	assert.Equal(t, 1+3+1+1, full, "the header and five lines of rows")
 	assert.Equal(t, []string{"X", "b"}, scrolled(table, 5, 2, 3))
-	assert.Equal(t, "row:0", table.(widget.Parted).Part(0, 3))
+	assert.Equal(t, "header:0", table.(widget.Parted).Part(0, 3), "the header covers the last line of the wrapped row")
 	assert.Equal(t, "row:1", table.(widget.Parted).Part(0, 4))
 }
 
