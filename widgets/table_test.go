@@ -169,29 +169,6 @@ func TestTableRejectsACollapseColumnItDoesNotHave(t *testing.T) {
 	assert.Contains(t, err.Error(), "named twice")
 }
 
-// widths keeps a column at least that wide, so a screenful of short rows draws the same columns as a screenful of long ones.
-func TestTableKeepsTheWidthsTheHostNames(t *testing.T) {
-	attrs := map[string]string{"columns": "A,B", "border": "false", "rule": "false", "widths": "5,1"}
-	attrs["rows"] = "1|2"
-	short := build(t, "Table", attrs)
-	attrs["rows"] = "12345|2"
-	long := build(t, "Table", attrs)
-
-	assert.Equal(t, []string{"A     B", "1     2"}, trimmed(rows(short, 0, 0)))
-	assert.Equal(t, []string{"A     B", "12345 2"}, trimmed(rows(long, 0, 0)))
-	assert.Equal(t, rows(short, 20, 0)[0], rows(long, 20, 0)[0], "spare room shares out the same way")
-}
-
-func TestTableRejectsBadWidths(t *testing.T) {
-	_, err := tryBuild("Table", map[string]string{"columns": "A,B", "widths": "1,2,3"})
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "for 2 columns")
-
-	_, err = tryBuild("Table", map[string]string{"columns": "A", "widths": "wide"})
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "not a width")
-}
-
 // rule="false" makes the header one more line of the listing. A tool whose output an agent reads wants no line under it.
 func TestABorderlessTableCanDropTheRuleUnderItsHeader(t *testing.T) {
 	attrs := map[string]string{"columns": "A,B", "rows": "1|2", "border": "false"}

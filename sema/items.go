@@ -68,6 +68,9 @@ func (p *Program) expandItems(node *tnode, scope *evalScope, file string, stack 
 		return nil, &syntax.Error{Pos: node.pos, Message: fmt.Sprintf(
 			"%s needs a list, got %s", attrItemsSource, items.Type())}
 	}
+	if items.Source() != nil {
+		return nil, &syntax.Error{Pos: node.pos, Message: attrItemsSource + " cannot repeat a list the host keeps; give it to a widget that reads one, such as a Table"}
+	}
 
 	var out []*Node
 	for i, item := range items.Items() {

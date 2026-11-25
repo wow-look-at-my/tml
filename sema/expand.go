@@ -395,6 +395,9 @@ func (p *Program) expandFor(node *tnode, scope *evalScope, file string, slots *s
 		return nil, &syntax.Error{Pos: node.pos, Message: fmt.Sprintf(
 			"<For each> needs a list, got %s", value.Type())}
 	}
+	if value.Source() != nil {
+		return nil, &syntax.Error{Pos: node.pos, Message: "<For each> cannot repeat a list the host keeps; give it to a widget that reads one, such as a Table"}
+	}
 
 	indexName, hasIndex := attrOf(node, "index")
 

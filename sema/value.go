@@ -20,7 +20,23 @@ type Value struct {
 	thick  Thickness
 	items  []Value
 	fields map[string]Value
+	// source is a list the host keeps itself. A widget reads it in place, so a long list costs nothing to hand over.
+	source Source
 }
+
+// A Source is a list a host keeps and a widget reads in place, rather than
+// one copied into the view on every frame.
+type Source interface {
+	Len() int
+}
+
+// SourceValue builds a string list the host keeps. A conditional sees it as true when Len is above zero.
+func SourceValue(src Source) Value {
+	return Value{typ: Type{Kind: KindString, IsList: true}, source: src}
+}
+
+// Source returns the list the host keeps, or nil for a list of values.
+func (v Value) Source() Source { return v.source }
 
 // Type reports the value's type.
 func (v Value) Type() Type { return v.typ }
@@ -65,6 +81,8 @@ func (v Value) Items() []Value { return v.items }
 // Truthy reports whether the value counts as true for a conditional. Only bools, strings and lists have a defined
 func (v Value) Truthy() (bool, error) {
 	switch {
+	case v.source != nil:
+		return v.source.Len() > 0, nil
 	case v.typ.IsList:
 		return len(v.items) > 0, nil
 	case v.typ.Kind == KindBool:
