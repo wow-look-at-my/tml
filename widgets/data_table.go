@@ -30,7 +30,7 @@ type dataTable struct {
 	// widths is the least cells each column takes, whatever the rows hold.
 	widths  []int
 	state   widget.State
-	measure  widget.Measurer
+	measure widget.Measurer
 	// drawn is the width the table last drew at, which is the shape Part reads a point against.
 	drawn int
 }
