@@ -140,6 +140,33 @@ It is as wide as its longest line, the title included, up to `maxWidth`. A longe
 
 The mark is the `accent` and `accentText` colours when the element gives them, else reversed video. A click reports `Activated` with `event.Part` set to `item:N`.
 
+A `TextArea` is a text field of many lines. A `Textbox` turns the newlines of a paste into spaces. A `TextArea` keeps them, so a pasted key arrives as it was written:
+
+```xml
+<TextArea id="key" value="{key}" cursor="{keyCursor}" placeholder="paste a key" height="6"/>
+```
+
+| Attribute | Default | Notes |
+| --- | --- | --- |
+| `value` | empty | The text, newlines included. |
+| `cursor` | `-1` | The caret, as an offset in runes into the whole value. A negative one is the end. |
+| `placeholder` | empty | Drawn faint while the value is empty. |
+| `disabled` | `false` | A disabled area takes no focus and no keys. |
+| `password` | `false` | Draws a `•` for each rune and keeps the newlines. The value in an edit is still the plain text. |
+
+It fills the width it is given. Its height is its line count, with a floor of a few lines. A line wider than the area is cut, not wrapped. The area shows the rows and the columns that keep the caret in view, worked out from `value`, `cursor` and its size on every frame. Like a `Textbox` it holds nothing: every edit reports `Changed` with the new `Value` and `Cursor`, and the host hands both back.
+
+Typed text inserts at the caret, and so does a paste, whole. A carriage return in a paste becomes a newline. Enter inserts a newline. Backspace and delete join a pair of lines at a line edge. Left and right move by a rune across line ends. Up and down keep the column, clamped to the shorter line.
+
+On the first line up is not taken, and on the last line down is not taken, so the focus ring moves on them. Home and end go to the edges of the line. Tab is not taken.
+
+```go
+case tml.Changed:
+    if event.ID == "key" {
+        m.key, m.keyCursor = event.Value, event.Cursor
+    }
+```
+
 A `Tabs` is a row of labels with one of them selected:
 
 ```xml

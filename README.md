@@ -24,7 +24,7 @@ Terminal Markup Language: an XML-based declarative language for reusable termina
 
 ## Widgets
 
-Buttons, fields, checkboxes, lists, tabs, tables, frames, popups, scrolling regions, progress bars, spinners, sparklines and images ship with the language and need no setup. Give a control an `id` and an `action` and it joins the focus ring:
+Buttons, fields, text areas, checkboxes, lists, tabs, tables, frames, popups, scrolling regions, progress bars, spinners, sparklines and images ship with the language. They need no setup. Give a control an `id` and an `action` and it joins the focus ring:
 
 ```xml
 <Button id="save" action="save" variant="primary" label="Save"/>

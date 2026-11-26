@@ -161,7 +161,7 @@ func (m *model) event(event tml.Event) {
 	}
 }
 
-// hotkey handles the keys the host keeps for itself. A letter is the search box's while it has the focus.
+// hotkey handles the keys the host keeps for itself. A letter belongs to a text field while that field has the focus.
 func (m *model) hotkey(p *tml.Program, key tml.Key) bool {
 	focused, _ := m.view.UI().Focused()
 	switch key.String() {
@@ -176,7 +176,7 @@ func (m *model) hotkey(p *tml.Program, key tml.Key) bool {
 		p.Quit()
 		return true
 	case "q":
-		if focused != "search" {
+		if focused != "search" && focused != "notes" {
 			p.Quit()
 			return true
 		}
