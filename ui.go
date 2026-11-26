@@ -96,6 +96,17 @@ type UI struct {
 	tips             tooltips
 }
 
+// pointerState is what a frame draws of the pointer: the element under it,
+// the element it holds.
+type pointerState struct {
+	hover, press, drag string
+	tip                bool
+}
+
+func (u *UI) pointerState() pointerState {
+	return pointerState{hover: u.hover, press: u.press, drag: u.drag, tip: u.tips.shown != nil}
+}
+
 // NewUI returns interaction state with the default key map.
 func NewUI() *UI { return &UI{keys: DefaultKeyMap()} }
 

@@ -365,10 +365,15 @@ func (p *Program) route(msg Msg) bool {
 			p.awaitTooltip()
 			return p.unchanged && !hid
 		}
+		before := p.view.UI().pointerState()
 		events := p.view.UI().Update(msg)
 		p.awaitTooltip()
 		for _, event := range events {
 			p.app.Update(p, event)
+		}
+		// A pointer that moved inside the element it was already on changed no cell, so it asks for no frame.
+		if _, pointer := msg.(Mouse); pointer && len(events) == 0 && before == p.view.UI().pointerState() {
+			return true
 		}
 		// A ctrl+c nobody took still ends the program, so a host cannot leave its user without a way out.
 		if key, ok := msg.(Key); ok && len(events) == 0 && key.Keystroke() == "ctrl+c" {
