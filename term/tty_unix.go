@@ -57,6 +57,8 @@ type pollReader struct {
 	fd         int
 	wake, woke *os.File
 	once       sync.Once
+	// closed is closed by Close, which ends a read that poll cannot wake.
+	closed chan struct{}
 	// blocking is set when poll does not work here, and the reader falls back to a plain read.
 	blocking bool
 }
@@ -71,7 +73,7 @@ func NewReader(stream io.Reader) (Reader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &pollReader{fd: int(file.Fd()), wake: wake, woke: woke}, nil
+	return &pollReader{fd: int(file.Fd()), wake: wake, woke: woke, closed: make(chan struct{})}, nil
 }
 
 func (r *pollReader) Read(p []byte) (int, error) {
@@ -108,21 +110,46 @@ func (r *pollReader) Read(p []byte) (int, error) {
 	}
 }
 
+// readBlocking reads when poll cannot watch the descriptor. The read runs in a goroutine whose buffer the goroutine
+// owns. Close can end the read without a later write landing in a caller that has moved on.
 func (r *pollReader) readBlocking(p []byte) (int, error) {
-	for {
-		n, err := unix.Read(r.fd, p)
-		if errors.Is(err, unix.EINTR) {
-			continue
+	select {
+	case <-r.closed:
+		return 0, io.EOF
+	default:
+	}
+	buf := make([]byte, len(p))
+	type result struct {
+		n   int
+		err error
+	}
+	done := make(chan result, 1)
+	go func() {
+		for {
+			n, err := unix.Read(r.fd, buf)
+			if errors.Is(err, unix.EINTR) {
+				continue
+			}
+			done <- result{n, err}
+			return
 		}
-		if n == 0 && err == nil {
+	}()
+	select {
+	case res := <-done:
+		if res.n == 0 && res.err == nil {
 			return 0, io.EOF
 		}
-		return max(n, 0), err
+		n := max(res.n, 0)
+		copy(p, buf[:n])
+		return n, res.err
+	case <-r.closed:
+		return 0, io.EOF
 	}
 }
 
 func (r *pollReader) Close() error {
 	r.once.Do(func() {
+		close(r.closed)
 		_, _ = r.wake.Write([]byte{0})
 		_ = r.wake.Close()
 	})
