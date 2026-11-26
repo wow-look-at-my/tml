@@ -9,9 +9,8 @@
 	<Property name="controlsTab" type="bool" default="true"/>
 	<Property name="dataTab" type="bool" default="false"/>
 	<Property name="mediaTab" type="bool" default="false"/>
-	<Property name="controlsVariant" type="string" default="primary"/>
-	<Property name="dataVariant" type="string" default="default"/>
-	<Property name="mediaVariant" type="string" default="default"/>
+	<Property name="sections" type="string[]" default="Controls,Data,Media"/>
+	<Property name="section" type="int" default="0"/>
 
 	<Property name="query" type="string" default=""/>
 	<Property name="cursor" type="int" default="0"/>
@@ -44,13 +43,8 @@
 
 				<Rule color="{theme.line}"/>
 
-				<Stack orientation="horizontal" gap="1">
-					<!-- The variant is data, so the section that is showing is the
-					     one drawn in the accent colour. -->
-					<Button id="tab-controls" action="tab:controls" label="Controls" variant="{controlsVariant}" tooltip="Buttons, fields, boxes and lists"/>
-					<Button id="tab-data" action="tab:data" label="Data" variant="{dataVariant}" tooltip="Tables, bars and graphs"/>
-					<Button id="tab-media" action="tab:media" label="Media" variant="{mediaVariant}" tooltip="Images and what moves"/>
-				</Stack>
+				<!-- The host owns the selected tab, and hands it back. -->
+				<Tabs id="tabs" items="{sections}" selected="{section}" tooltip="Click a section, or use left and right"/>
 
 				<Border title="Controls" color="{theme.line}" width="*" if="{controlsTab}">
 					<Stack gap="1">

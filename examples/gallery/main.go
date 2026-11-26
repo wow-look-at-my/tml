@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -17,6 +18,9 @@ import (
 
 //go:embed ui
 var uiFS embed.FS
+
+// sections are the tabs, in the order the strip draws them.
+var sections = []string{"controls", "data", "media"}
 
 var services = []string{"api", "web", "worker", "scheduler", "database", "cache"}
 
@@ -107,7 +111,19 @@ func (m *model) event(event tml.Event) {
 		if event.ID == "search" {
 			m.query, m.cursor = event.Value, event.Cursor
 		}
+		// The arrows on the tab strip report the index of the new tab.
+		if event.ID == "tabs" {
+			m.show(event.Cursor)
+		}
 	case tml.Activated:
+		// A click on the tab strip names the tab it landed on.
+		if event.ID == "tabs" {
+			if index, ok := strings.CutPrefix(event.Part, "tab:"); ok {
+				n, _ := strconv.Atoi(index)
+				m.show(n)
+			}
+			return
+		}
 		// A list is a single control to the ring.
 		if event.ID == "services" && event.Y >= 0 {
 			m.selected = clamp(event.Y, 0, len(services)-1)
@@ -154,9 +170,6 @@ func (m *model) hotkey(p *tml.Program, key tml.Key) bool {
 func (m *model) act(action string) bool {
 	kind, arg, _ := strings.Cut(action, ":")
 	switch kind {
-	case "tab":
-		m.tab = arg
-		m.status = arg
 	case "toggle":
 		m.notify = !m.notify
 	case "size":
@@ -175,6 +188,17 @@ func (m *model) act(action string) bool {
 		return false
 	}
 	return true
+}
+
+// show switches to the section at index n of sections.
+func (m *model) show(n int) {
+	m.tab = sections[clamp(n, 0, len(sections)-1)]
+	m.status = m.tab
+}
+
+// section is the index of the section on screen, which is the tab the strip marks.
+func (m *model) section() int {
+	return max(0, slices.Index(sections, m.tab))
 }
 
 func (m *model) scroll(id string, delta int) {
@@ -209,10 +233,8 @@ func (m *model) Props() tml.Props {
 		"dataTab":     sema.BoolValue(m.tab == "data"),
 		"mediaTab":    sema.BoolValue(m.tab == "media"),
 
-		"controlsVariant": sema.StringValue(variant(m.tab == "controls")),
-		"dataVariant":     sema.StringValue(variant(m.tab == "data")),
-		"mediaVariant":    sema.StringValue(variant(m.tab == "media")),
-		"query":           sema.StringValue(m.query),
+		"section":         sema.StringValue(strconv.Itoa(m.section())),
+		"query":         sema.StringValue(m.query),
 		"cursor":          sema.StringValue(strconv.Itoa(m.cursor)),
 		"notify":          sema.BoolValue(m.notify),
 		"small":           sema.BoolValue(m.size == "small"),
@@ -228,14 +250,6 @@ func (m *model) Props() tml.Props {
 		"step":            sema.StringValue(strconv.Itoa(m.step)),
 		"confirming":      sema.BoolValue(m.confirming),
 	}
-}
-
-// variant is how a tab button is drawn. The language has no conditional expression on purpose, so a choice like this
-func variant(active bool) string {
-	if active {
-		return "primary"
-	}
-	return "default"
 }
 
 func join(values []int) string {

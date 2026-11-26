@@ -23,7 +23,8 @@ func Library() *widget.Registry {
 		BindFactory("ProgressBar", factory(newProgressBar, progressAttrs)).
 		BindFactory("Spinner", factory(newSpinner, spinnerAttrs)).
 		BindFactory("Sparkline", factory(newSparkline, sparklineAttrs)).
-		BindFactory("Badge", factory(newBadge, badgeAttrs))
+		BindFactory("Badge", factory(newBadge, badgeAttrs)).
+		BindFactory("Tabs", factory(newTabs, tabsAttrs))
 }
 
 // Names lists every element the library binds, for documentation and for a host that wants to know what it is getting.

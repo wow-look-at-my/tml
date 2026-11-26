@@ -140,6 +140,31 @@ It is as wide as its longest line, the title included, up to `maxWidth`. A longe
 
 The mark is the `accent` and `accentText` colours when the element gives them, else reversed video. A click reports `Activated` with `event.Part` set to `item:N`.
 
+A `Tabs` is a row of labels with one of them selected:
+
+```xml
+<Tabs id="tabs" items="Controls,Data,Media" selected="{section}"/>
+```
+
+| Attribute | Default | Notes |
+| --- | --- | --- |
+| `items` | none | The labels, in order. |
+| `selected` | `0` | The index of the selected label. The host owns it. |
+| `disabled` | `false` | A disabled strip takes no focus and names no parts. |
+
+The selected label is bold and underlined in the theme's `primary` colour, and reversed while the strip has the focus. A strip too narrow for its labels cuts the label at the edge and drops the rest. A click reports `Activated` with `event.Part` set to `tab:N`. While the strip has the focus, left and right report `Changed`: `Value` is the new index in decimal. `Cursor` is the same index as a number. Left at the first tab and right at the last are not taken, so the focus ring moves on them.
+
+```go
+case tml.Activated:
+    if index, ok := strings.CutPrefix(event.Part, "tab:"); ok {
+        m.section, _ = strconv.Atoi(index)
+    }
+case tml.Changed:
+    if event.ID == "tabs" {
+        m.section = event.Cursor
+    }
+```
+
 ### Data
 
 Both take focus, and both leave the selection to the host. `selected` is a row index the model owns. Nothing in the widget can therefore disagree with what the program thinks is picked. A `Table` marks its row in place, as a reversed bar across every column, bold while the table focus. It uses no cursor gutter, because a row of columns has no single place to put one. The bar draws whether or not the table focus.

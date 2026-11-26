@@ -137,11 +137,42 @@ func TestClickingATabSwitchesSection(t *testing.T) {
 	m := gallery(t)
 	require.NotContains(t, m.frameOf(), "tml: ")
 
-	target := control(t, m, "tab-media")
-	press(t, m, program(t, m), target.Rect.X+1, target.Rect.Y+1)
+	target := control(t, m, "tabs")
+	require.NotNil(t, target.Part)
+	x := -1
+	for col := range target.Box.W {
+		if target.Part.Part(col, 0) == "tab:2" {
+			x = target.Box.X + col
+			break
+		}
+	}
+	require.GreaterOrEqual(t, x, 0, "the strip draws the media tab")
+	press(t, m, program(t, m), x, target.Box.Y)
 
 	assert.Equal(t, "media", m.tab)
 	assert.Contains(t, cell.Strip(m.frameOf()), "Media ─", "the media section is the one drawn")
+}
+
+// With the strip focused, the arrows move between sections. At the last section the arrow goes back to the ring.
+func TestTheArrowsSwitchSection(t *testing.T) {
+	m := gallery(t)
+	require.NotContains(t, m.frameOf(), "tml: ")
+	require.True(t, m.view.UI().Focus("tabs"))
+	p := program(t, m)
+
+	send(t, m, p, input.ParseKey("right"))
+	assert.Equal(t, "data", m.tab)
+	send(t, m, p, input.ParseKey("right"))
+	assert.Equal(t, "media", m.tab)
+	send(t, m, p, input.ParseKey("left"))
+	assert.Equal(t, "data", m.tab)
+
+	m.tab = "media"
+	require.NotContains(t, m.frameOf(), "tml: ")
+	send(t, m, p, input.ParseKey("right"))
+	assert.Equal(t, "media", m.tab, "right at the last tab does not wrap")
+	focused, _ := m.view.UI().Focused()
+	assert.NotEqual(t, "tabs", focused, "the ring took the key")
 }
 
 // Typing belongs to the field while the field has focus, so the ring's own keys and the quit key both have to stand
