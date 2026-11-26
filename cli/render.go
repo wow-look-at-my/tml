@@ -14,9 +14,10 @@ func init() {
 	)
 
 	render := &cobra.Command{
-		Use:   "render <file.tml>",
-		Short: "Render a view to stdout",
-		Args:  cobra.ExactArgs(1),
+		Use:     "render <file.tml>",
+		Short:   "Render a view to stdout",
+		GroupID: groupDocument,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			view, parsed, err := loadView(args[0], dark, props)
 			if err != nil {

@@ -24,8 +24,9 @@ func newTreeCmd() *cobra.Command {
 		ids    bool
 	)
 	cmd := &cobra.Command{
-		Use:   "tree [file.tml]",
-		Short: "Print an expanded document, or a running program's element tree",
+		Use:     "tree [file.tml]",
+		Short:   "Print an expanded document, or a running program's element tree",
+		GroupID: groupEither,
 		Long: "With a file, instantiates the view and prints the tree with components,\n" +
 			"slots and control flow resolved away, which is what layout and rendering\n" +
 			"see.\n" +

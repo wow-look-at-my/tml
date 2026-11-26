@@ -31,8 +31,9 @@ func newQueryCmd() *cobra.Command {
 		timeout   time.Duration
 	)
 	cmd := &cobra.Command{
-		Use:   "query",
-		Short: "Report one element by id from a running program",
+		Use:     "query",
+		Short:   "Report one element by id from a running program",
+		GroupID: groupLive,
 		Long: "Prints the element as JSON: what it is, where it landed, the space it\n" +
 			"was given, its clip, its scroll position, whether it has focus, and the\n" +
 			"lines it drew.\n" +
@@ -89,9 +90,10 @@ func newElementsCmd() *cobra.Command {
 		keepANSI bool
 	)
 	cmd := &cobra.Command{
-		Use:   "elements",
-		Short: "Report every id-bearing element of a running program, in document order",
-		Args:  cobra.NoArgs,
+		Use:     "elements",
+		Short:   "Report every id-bearing element of a running program, in document order",
+		GroupID: groupLive,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			res, err := ask(sock, inspect.Request{Op: "elements", ANSI: keepANSI})
 			if err != nil {
@@ -108,9 +110,10 @@ func newElementsCmd() *cobra.Command {
 func newIDsCmd() *cobra.Command {
 	var sock string
 	cmd := &cobra.Command{
-		Use:   "ids",
-		Short: "List the ids the current frame of a running program declares",
-		Args:  cobra.NoArgs,
+		Use:     "ids",
+		Short:   "List the ids the current frame of a running program declares",
+		GroupID: groupLive,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			res, err := ask(sock, inspect.Request{Op: "ids"})
 			if err != nil {
@@ -128,8 +131,9 @@ func newAtCmd() *cobra.Command {
 	var sock string
 	var x, y int
 	cmd := &cobra.Command{
-		Use:   "at",
-		Short: "Report which element of a running program covers a cell",
+		Use:     "at",
+		Short:   "Report which element of a running program covers a cell",
+		GroupID: groupLive,
 		Long: "Prints the id of the innermost element covering the cell, and exits 1\n" +
 			"when nothing does. It is the pointer's own question, asked from a shell.",
 		Args: cobra.NoArgs,
@@ -159,8 +163,9 @@ func newFrameCmd() *cobra.Command {
 		maxWidth bool
 	)
 	cmd := &cobra.Command{
-		Use:   "frame",
-		Short: "Report the frame a running program has on screen",
+		Use:     "frame",
+		Short:   "Report the frame a running program has on screen",
+		GroupID: groupLive,
 		Long: "With --since it waits for a frame newer than that sequence number, so a\n" +
 			"test can say \"after the next paint\" instead of sleeping.\n" +
 			"\n" +
@@ -207,9 +212,10 @@ func newKeyCmd() *cobra.Command {
 		clk  bool
 	)
 	cmd := &cobra.Command{
-		Use:   "input",
-		Short: "Send a keystroke or a click to a running program",
-		Args:  cobra.NoArgs,
+		Use:     "input",
+		Short:   "Send a keystroke or a click to a running program",
+		GroupID: groupLive,
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			req := inspect.Request{Op: "key", Key: key}
 			if clk {
@@ -240,8 +246,9 @@ func newRestyleCmd() *cobra.Command {
 		clear bool
 	)
 	cmd := &cobra.Command{
-		Use:   "restyle",
-		Short: "Override a running program's element attributes, or drop every override",
+		Use:     "restyle",
+		Short:   "Override a running program's element attributes, or drop every override",
+		GroupID: groupLive,
 		Long: "Overrides land on the next frame the program paints. Any attribute the\n" +
 			"document could carry works, layout and style alike: width, height,\n" +
 			"margin-left, background, foreground.",

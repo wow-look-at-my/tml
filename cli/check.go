@@ -10,8 +10,9 @@ func init() {
 	var dark bool
 
 	check := &cobra.Command{
-		Use:   "check <file.tml>",
-		Short: "Parse and check a view without rendering it",
+		Use:     "check <file.tml>",
+		Short:   "Parse and check a view without rendering it",
+		GroupID: groupDocument,
 		Long: "Reports every diagnostic that does not depend on runtime arguments: " +
 			"malformed XML, unknown elements, bad property types, unresolved references.",
 		Args: cobra.ExactArgs(1),

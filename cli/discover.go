@@ -82,8 +82,9 @@ func init() { root.AddCommand(newListCmd()) }
 
 func newListCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "list",
-		Short: "List the TML programs running as this user",
+		Use:     "list",
+		Short:   "List the TML programs running as this user",
+		GroupID: groupLive,
 		Long: "Every program built on TML serves the inspection protocol, so this is\n" +
 			"every one of them that is running now. A socket whose program has gone\n" +
 			"is not listed: each is dialled before it is reported.",
