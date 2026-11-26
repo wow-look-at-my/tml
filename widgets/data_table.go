@@ -14,7 +14,7 @@ import (
 )
 
 var tableAttrs = []string{
-	"columns", "rows", "separator", "border", "rule", "spacing", "selected", "disabled", "wrap", "collapse", "weights", "fit",
+	"columns", "rows", "separator", "border", "rule", "spacing", "selected", "disabled", "wrap", "collapse", "weights", "fit", "tree",
 }
 
 // dataTable is a grid of text with headers. It takes every row up front. It sizes its columns from all of them, and
@@ -35,7 +35,10 @@ type dataTable struct {
 	// weights is the share of spare room each column takes. fit is the columns.
 	weights []int
 	fit     []int
-	state   widget.State
+	// tree is each row's place in the tree the first column draws, or nil for a table with no tree.
+	tree      []treeNode
+	treeWidth int
+	state     widget.State
 	measure widget.Measurer
 	// drawn is the width the table last drew at, and top the first of its lines on screen.
 	drawn, top int
@@ -47,7 +50,7 @@ func newTable(ctx widget.Context) (widget.Native, error) {
 		return nil, err
 	}
 
-	t := &dataTable{columns: ctx.Attrs.List("columns"), bordered: bordered, measure: ctx.Measure}
+	t := &dataTable{columns: ctx.Attrs.List("columns"), bordered: bordered, measure: ctx.Measure, treeWidth: -1}
 	if t.selected, err = ctx.Attrs.Int("selected", -1); err != nil {
 		return nil, err
 	}
@@ -78,6 +81,9 @@ func newTable(ctx widget.Context) (widget.Native, error) {
 		return nil, err
 	}
 	if t.rows, err = tableRows(ctx); err != nil {
+		return nil, err
+	}
+	if t.tree, err = treeNodes(ctx, t.rows.Len()); err != nil {
 		return nil, err
 	}
 	return t, nil
