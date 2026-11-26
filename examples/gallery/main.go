@@ -35,18 +35,18 @@ var steps = []string{
 type model struct {
 	view *tml.View
 
-	tab      string
-	status   string
-	query    string
-	cursor   int
-	notes    string
+	tab    string
+	status string
+	query  string
+	cursor int
+	notes  string
 	// notesCursor is the caret in notes, in runes. A negative one is the end.
 	notesCursor int
 	notify      bool
-	size     string
-	progress int
-	frame    int
-	load     []int
+	size        string
+	progress    int
+	frame       int
+	load        []int
 
 	selected   int
 	step       int
@@ -83,9 +83,9 @@ func newModel() (*model, error) {
 		size:   "medium",
 		// The caret starts at the end of the notes.
 		notesCursor: -1,
-		load:   []int{2, 5, 3, 8, 6, 9, 4, 7, 5, 9, 6, 3},
-		width:  90,
-		height: 30,
+		load:        []int{2, 5, 3, 8, 6, 9, 4, 7, 5, 9, 6, 3},
+		width:       90,
+		height:      30,
 	}
 	for i := 1; i <= 24; i++ {
 		m.log = append(m.log, fmt.Sprintf("%02d:%02d deploy step %d finished", 9+i/12, i*5%60, i))
@@ -271,25 +271,25 @@ func (m *model) Props() tml.Props {
 		"dataTab":     sema.BoolValue(m.tab == "data"),
 		"mediaTab":    sema.BoolValue(m.tab == "media"),
 
-		"section":    sema.StringValue(strconv.Itoa(m.section())),
-		"query":      sema.StringValue(m.query),
+		"section":     sema.StringValue(strconv.Itoa(m.section())),
+		"query":       sema.StringValue(m.query),
 		"cursor":      sema.StringValue(strconv.Itoa(m.cursor)),
 		"notes":       sema.StringValue(m.notes),
 		"notesCursor": sema.StringValue(strconv.Itoa(m.notesCursor)),
-		"notify":     sema.BoolValue(m.notify),
-		"small":      sema.BoolValue(m.size == "small"),
-		"medium":     sema.BoolValue(m.size == "medium"),
-		"large":      sema.BoolValue(m.size == "large"),
-		"progress":   sema.StringValue(strconv.Itoa(m.progress)),
-		"load":       sema.StringValue(join(m.load)),
-		"services":   sema.StringValue(strings.Join(services, ",")),
-		"selected":   sema.StringValue(strconv.Itoa(m.selected)),
-		"offset":     sema.StringValue(strconv.Itoa(m.offset)),
-		"log":        sema.StringValue(strings.Join(m.log, ",")),
-		"steps":      sema.StringValue(strings.Join(m.shownSteps(), ",")),
-		"tree":       sema.StringValue(strings.Join(m.tree(), ",")),
-		"step":       sema.StringValue(strconv.Itoa(m.step)),
-		"confirming": sema.BoolValue(m.confirming),
+		"notify":      sema.BoolValue(m.notify),
+		"small":       sema.BoolValue(m.size == "small"),
+		"medium":      sema.BoolValue(m.size == "medium"),
+		"large":       sema.BoolValue(m.size == "large"),
+		"progress":    sema.StringValue(strconv.Itoa(m.progress)),
+		"load":        sema.StringValue(join(m.load)),
+		"services":    sema.StringValue(strings.Join(services, ",")),
+		"selected":    sema.StringValue(strconv.Itoa(m.selected)),
+		"offset":      sema.StringValue(strconv.Itoa(m.offset)),
+		"log":         sema.StringValue(strings.Join(m.log, ",")),
+		"steps":       sema.StringValue(strings.Join(m.shownSteps(), ",")),
+		"tree":        sema.StringValue(strings.Join(m.tree(), ",")),
+		"step":        sema.StringValue(strconv.Itoa(m.step)),
+		"confirming":  sema.BoolValue(m.confirming),
 	}
 }
 
