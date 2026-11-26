@@ -11,6 +11,7 @@ import (
 	"github.com/wow-look-at-my/tml"
 	"github.com/wow-look-at-my/tml/cell"
 	"github.com/wow-look-at-my/tml/input"
+	"github.com/wow-look-at-my/tml/sema"
 )
 
 //go:embed testdata/hover-view.xml
@@ -45,8 +46,8 @@ func TestAScrimInsideAnAreaLiftsWhenTheAreaIsHovered(t *testing.T) {
 
 // A scrim that is off is the frame without it.
 func TestAScrimTurnsOnFromAProperty(t *testing.T) {
-	off := hoverFrame(t, tml.Props{"dimmed": boolValue(false)}, 0, 0)
-	on := hoverFrame(t, tml.Props{"dimmed": boolValue(true)}, 0, 0)
+	off := hoverFrame(t, tml.Props{"dimmed": sema.BoolValue(false)}, 0, 0)
+	on := hoverFrame(t, tml.Props{"dimmed": sema.BoolValue(true)}, 0, 0)
 
 	assert.Equal(t, cell.Strip(off), cell.Strip(on))
 	assert.Contains(t, off, "below")
