@@ -48,7 +48,7 @@ type pass struct {
 }
 
 // syncState tells every interactive widget how it is being interacted with, before anything is measured. A control
-func (p *pass) syncState() {
+func (p *pass) syncState(root *Box) {
 	if p.e.opts.Interaction == nil {
 		return
 	}
@@ -61,6 +61,24 @@ func (p *pass) syncState() {
 		if stateful, ok := box.Native.(widget.Stateful); ok {
 			stateful.SetState(box.State)
 		}
+	}
+	inheritHover(root, false)
+}
+
+// inheritHover tells a widget the pointer cannot reach on its own that the element around it is hovered. A part of a
+// hovered element can then draw itself differently. Focus and press stay with the element that has them.
+func inheritHover(box *Box, hovered bool) {
+	switch {
+	case box.tracked:
+		hovered = box.State.Hovered
+	case hovered:
+		box.State.Hovered = true
+		if stateful, ok := box.Native.(widget.Stateful); ok {
+			stateful.SetState(box.State)
+		}
+	}
+	for _, child := range box.Children {
+		inheritHover(child, hovered)
 	}
 }
 
@@ -115,6 +133,7 @@ func (p *pass) track(box *Box) error {
 	if !box.focus && box.ID == "" && box.Tooltip == "" {
 		return nil
 	}
+	box.tracked = true
 	p.targets = append(p.targets, box)
 	return nil
 }

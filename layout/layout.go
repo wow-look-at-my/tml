@@ -90,7 +90,9 @@ type Box struct {
 	State widget.State
 
 	// focus reports whether the keyboard can land here. An element with an id but no focus still answers the pointer.
-	focus   bool
+	focus bool
+	// tracked reports whether the pointer reaches this element: it takes focus, or it has an id or a tooltip.
+	tracked bool
 	attrs   map[string]string
 	slot    string
 	desired Size
@@ -208,7 +210,7 @@ func (e *Engine) layout(node *sema.Node, width, height int, mode fitMode) (*Box,
 	if err != nil {
 		return nil, err
 	}
-	p.syncState()
+	p.syncState(box)
 
 	e.measure(box, Constraints{MaxW: width, MaxH: height})
 

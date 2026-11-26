@@ -11,6 +11,8 @@ func Library() *widget.Registry {
 		BindFactory("Border", factory(newFrame(false), frameAttrs)).
 		BindFactory("Popup", factory(newFrame(true), frameAttrs)).
 		BindFactory("Scrollbox", factory(newScrollbox, scrollboxAttrs)).
+		BindFactory("Area", factory(newArea, areaAttrs)).
+		BindFactory("Scrim", factory(newScrim, scrimAttrs)).
 		BindFactory("Button", slotted(newButton, buttonAttrs, buttonSlots)).
 		BindFactory("Textbox", factory(newTextbox, textboxAttrs)).
 		BindFactory("Checkbox", factory(newCheck("Checkbox"), checkAttrs)).
