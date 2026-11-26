@@ -39,7 +39,10 @@ type model struct {
 	status   string
 	query    string
 	cursor   int
-	notify   bool
+	notes    string
+	// notesCursor is the caret in notes, in runes. A negative one is the end.
+	notesCursor int
+	notify      bool
 	size     string
 	progress int
 	frame    int
@@ -76,7 +79,10 @@ func newModel() (*model, error) {
 		tab:    "controls",
 		status: "ready",
 		notify: true,
+		notes:  "first line\nsecond line",
 		size:   "medium",
+		// The caret starts at the end of the notes.
+		notesCursor: -1,
 		load:   []int{2, 5, 3, 8, 6, 9, 4, 7, 5, 9, 6, 3},
 		width:  90,
 		height: 30,
@@ -112,6 +118,10 @@ func (m *model) event(event tml.Event) {
 		// The search box edits itself and holds nothing: the value and the caret come back here.
 		if event.ID == "search" {
 			m.query, m.cursor = event.Value, event.Cursor
+		}
+		// The notes keep their newlines, and the caret is an offset in runes.
+		if event.ID == "notes" {
+			m.notes, m.notesCursor = event.Value, event.Cursor
 		}
 		// The arrows on the tab strip report the index of the new tab.
 		if event.ID == "tabs" {
@@ -263,7 +273,9 @@ func (m *model) Props() tml.Props {
 
 		"section":    sema.StringValue(strconv.Itoa(m.section())),
 		"query":      sema.StringValue(m.query),
-		"cursor":     sema.StringValue(strconv.Itoa(m.cursor)),
+		"cursor":      sema.StringValue(strconv.Itoa(m.cursor)),
+		"notes":       sema.StringValue(m.notes),
+		"notesCursor": sema.StringValue(strconv.Itoa(m.notesCursor)),
 		"notify":     sema.BoolValue(m.notify),
 		"small":      sema.BoolValue(m.size == "small"),
 		"medium":     sema.BoolValue(m.size == "medium"),

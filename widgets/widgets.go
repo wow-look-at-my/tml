@@ -13,6 +13,7 @@ func Library() *widget.Registry {
 		BindFactory("Scrollbox", factory(newScrollbox, scrollboxAttrs)).
 		BindFactory("Button", slotted(newButton, buttonAttrs, buttonSlots)).
 		BindFactory("Textbox", factory(newTextbox, textboxAttrs)).
+		BindFactory("TextArea", factory(newTextArea, textareaAttrs)).
 		BindFactory("Checkbox", factory(newCheck("Checkbox"), checkAttrs)).
 		BindFactory("Radio", factory(newCheck("Radio"), checkAttrs)).
 		BindFactory("List", factory(newList, listAttrs)).

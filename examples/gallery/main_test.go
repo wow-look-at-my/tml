@@ -193,6 +193,21 @@ func TestTypingGoesToTheFocusedField(t *testing.T) {
 	assert.False(t, quits(t, p), "typing q into the field does not quit")
 }
 
+// A multi-line paste into the notes keeps its newlines, and enter types one.
+func TestTheNotesKeepTheirNewlines(t *testing.T) {
+	m := gallery(t)
+	require.NotContains(t, m.frameOf(), "tml: ")
+	require.True(t, m.view.UI().Focus("notes"))
+	p := program(t, m)
+
+	send(t, m, p, input.Paste{Text: "\nthird\r\nfourth"})
+	assert.Equal(t, "first line\nsecond line\nthird\nfourth", m.notes)
+	send(t, m, p, input.ParseKey("enter"))
+	assert.Equal(t, "first line\nsecond line\nthird\nfourth\n", m.notes)
+	assert.Equal(t, len(m.notes), m.notesCursor)
+	assert.Contains(t, cell.Strip(m.frameOf()), "fourth", "the area follows the caret down")
+}
+
 func TestQuitKeysOnlyBindOutsideAField(t *testing.T) {
 	m := gallery(t)
 	require.NotContains(t, m.frameOf(), "tml: ")

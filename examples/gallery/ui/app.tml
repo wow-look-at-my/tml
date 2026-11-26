@@ -14,6 +14,8 @@
 
 	<Property name="query" type="string" default=""/>
 	<Property name="cursor" type="int" default="0"/>
+	<Property name="notes" type="string" default=""/>
+	<Property name="notesCursor" type="int" default="-1"/>
 	<Property name="notify" type="bool" default="true"/>
 	<Property name="small" type="bool" default="false"/>
 	<Property name="medium" type="bool" default="true"/>
@@ -54,6 +56,8 @@
 								cursor="{cursor}" placeholder="type to filter" width="26"/>
 							<Checkbox id="notify" action="toggle:notify" label="Notify me" checked="{notify}"/>
 						</Stack>
+						<TextArea id="notes" action="focus:notes" value="{notes}" cursor="{notesCursor}"
+							placeholder="notes keep their newlines" width="26"/>
 						<Stack orientation="horizontal" gap="2">
 							<Radio id="small" action="size:small" label="Small" checked="{small}"/>
 							<Radio id="medium" action="size:medium" label="Medium" checked="{medium}"/>
