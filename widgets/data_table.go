@@ -3,7 +3,9 @@
 package widgets
 
 import (
+	"fmt"
 	"slices"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -11,12 +13,15 @@ import (
 	"github.com/wow-look-at-my/tml/widget"
 )
 
-var tableAttrs = []string{"columns", "rows", "separator", "border", "rule", "spacing", "selected", "disabled", "wrap", "collapse"}
+var tableAttrs = []string{
+	"columns", "rows", "separator", "border", "rule", "spacing", "selected", "disabled", "wrap", "collapse", "weights", "fit",
+}
 
-// dataTable is a grid of text with headers.
+// dataTable is a grid of text with headers. It takes every row up front. It sizes its columns from all of them, and
+// draws only the rows a scrolling region shows.
 type dataTable struct {
 	columns  []string
-	rows     [][]string
+	rows     *widget.Rows
 	bordered bool
 	rule     bool
 	// spacing is the blank cells between a pair of columns of a borderless table.
@@ -27,14 +32,16 @@ type dataTable struct {
 	wrap     bool
 	// collapse is the order the columns give way in when the table is wider than its space, as a Grid's collapse is.
 	collapse []int
-	state    widget.State
-	measure  widget.Measurer
-	// drawn is the width the table last drew at, which is the shape Part reads a point against.
-	drawn int
+	// weights is the share of spare room each column takes. fit is the columns.
+	weights []int
+	fit     []int
+	state   widget.State
+	measure widget.Measurer
+	// drawn is the width the table last drew at, and top the first of its lines on screen.
+	drawn, top int
 }
 
 func newTable(ctx widget.Context) (widget.Native, error) {
-	separator := ctx.Attrs.String("separator", "|")
 	bordered, err := ctx.Attrs.Bool("border", true)
 	if err != nil {
 		return nil, err
@@ -61,54 +68,95 @@ func newTable(ctx widget.Context) (widget.Native, error) {
 	if t.spacing < 0 {
 		return nil, ctx.Attrs.Errorf("spacing", "expected zero or more cells, got %d", t.spacing)
 	}
-	for _, raw := range ctx.Attrs.List("collapse") {
-		col, convErr := strconv.Atoi(raw)
-		if convErr != nil || col < 0 || col >= len(t.columns) {
-			return nil, ctx.Attrs.Errorf("collapse", "%q is not a column of this table (0 to %d)", raw, len(t.columns)-1)
-		}
-		if slices.Contains(t.collapse, col) {
-			return nil, ctx.Attrs.Errorf("collapse", "column %d is named twice", col)
-		}
-		t.collapse = append(t.collapse, col)
+	if t.collapse, err = columnList(ctx, "collapse", len(t.columns)); err != nil {
+		return nil, err
 	}
-	for _, raw := range ctx.Attrs.List("rows") {
-		cells := strings.Split(raw, separator)
-		for i, cell := range cells {
-			cells[i] = strings.TrimSpace(cell)
-		}
-		t.rows = append(t.rows, cells)
+	if t.fit, err = columnList(ctx, "fit", len(t.columns)); err != nil {
+		return nil, err
+	}
+	if t.weights, err = weightList(ctx, len(t.columns)); err != nil {
+		return nil, err
+	}
+	if t.rows, err = tableRows(ctx); err != nil {
+		return nil, err
 	}
 	return t, nil
+}
+
+// columnList reads an attribute that names columns by index, each once.
+func columnList(ctx widget.Context, name string, columns int) ([]int, error) {
+	var out []int
+	for _, raw := range ctx.Attrs.List(name) {
+		col, err := strconv.Atoi(raw)
+		if err != nil || col < 0 || col >= columns {
+			return nil, ctx.Attrs.Errorf(name, "%q is not a column of this table (0 to %d)", raw, columns-1)
+		}
+		if slices.Contains(out, col) {
+			return nil, ctx.Attrs.Errorf(name, "column %d is named twice", col)
+		}
+		out = append(out, col)
+	}
+	return out, nil
+}
+
+// weightList reads the weights, one for each column. A column the list does not reach weighs one.
+func weightList(ctx widget.Context, columns int) ([]int, error) {
+	raw := ctx.Attrs.List("weights")
+	if len(raw) > columns {
+		return nil, ctx.Attrs.Errorf("weights", "names %d weights for %d columns", len(raw), columns)
+	}
+	weights := make([]int, columns)
+	for i := range weights {
+		weights[i] = 1
+	}
+	for i, text := range raw {
+		w, err := strconv.Atoi(strings.TrimSpace(text))
+		if err != nil || w < 0 {
+			return nil, ctx.Attrs.Errorf("weights", "%q is not a weight: expected zero or more", text)
+		}
+		weights[i] = w
+	}
+	return weights, nil
+}
+
+// tableRows reads the rows: a widget.Rows the host keeps, or a list of delimited strings.
+func tableRows(ctx widget.Context) (*widget.Rows, error) {
+	if src := ctx.Attrs.Source("rows"); src != nil {
+		rows, ok := src.(*widget.Rows)
+		if !ok {
+			return nil, ctx.Attrs.Errorf("rows", "expected a widget.Rows, got %T", src)
+		}
+		return rows, nil
+	}
+	separator := ctx.Attrs.String("separator", "|")
+	var cells [][]string
+	for _, raw := range ctx.Attrs.List("rows") {
+		row := strings.Split(raw, separator)
+		for i, text := range row {
+			row[i] = strings.TrimSpace(text)
+		}
+		cells = append(cells, row)
+	}
+	return widget.NewRows(cells), nil
 }
 
 // Part names a point of the table. "header:N" over the heading of column N, counted among every column the table
 // declares, and "row:N" over data row N. A border, a rule or the gap between a pair of headings is no part.
 func (t *dataTable) Part(x, y int) string {
 	s := t.shapeAt(t.drawn)
-	top := 0
-	if t.bordered {
-		top = 1
-	}
-	if y < top {
-		return ""
-	}
-	header := t.rowHeight(t.columns, s)
-	if y < top+header {
-		if col, ok := t.columnAt(x, s); ok {
-			return "header:" + strconv.Itoa(col)
+	head := t.headLines(s)
+	// The header is drawn at the top of what is on screen, over the rows a scroll moved under it.
+	if line := y - t.top; line >= 0 && line < head {
+		border := t.edges() / 2
+		if line >= border && line < border+t.rowHeight(t.columns, s) {
+			if col, ok := t.columnAt(x, s); ok {
+				return "header:" + strconv.Itoa(col)
+			}
 		}
 		return ""
 	}
-	at := top + header
-	if t.headerRule() {
-		at++
-	}
-	for i, row := range t.rows {
-		height := t.rowHeight(row, s)
-		if y >= at && y < at+height {
-			return "row:" + strconv.Itoa(i)
-		}
-		at += height
+	if i := t.rowAt(s, y-head); i >= 0 && i < t.rows.Len() {
+		return "row:" + strconv.Itoa(i)
 	}
 	return ""
 }
@@ -126,7 +174,7 @@ func (t *dataTable) columnAt(x int, s shape) (int, bool) {
 }
 
 // A table with no rows has nothing to land on, so tab passes over it.
-func (t *dataTable) AcceptsFocus() bool { return !t.disabled && len(t.rows) > 0 }
+func (t *dataTable) AcceptsFocus() bool { return !t.disabled && t.rows.Len() > 0 }
 
 func (t *dataTable) SetState(state widget.State) { t.state = state }
 
@@ -154,14 +202,12 @@ func cellText(row []string, col int) string {
 	return ""
 }
 
-// natural is the widest cell of each shown column.
+// natural is the widest cell of each shown column, over every row, not only the rows on screen.
 func (t *dataTable) natural(shown []int) []int {
+	all := t.rows.Widths(len(t.columns), t.measure)
 	widths := make([]int, len(shown))
 	for i, col := range shown {
-		widths[i] = t.measure.Width(t.columns[col])
-		for _, row := range t.rows {
-			widths[i] = max(widths[i], t.measure.Width(cellText(row, col)))
-		}
+		widths[i] = max(t.measure.Width(t.columns[col]), all[col])
 	}
 	return widths
 }
@@ -195,29 +241,76 @@ func (t *dataTable) shownAt(w int) []int {
 }
 
 // shapeAt lays the table out at w. A w of zero is the table's natural width. A table too wide for w takes cells from
-// its widest column first, and a table narrower than w shares the room out evenly.
+// the columns fit does not name first, and from the fit columns last. A table narrower than w shares the room out by
+// weight.
 func (t *dataTable) shapeAt(w int) shape {
 	shown := t.shownAt(w)
 	widths := t.natural(shown)
 	if w <= 0 || len(widths) == 0 {
 		return shape{shown: shown, widths: widths}
 	}
-	for over := t.total(widths) - w; over > 0; over-- {
-		widest := 0
-		for i, width := range widths {
-			if width > widths[widest] {
-				widest = i
-			}
-		}
-		if widths[widest] <= 1 {
-			break
-		}
-		widths[widest]--
-	}
-	for under, i := w-t.total(widths), 0; under > 0; under, i = under-1, i+1 {
-		widths[i%len(widths)]++
+	if over := t.total(widths) - w; over > 0 {
+		t.shrink(shown, widths, over)
+	} else if over < 0 {
+		t.grow(shown, widths, -over)
 	}
 	return shape{shown: shown, widths: widths}
+}
+
+// shrink takes over cells from the columns, widest first within each group. The columns fit does not name are the
+// first group. Each fit column is a group of its own, the least important first.
+func (t *dataTable) shrink(shown, widths []int, over int) {
+	var rest []int
+	for i, col := range shown {
+		if !slices.Contains(t.fit, col) {
+			rest = append(rest, i)
+		}
+	}
+	groups := [][]int{rest}
+	for _, col := range slices.Backward(t.fit) {
+		if i := slices.Index(shown, col); i >= 0 {
+			groups = append(groups, []int{i})
+		}
+	}
+	for _, group := range groups {
+		for over > 0 {
+			widest := -1
+			for _, i := range group {
+				if widths[i] > 1 && (widest < 0 || widths[i] > widths[widest]) {
+					widest = i
+				}
+			}
+			if widest < 0 {
+				break
+			}
+			widths[widest]--
+			over--
+		}
+	}
+}
+
+// grow shares under spare cells among the columns by weight. What the shares leave over goes one cell at a time to the
+// weighted columns, from the left.
+func (t *dataTable) grow(shown, widths []int, under int) {
+	sum := 0
+	for _, col := range shown {
+		sum += t.weights[col]
+	}
+	if sum == 0 {
+		return
+	}
+	given := 0
+	for i, col := range shown {
+		share := under * t.weights[col] / sum
+		widths[i] += share
+		given += share
+	}
+	for i := 0; given < under; i = (i + 1) % len(shown) {
+		if t.weights[shown[i]] > 0 {
+			widths[i]++
+			given++
+		}
+	}
 }
 
 // lines is one cell's text at its column width: wrapped, or cut to one line.
@@ -228,8 +321,11 @@ func (t *dataTable) lines(text string, width int) []cell.Line {
 	return t.measure.Wrap(text, width)
 }
 
-// rowHeight is the lines the tallest cell of a row takes.
+// rowHeight is the lines the tallest cell of a row takes. A table that does not wrap gives every row one line.
 func (t *dataTable) rowHeight(row []string, s shape) int {
+	if !t.wrap {
+		return 1
+	}
 	height := 1
 	for i, col := range s.shown {
 		height = max(height, len(t.lines(cellText(row, col), s.widths[i])))
@@ -237,21 +333,62 @@ func (t *dataTable) rowHeight(row []string, s shape) int {
 	return height
 }
 
+// starts is where each row begins, counted in lines from the first, with the line after the last at the end. A table
+// that does not wrap needs none: row i starts at line i.
+func (t *dataTable) starts(s shape) []int {
+	if !t.wrap {
+		return nil
+	}
+	return t.rows.Memo(fmt.Sprint(s.shown, s.widths), func() []int {
+		out := make([]int, t.rows.Len()+1)
+		for i := range t.rows.Len() {
+			out[i+1] = out[i] + t.rowHeight(t.rows.Row(i), s)
+		}
+		return out
+	})
+}
+
+// rowsHeight is the lines every row takes together.
+func (t *dataTable) rowsHeight(s shape) int {
+	if starts := t.starts(s); starts != nil {
+		return starts[len(starts)-1]
+	}
+	return t.rows.Len()
+}
+
+func (t *dataTable) rowAt(s shape, y int) int {
+	if y < 0 {
+		return -1
+	}
+	starts := t.starts(s)
+	if starts == nil {
+		return y
+	}
+	return sort.SearchInts(starts, y+1) - 1
+}
+
+// rowStart is the line row i starts on, counted from the first row.
+func (t *dataTable) rowStart(s shape, i int) int {
+	if starts := t.starts(s); starts != nil {
+		return starts[i]
+	}
+	return i
+}
+
 // headerRule reports whether a line sits between the header and the rows.
 func (t *dataTable) headerRule() bool { return t.bordered || t.rule }
 
-func (t *dataTable) height(s shape) int {
-	height := t.rowHeight(t.columns, s)
+// headLines is the lines above the first row: the top border, the header and the rule under it.
+func (t *dataTable) headLines(s shape) int {
+	lines := t.edges()/2 + t.rowHeight(t.columns, s)
 	if t.headerRule() {
-		height++
+		lines++
 	}
-	if t.bordered {
-		height += 2
-	}
-	for _, row := range t.rows {
-		height += t.rowHeight(row, s)
-	}
-	return height
+	return lines
+}
+
+func (t *dataTable) height(s shape) int {
+	return t.headLines(s) + t.rowsHeight(s) + t.edges()/2
 }
 
 func (t *dataTable) Measure(maxW, _ int) (int, int) {
@@ -263,28 +400,23 @@ func (t *dataTable) Measure(maxW, _ int) (int, int) {
 	return w, t.height(t.shapeAt(w))
 }
 
+// Draw paints the rows that are on screen and no others, so a table of any length costs a screenful. A scrolling
+// region that moved the header off the top gets it back there, drawn over the rows beneath it.
 func (t *dataTable) Draw(c cell.Canvas) {
 	w, _ := c.Size()
-	t.drawn = w
+	visible := c.Visible()
+	t.drawn, t.top = w, max(0, visible.Y)
 	if t.disabled {
 		c = c.Styled(cell.Style{}.Faint(true))
 	}
 	s := t.shapeAt(w)
+	head := t.headLines(s)
+	end := visible.Y + visible.H
 
-	y := 0
-	if t.bordered {
-		t.drawRule(c, y, s, "┌", "─", "┬", "┐")
-		y++
-	}
-	y += t.drawRow(c, y, t.columns, s, cell.Style{})
-	if t.bordered {
-		t.drawRule(c, y, s, "├", "─", "┼", "┤")
-		y++
-	} else if t.rule {
-		c.Repeat(0, y, t.total(s.widths), 1, "─", cell.Style{}.Faint(true))
-		y++
-	}
-	for i, row := range t.rows {
+	body := c.Clip(0, t.top+head, w, max(0, end-t.top-head))
+	first := max(0, t.rowAt(s, t.top))
+	y := head + t.rowStart(s, min(first, t.rows.Len()))
+	for i := first; i < t.rows.Len() && y < end; i++ {
 		// The mark does not wait for focus. Focus adds the bold.
 		var style cell.Style
 		if i == t.selected && !t.disabled {
@@ -293,10 +425,25 @@ func (t *dataTable) Draw(c cell.Canvas) {
 				style = style.Bold(true)
 			}
 		}
-		y += t.drawRow(c, y, row, s, style)
+		y += t.drawRow(body, y, t.rows.Row(i), s, style)
 	}
+	if t.bordered && y < end {
+		t.drawRule(body, y, s, "└", "─", "┴", "┘")
+	}
+	t.drawHead(c, t.top, s)
+}
+
+// drawHead draws the top border, the header and the rule under it, from line y.
+func (t *dataTable) drawHead(c cell.Canvas, y int, s shape) {
 	if t.bordered {
-		t.drawRule(c, y, s, "└", "─", "┴", "┘")
+		t.drawRule(c, y, s, "┌", "─", "┬", "┐")
+		y++
+	}
+	y += t.drawRow(c, y, t.columns, s, cell.Style{})
+	if t.bordered {
+		t.drawRule(c, y, s, "├", "─", "┼", "┤")
+	} else if t.rule {
+		c.Repeat(0, y, t.total(s.widths), 1, "─", cell.Style{}.Faint(true))
 	}
 }
 

@@ -65,11 +65,13 @@ A focused widget that implements `widget.Keyed` takes keys before the ring does.
 
 The focus ring is the widgets that take focus. The pointer also reaches anything else with an id, which is what lets the wheel find a `Scrollbox`. A widget that implements `Focusable` and refuses is disabled and reachable by neither.
 
-A pointer event carries `X`/`Y` inside the control it hit, `-1` from the keyboard. That is how a host tells one row of a `List` from another. A multi-part widget is still one element to the ring, and sub-targets are deliberately not a thing. Turning that `Y` into a row index assumes a row is a line. A `Table` guarantees that only under `wrap="false"`. A cell too wide for its column otherwise takes the next line, and puts every row below it out of step.
+A pointer event carries `X`/`Y` inside the control it hit, `-1` from the keyboard. That is how a host tells one row of a `List` from another. A multi-part widget is still one element to the ring, and sub-targets are deliberately not a thing. A `Table` names the row under the pointer itself, in `event.Part`, so a host never turns `Y` into a row index.
 
 `UI().Target(id)` reads an element back out of the last frame. A scrolling region also reports its `Scroll` position and maximum there, because how far the content runs depends on how it wrapped. To follow a growing transcript, ask for a big offset and read back where it stopped.
 
-Content too long to lay out goes through `Scrollbox`'s `contentHeight`. The host hands over the rows on screen, and says how many there are in all. That takes a 10 000-row transcript from 758 ms a frame to a flat 7.2 ms. See docs/widgets.md.
+A `Table` virtualizes itself. It takes every row as a `widget.Rows` (`widget/rows.go`), sizes its columns from all of them once. And draws only the rows a `Scrollbox` shows, under a header that stays. `weights` and `fit` say which columns take spare room and which give way last. Never slice a table's rows in the host. `widgets/table_rows_test.go` holds that down.
+
+Other content too long to lay out goes through `Scrollbox`'s `contentHeight`. The host hands over the rows on screen, and says how many there are in all. That takes a 10 000-row transcript from 758 ms a frame to a flat 7.2 ms. See docs/widgets.md.
 
 A list of data-template items too long to lay out scrolls through `tml.Window` (`window.go`). `View.ItemHeight` measures one item with the engine. As a result, the host keeps no row count of its own. The window owns the position, both ends and the follow. Its `Slice` is the items and the `Scrollbox` offset. See docs/widgets.md.
 

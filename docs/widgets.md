@@ -160,6 +160,26 @@ That arithmetic holds only while a row is a line. A cell too wide for its column
 <Table id="items" columns="DELETED,SIZE,ORIGINAL PATH" rows="{rows}" selected="{selected}" wrap="false"/>
 ```
 
+A table takes every row, and the host never slices it. For a long listing, build a `widget.Rows` once when the data changes and pass `rows.Value()` in `Props` on every frame. The table then does the rest:
+
+- It sizes each column from the widest cell over every row. The `Rows` measures that once, so a scroll never resizes a column.
+- Inside a `Scrollbox` it draws only the rows on screen. A frame costs a screenful whatever the length. The header stays at the top while the rows scroll under it.
+- `event.Part` names the row by its index in the whole listing, however far it scrolled.
+
+```go
+rows := widget.NewRows(cells) // [][]string, rebuilt when the data changes
+props["rows"] = rows.Value()
+```
+
+```xml
+<Scrollbox id="items" offset="{offset}" height="*">
+    <Table id="rows" columns="{columns}" rows="{rows}" selected="{selected}" wrap="false"
+        weights="2,1,1,3" fit="0,2"/>
+</Scrollbox>
+```
+
+`weights` shares spare room among the columns in proportion, one number for each column. A column the list does not reach weighs one, and a weight of zero takes none. `fit` names the columns that keep their whole width longest when the table is too narrow, the most important first. The other columns give way first, widest first, and then the fit columns, the last named first. A plain list of delimited strings still works for a short table.
+
 ### Display
 
 | Element | Attributes | Notes |

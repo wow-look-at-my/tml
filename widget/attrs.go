@@ -111,6 +111,11 @@ func (a Attrs) Enum(name, deflt string, allowed ...string) (string, error) {
 	return "", a.Errorf(name, "expected one of %s, got %q", strings.Join(allowed, ", "), raw)
 }
 
+// Source reads a list attribute the host keeps itself, or nil when the attribute is an ordinary list or absent.
+func (a Attrs) Source(name string) sema.Source {
+	return a.values[name].Source()
+}
+
 // List reads a list attribute. A typed list keeps its elements; anything else splits on commas, which is the same
 func (a Attrs) List(name string) []string {
 	value, ok := a.values[name]
