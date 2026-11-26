@@ -34,6 +34,6 @@ func init() {
 	render.Flags().BoolVar(&dark, "dark", false, "resolve adaptive theme tokens to their dark value")
 	render.Flags().IntVar(&width, "width", 80, "viewport width in cells")
 	render.Flags().IntVar(&height, "height", 24, "viewport height in cells")
-	render.Flags().StringArrayVar(&props, "prop", nil, "set a property as name=value (repeatable)")
+	render.Flags().StringArrayVar(&props, "prop", nil, propHelp)
 	root.AddCommand(render)
 }

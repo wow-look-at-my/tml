@@ -60,7 +60,7 @@ func newTreeCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&dark, "dark", false, "resolve adaptive theme tokens to their dark value")
-	cmd.Flags().StringArrayVar(&props, "prop", nil, "set a property as name=value (repeatable)")
+	cmd.Flags().StringArrayVar(&props, "prop", nil, propHelp)
 	socketFlag(cmd, &sock)
 	cmd.Flags().BoolVar(&asJSON, "json", false, "print the live tree as JSON instead of an outline")
 	cmd.Flags().BoolVar(&ids, "ids-only", false, "print only the live-tree nodes that carry an id")

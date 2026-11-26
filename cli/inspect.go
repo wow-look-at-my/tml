@@ -173,7 +173,7 @@ func newInspectCmd() *cobra.Command {
 	inspect.Flags().BoolVar(&dark, "dark", false, "resolve adaptive theme tokens to their dark value")
 	inspect.Flags().IntVar(&width, "width", 80, "viewport width in cells")
 	inspect.Flags().IntVar(&height, "height", 24, "viewport height in cells")
-	inspect.Flags().StringArrayVar(&props, "prop", nil, "set a property as name=value (repeatable)")
+	inspect.Flags().StringArrayVar(&props, "prop", nil, propHelp)
 	inspect.Flags().StringVar(&id, "id", "", "report only the element carrying this id")
 	inspect.Flags().BoolVar(&keepANSI, "ansi", false, "keep the escape sequences in the reported lines")
 	return inspect
