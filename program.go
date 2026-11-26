@@ -111,8 +111,8 @@ type Program struct {
 	// stale says a message changed what the last layout published, so the next input needs a fresh layout.
 	stale     bool
 	unchanged bool
-	stopping      bool
-	err           error
+	stopping  bool
+	err       error
 	// stopTooltip cancels the wait for a tooltip, or is nil when nothing waits.
 	stopTooltip func()
 
