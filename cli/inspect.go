@@ -109,8 +109,9 @@ func newInspectCmd() *cobra.Command {
 	)
 
 	inspect := &cobra.Command{
-		Use:   "inspect <file.tml>",
-		Short: "Report where an element landed and what it drew",
+		Use:     "inspect <file.tml>",
+		Short:   "Report where an element landed and what it drew",
+		GroupID: groupDocument,
 		Long: "Lays the view out at the given size and prints JSON describing the\n" +
 			"elements that carry an id: the rect they occupy, the content size they\n" +
 			"were given, their clip, their scroll position, and the lines they drew.\n" +

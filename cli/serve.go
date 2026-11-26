@@ -59,8 +59,9 @@ func newServeCmd() *cobra.Command {
 		open bool
 	)
 	cmd := &cobra.Command{
-		Use:   "serve",
-		Short: "Serve the interactive inspector in a browser",
+		Use:     "serve",
+		Short:   "Serve the interactive inspector in a browser",
+		GroupID: groupLive,
 		Long: "Opens a local HTTP server showing the program's terminal live, its\n" +
 			"element tree, and the element you pick. Click the preview to select,\n" +
 			"drag to move an element, shift-drag to resize, and edit any attribute\n" +

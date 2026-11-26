@@ -26,8 +26,9 @@ func newCaptureCmd() *cobra.Command {
 		out           string
 	)
 	cmd := &cobra.Command{
-		Use:   "capture [file.tml]",
-		Short: "Write one frame as a self-contained inspector page",
+		Use:     "capture [file.tml]",
+		Short:   "Write one frame as a self-contained inspector page",
+		GroupID: groupEither,
 		Long: "Writes the browser inspector over a single frame as one HTML file: the\n" +
 			"terminal as it was painted, the element tree, and every element's\n" +
 			"geometry, clip, scroll and drawn text. The file fetches nothing when it\n" +

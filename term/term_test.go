@@ -354,6 +354,33 @@ func TestReaderCloseInterruptsABlockedRead(t *testing.T) {
 	assert.ErrorIs(t, <-done, io.EOF)
 }
 
+// Close has to end a blocked read when poll does not work, which is the path this reader falls back to there.
+func TestReaderCloseInterruptsAReadWithoutPoll(t *testing.T) {
+	source, sink, err := os.Pipe()
+	require.NoError(t, err)
+	defer source.Close()
+	defer sink.Close()
+
+	reader, err := NewReader(source)
+	require.NoError(t, err)
+	reader.(*pollReader).blocking = true
+
+	_, err = sink.Write([]byte("hi"))
+	require.NoError(t, err)
+	buf := make([]byte, 8)
+	n, err := reader.Read(buf)
+	require.NoError(t, err)
+	assert.Equal(t, "hi", string(buf[:n]))
+
+	done := make(chan error, 1)
+	go func() {
+		_, err := reader.Read(buf)
+		done <- err
+	}()
+	require.NoError(t, reader.Close())
+	assert.ErrorIs(t, <-done, io.EOF)
+}
+
 func TestReaderOverAPlainStream(t *testing.T) {
 	reader, err := NewReader(strings.NewReader("abc"))
 	require.NoError(t, err)
