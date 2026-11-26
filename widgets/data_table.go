@@ -39,7 +39,7 @@ type dataTable struct {
 	tree      []treeNode
 	treeWidth int
 	state     widget.State
-	measure widget.Measurer
+	measure   widget.Measurer
 	// drawn is the width the table last drew at, and top the first of its lines on screen.
 	drawn, top int
 }
