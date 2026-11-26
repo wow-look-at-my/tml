@@ -68,8 +68,35 @@ func TestScrimKeepsAttributes(t *testing.T) {
 	assert.Equal(t, cell.RGB(100, 100, 100), got.Fg, "a reversed blank is drawn in the foreground, so it darkens")
 }
 
+// A scrim that lifts on hover leaves the content as drawn while the pointer is on it, and darkens it otherwise.
+func TestScrimLiftsWhileHovered(t *testing.T) {
+	s := &scrim{on: true, percent: 50, liftOnHover: true, to: cell.RGB(0, 0, 0), text: cell.RGB(200, 200, 200)}
+
+	assert.Equal(t, cell.RGB(100, 100, 100), overlaid("x", cell.Style{}, s).Fg)
+
+	s.SetState(widget.State{Hovered: true})
+	assert.True(t, overlaid("x", cell.Style{}, s).IsZero())
+
+	// Without the attribute a hover changes nothing: a scrim over a whole screen is hovered all the time.
+	plain := &scrim{on: true, percent: 50, to: cell.RGB(0, 0, 0), text: cell.RGB(200, 200, 200)}
+	plain.SetState(widget.State{Hovered: true})
+	assert.Equal(t, cell.RGB(100, 100, 100), overlaid("x", cell.Style{}, plain).Fg)
+}
+
+// An area is a pointer target and nothing else: its content is drawn where it would be without it.
+func TestAreaDrawsNothingAndKeepsNoCell(t *testing.T) {
+	native := build(t, "Area", nil)
+	composer, ok := native.(widget.Composer)
+	require.True(t, ok)
+
+	assert.Equal(t, "hi  ", widgettest.Compose(composer, []string{"hi"}, 4, 1).Lines()[0])
+	assert.True(t, widgettest.Compose(composer, []string{"hi"}, 4, 1).At(0, 0).Style.IsZero())
+}
+
 func TestScrimRejectsABadAttribute(t *testing.T) {
-	_, err := tryBuild("Scrim", map[string]string{"on": "maybe"})
+	_, err := tryBuild("Scrim", map[string]string{"lift": "always"})
+	require.Error(t, err)
+	_, err = tryBuild("Scrim", map[string]string{"on": "maybe"})
 	require.Error(t, err)
 	_, err = tryBuild("Scrim", map[string]string{"percent": "half"})
 	require.Error(t, err)
