@@ -311,7 +311,7 @@ func (p *Program) loop() {
 				if p.stopping {
 					break
 				}
-				if p.stale && isInput(msg) && p.opts.Inline {
+				if p.stale && isInput(msg) {
 					if err := p.settle(); err != nil {
 						p.err = err
 						return

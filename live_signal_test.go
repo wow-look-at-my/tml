@@ -15,7 +15,7 @@ import (
 
 // A host that owns SIGINT keeps its region on screen through the signal, and the region ends only on Stop.
 func TestLiveWithHostSignalsSurvivesSIGINT(t *testing.T) {
-	t.Serial("the test sends SIGINT to the whole process")
+	t.Serial("the test sends SIGINT to the whole process, which every running program would also receive")
 	exclusive(t)
 	host := make(chan os.Signal, 1)
 	signal.Notify(host, os.Interrupt)

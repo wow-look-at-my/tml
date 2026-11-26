@@ -162,7 +162,7 @@ func landed(t *testing.T, value, id string) tml.Target {
 
 // Keys typed in one burst all reach the field, and the burst is one frame on the terminal.
 func TestABurstOfKeysTypesEveryKey(t *testing.T) {
-	t.Serial("the program under test holds the inspector's driving hooks of the process while it runs")
+	t.Serial("a typing burst program takes the process inspector's key hooks and resets the drivable guard")
 	exclusive(t)
 
 	app, written := runBurst(t, keys("l", "e", "a", "s", "e")...)
@@ -173,7 +173,7 @@ func TestABurstOfKeysTypesEveryKey(t *testing.T) {
 
 // A burst that types, moves the caret and deletes ends where key-by-key editing ends.
 func TestABurstOfEditsMatchesSequentialEditing(t *testing.T) {
-	t.Serial("the program under test holds the inspector's driving hooks of the process while it runs")
+	t.Serial("the caret editing burst loads two views into the one process inspector and runs a program on one")
 	exclusive(t)
 
 	strokes := []string{"a", "b", "c", "left", "left", "backspace", "x", "y"}
@@ -187,7 +187,7 @@ func TestABurstOfEditsMatchesSequentialEditing(t *testing.T) {
 
 // Each wheel notch of a burst scrolls on from where the one before it left the log.
 func TestABurstOfWheelNotchesScrollsByAllOfThem(t *testing.T) {
-	t.Serial("the program under test holds the inspector's driving hooks of the process while it runs")
+	t.Serial("wheel notches go to a program that owns the process inspector's pointer hooks while it scrolls")
 	exclusive(t)
 
 	log := landed(t, "", "log")
@@ -200,7 +200,7 @@ func TestABurstOfWheelNotchesScrollsByAllOfThem(t *testing.T) {
 
 // A click after a key in the same burst lands on the layout the key produced.
 func TestAClickAfterAKeyResolvesAgainstTheKeysLayout(t *testing.T) {
-	t.Serial("the program under test holds the inspector's driving hooks of the process while it runs")
+	t.Serial("a click after a key needs the process inspector's click hooks bound to this program alone")
 	exclusive(t)
 
 	before, after := landed(t, "", "go"), landed(t, "x", "go")
@@ -217,7 +217,7 @@ func TestAClickAfterAKeyResolvesAgainstTheKeysLayout(t *testing.T) {
 
 // Messages the app says changed nothing cost no layout, and an input after them costs none of its own.
 func TestUnchangedMessagesInABurstCostNoLayout(t *testing.T) {
-	t.Serial("the program under test holds the inspector's driving hooks of the process while it runs")
+	t.Serial("counting layouts needs the drivable guard and the inspector of the process for this program only")
 	exclusive(t)
 
 	app, written := runBurst(t, burstQuiet{}, input.ParseKey("q"), burstQuiet{}, input.ParseKey("q"), input.ParseKey("z"))
@@ -228,7 +228,7 @@ func TestUnchangedMessagesInABurstCostNoLayout(t *testing.T) {
 
 // A burst the app says changed nothing paints no frame and lays nothing out.
 func TestAnUnchangedBurstLaysNothingOut(t *testing.T) {
-	t.Serial("the program under test holds the inspector's driving hooks of the process while it runs")
+	t.Serial("a burst that paints nothing still binds the process inspector and drivable guard to its program")
 	exclusive(t)
 
 	app, written := runBurst(t, burstQuiet{}, input.ParseKey("q"), burstQuiet{})
