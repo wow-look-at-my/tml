@@ -99,6 +99,7 @@
 							<Text>there is not, and as a link to the file where there is</Text>
 							<Text>no colour either.</Text>
 							<Text style="muted">protocol="mosaic" forces one of them</Text>
+							<IconLabel icon="./logo.png" label="IconLabel: a mark beside its name"/>
 						</Stack>
 					</Stack>
 				</Border>
