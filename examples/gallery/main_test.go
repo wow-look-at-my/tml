@@ -274,6 +274,24 @@ func TestClickingATableRowSelectsIt(t *testing.T) {
 	assert.Equal(t, 2, m.step, "the third row, under the header and its rule")
 }
 
+// The glyph in front of the run folds its steps away, and a second click brings them back.
+func TestClickingATreeToggleFoldsTheRun(t *testing.T) {
+	m := gallery(t)
+	m.tab = "data"
+	require.NotContains(t, m.frameOf(), "tml: ")
+
+	table := control(t, m, "steps")
+	press(t, m, program(t, m), table.Box.X, table.Box.Y+2)
+	assert.True(t, m.folded)
+	assert.NotContains(t, cell.Strip(m.frameOf()), "build", "the steps are folded away")
+	assert.Contains(t, cell.Strip(m.frameOf()), "▸ pipeline")
+
+	table = control(t, m, "steps")
+	press(t, m, program(t, m), table.Box.X, table.Box.Y+2)
+	assert.False(t, m.folded)
+	assert.Contains(t, cell.Strip(m.frameOf()), "▾ pipeline")
+}
+
 // press clicks and releases over a single point, which is what activates a
 // control.
 func press(t *testing.T, m *model, p *tml.Program, x, y int) {

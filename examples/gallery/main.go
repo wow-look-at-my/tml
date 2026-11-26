@@ -26,6 +26,7 @@ var services = []string{"api", "web", "worker", "scheduler", "database", "cache"
 
 // steps are table rows: cells joined by the separator <Table> splits on.
 var steps = []string{
+	"pipeline|09:05|running",
 	"build|09:05|done",
 	"test|09:12|done",
 	"deploy|09:20|running",
@@ -46,6 +47,7 @@ type model struct {
 
 	selected   int
 	step       int
+	folded     bool
 	offset     int
 	log        []string
 	confirming bool
@@ -129,9 +131,15 @@ func (m *model) event(event tml.Event) {
 			m.selected = clamp(event.Y, 0, len(services)-1)
 			return
 		}
-		// A borderless table's header and the rule under it take the first a couple of lines.
-		if event.ID == "steps" && event.Y >= 0 {
-			m.step = clamp(event.Y-2, 0, len(steps)-1)
+		// A table names the row a click landed on, and the disclosure glyph of a row in its tree.
+		if event.ID == "steps" {
+			if _, ok := strings.CutPrefix(event.Part, "toggle:"); ok {
+				m.folded = !m.folded
+				m.step = 0
+			} else if row, ok := strings.CutPrefix(event.Part, "row:"); ok {
+				n, _ := strconv.Atoi(row)
+				m.step = clamp(n, 0, len(m.shownSteps())-1)
+			}
 			return
 		}
 		if event.Action != "" && !m.act(event.Action) {
@@ -208,8 +216,28 @@ func (m *model) scroll(id string, delta int) {
 	case "services":
 		m.selected = clamp(m.selected+delta, 0, len(services)-1)
 	case "steps":
-		m.step = clamp(m.step+delta, 0, len(steps)-1)
+		m.step = clamp(m.step+delta, 0, len(m.shownSteps())-1)
 	}
+}
+
+// shownSteps is the rows of the table: the run alone while it is folded, and the run with its steps otherwise.
+func (m *model) shownSteps() []string {
+	if m.folded {
+		return steps[:1]
+	}
+	return steps
+}
+
+// tree is the place of each shown row in the table's tree.
+func (m *model) tree() []string {
+	if m.folded {
+		return []string{"0:closed"}
+	}
+	out := []string{"0:open"}
+	for range steps[1:] {
+		out = append(out, "1:leaf")
+	}
+	return out
 }
 
 func clamp(n, low, high int) int { return max(low, min(n, high)) }
@@ -246,7 +274,8 @@ func (m *model) Props() tml.Props {
 		"selected":   sema.StringValue(strconv.Itoa(m.selected)),
 		"offset":     sema.StringValue(strconv.Itoa(m.offset)),
 		"log":        sema.StringValue(strings.Join(m.log, ",")),
-		"steps":      sema.StringValue(strings.Join(steps, ",")),
+		"steps":      sema.StringValue(strings.Join(m.shownSteps(), ",")),
+		"tree":       sema.StringValue(strings.Join(m.tree(), ",")),
 		"step":       sema.StringValue(strconv.Itoa(m.step)),
 		"confirming": sema.BoolValue(m.confirming),
 	}

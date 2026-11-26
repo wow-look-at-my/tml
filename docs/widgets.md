@@ -205,6 +205,27 @@ props["rows"] = rows.Value()
 
 `weights` shares spare room among the columns in proportion, one number for each column. A column the list does not reach weighs one, and a weight of zero takes none. `fit` names the columns that keep their whole width longest when the table is too narrow, the most important first. The other columns give way first, widest first, and then the fit columns, the last named first. A plain list of delimited strings still works for a short table.
 
+`tree` makes column 0 a tree. It takes one entry for each row, in row order, each `<depth>:<state>`. A malformed entry, or a count that does not match the rows, fails the element and names the entry and its row. Column 0 then draws an indent. This happens for each level of depth and then `▾` for an open row. This also happens `▸` for a closed one, or a blank for a leaf, then a space and the text.
+
+The header has no prefix. The column is sized with the prefix, over every row, and the rows measure their cells once.
+
+```xml
+<Table id="steps" columns="step,when,state" rows="{steps}" tree="{tree}" wrap="false"/>
+```
+
+```go
+props["tree"] = sema.StringValue("0:open,1:leaf,1:closed")
+```
+
+A point on the glyph of an open or closed row answers `toggle:N`, and the rest of the row answers `row:N`. N is the row's index in the whole listing, however far the table scrolled. A leaf never answers `toggle:`. The host owns which rows are open: it rebuilds the rows and the tree when a toggle arrives.
+
+```go
+if row, ok := strings.CutPrefix(event.Part, "toggle:"); ok {
+    n, _ := strconv.Atoi(row)
+    m.open[n] = !m.open[n]   // then rebuild rows and tree
+}
+```
+
 ### Display
 
 | Element | Attributes | Notes |
