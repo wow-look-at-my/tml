@@ -260,6 +260,14 @@ if row, ok := strings.CutPrefix(event.Part, "toggle:"); ok {
 | `Spinner` | `kind`, `color` | It animates itself; see [Animation](#animation). |
 | `Badge` | `label` | A padded chip. |
 
+`IconLabel` draws its `icon` through the same ladder as `Image`: see [images.md](images.md). The label takes the element's own colours, so a theme colour on the element is the name's colour:
+
+```xml
+<IconLabel icon="./anthropic.png" label="Anthropic" fg="{theme.accent}"/>
+```
+
+The icon is `iconWidth` cells wide and one row high, then `gap` blank cells. A row too narrow for both keeps the label and leaves the icon out. With no `icon`, or with `protocol="link"`, it is the label alone.
+
 Nothing in the library holds state of its own. Every one of them draws what its attributes say, which is why the host's model stays the only place anything is true. The element that moves is a `Spinner`. It moves because the engine counts its frame. `examples/gallery` is all of them on one screen.
 
 ## Animation

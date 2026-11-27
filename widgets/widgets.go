@@ -25,6 +25,7 @@ func Library() *widget.Registry {
 		BindFactory("Spinner", factory(newSpinner, spinnerAttrs)).
 		BindFactory("Sparkline", factory(newSparkline, sparklineAttrs)).
 		BindFactory("Badge", factory(newBadge, badgeAttrs)).
+		BindFactory("IconLabel", factory(newIconLabel, iconLabelAttrs)).
 		BindFactory("Tabs", factory(newTabs, tabsAttrs))
 }
 
