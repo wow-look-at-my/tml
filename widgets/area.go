@@ -10,14 +10,14 @@ import (
 
 var areaAttrs = []string{}
 
-// area is a region the pointer reaches and nothing else: it draws no cell and keeps no cell for itself.
-type area struct{}
+// target is the Area widget: a region the pointer reaches and nothing else. It draws no cell and keeps no cell for itself.
+type target struct{}
 
-func newArea(widget.Context) (widget.Native, error) { return area{}, nil }
+func newArea(widget.Context) (widget.Native, error) { return target{}, nil }
 
-func (area) Insets() sema.Thickness { return sema.Thickness{} }
+func (target) Insets() sema.Thickness { return sema.Thickness{} }
 
 // Measure is only reached when the element is empty, and an empty area is no cells.
-func (area) Measure(_, _ int) (int, int) { return 0, 0 }
+func (target) Measure(_, _ int) (int, int) { return 0, 0 }
 
-func (area) Draw(cell.Canvas) {}
+func (target) Draw(cell.Canvas) {}
