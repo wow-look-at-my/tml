@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"time"
 
@@ -64,10 +65,23 @@ func (s *Server) wait() chan struct{} {
 	return ch
 }
 
+// socketPathLimit is the longest path a unix socket address holds on this system, less its terminator.
+func socketPathLimit() int {
+	if runtime.GOOS == "linux" {
+		return 107
+	}
+	return 103
+}
+
 // ListenSocket serves the line protocol on a unix socket at path. A stale socket left by a killed program is removed
 func (s *Server) ListenSocket(path string) error {
 	if path == "" {
 		return errors.New("inspect: socket path is empty")
+	}
+	// The kernel answers a path that is too long with "invalid argument", which names neither the cause nor the fix.
+	if limit := socketPathLimit(); len(path) > limit {
+		return fmt.Errorf("inspect: socket path %s is %d bytes and a unix socket path holds %d here; "+
+			"set TML_INSPECT_DIR to a shorter directory", path, len(path), limit)
 	}
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return fmt.Errorf("inspect: cannot create socket directory: %w", err)

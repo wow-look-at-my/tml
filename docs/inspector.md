@@ -115,6 +115,10 @@ Clicking the preview selects the element under the cell. Dragging moves it, by w
 
     tml capture -o frame.html                     # the running program tml capture app.tml --width 96 --height 26 -o frame.html
 
+A view that draws a list of records cannot be given one as `name=value`. `--prop @props.json` reads a file of typed values instead: text, a number, `true` or `false`, a list of strings, or a list of records. A document has no moment of its own, so a capture of one is stamped with `SOURCE_DATE_EPOCH` when that is set. The same view and the same values then write the same bytes. A committed capture can be checked against a fresh one.
+
+    tml capture Card.tml --prop @Card.props.json --width 80 --height 6 -o Card.html
+
 The reads work exactly as they do live. Pick an element from the tree, or click it in the preview. Then read its rect, content, clip, scroll and drawn text. The writes are gone, and visibly so. A keystroke and a restyle both need the program to lay them out again. A capture therefore leaves those controls out, rather than offer a button that cannot work.
 
 `inspect.Snapshot` and `inspect.WriteCapture` are the same thing from Go, over any `Handler`. `inspect.SnapshotFrame` takes a frame the caller already holds.

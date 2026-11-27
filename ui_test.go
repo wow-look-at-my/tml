@@ -111,6 +111,25 @@ func TestKeyMapIsReplaceable(t *testing.T) {
 	assert.Equal(t, "b", id)
 }
 
+// The program paints after a pointer input only when this state changed. A move across one element is the common
+// case, and it must not cost a frame per cell.
+func TestAMoveInsideOneElementLeavesThePointerStateAlone(t *testing.T) {
+	u := NewUI()
+	ring(u, pointerOnly("row", "", 0, 0, 8, 1), pointerOnly("other", "", 0, 2, 8, 1))
+
+	u.Update(input.Mouse{X: 1, Y: 0, Action: input.Motion})
+	on := u.pointerState()
+	u.Update(input.Mouse{X: 5, Y: 0, Action: input.Motion})
+	assert.Equal(t, on, u.pointerState(), "the same element is under the pointer")
+
+	u.Update(input.Mouse{X: 5, Y: 2, Action: input.Motion})
+	assert.NotEqual(t, on, u.pointerState(), "another element is under the pointer, which draws differently")
+
+	u.Update(input.Mouse{X: 5, Y: 2, Action: input.Press, Button: input.ButtonLeft})
+	assert.Equal(t, u.pointerState().hover, u.pointerState().press, "a held element draws differently too")
+	assert.NotEmpty(t, u.pointerState().press)
+}
+
 func TestPointerHoversAndActivatesOnRelease(t *testing.T) {
 	u := NewUI()
 	ring(u, target("save", "save", 0, 0, 8, 1), target("quit", "quit", 0, 2, 8, 1))

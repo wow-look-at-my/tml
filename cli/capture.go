@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -52,7 +53,7 @@ func newCaptureCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&dark, "dark", false, "resolve adaptive theme tokens to their dark value")
 	cmd.Flags().IntVar(&width, "width", 80, "viewport width in cells, when capturing a file")
 	cmd.Flags().IntVar(&height, "height", 24, "viewport height in cells, when capturing a file")
-	cmd.Flags().StringArrayVar(&props, "prop", nil, "set a property as name=value (repeatable)")
+	cmd.Flags().StringArrayVar(&props, "prop", nil, propHelp)
 	socketFlag(cmd, &sock)
 	cmd.Flags().StringVarP(&out, "out", "o", "", "write to this path instead of stdout")
 	return cmd
@@ -75,9 +76,17 @@ func takeCapture(args []string, dark bool, width, height int, props []string, so
 		return inspect.Capture{}, err
 	}
 	return inspect.SnapshotFrame(inspect.Frame{
-		Seq: 1, At: time.Now(), Width: width, Height: height,
+		Seq: 1, At: captureTime(), Width: width, Height: height,
 		Box: box, State: inspect.StateOf(view.UI().Targets()), Screen: render.Frame(box, width, height, nil),
 	})
+}
+
+// captureTime is the moment a capture of a document is stamped with.
+func captureTime() time.Time {
+	if seconds, err := strconv.ParseInt(os.Getenv("SOURCE_DATE_EPOCH"), 10, 64); err == nil {
+		return time.Unix(seconds, 0).UTC()
+	}
+	return time.Now()
 }
 
 // writeCapture sends the page to stdout, or to a file and its path to stdout. The path is what a caller opens next. A

@@ -1,0 +1,9 @@
+<Stack>
+	<Area id="row">
+		<Stack orientation="horizontal" gap="1">
+			<Text>name</Text>
+			<Scrim lift="hover"><Text>detail</Text></Scrim>
+		</Stack>
+	</Area>
+	<Scrim on="{dimmed}"><Text>below</Text></Scrim>
+</Stack>

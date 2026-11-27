@@ -1,0 +1,33 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<!-- A view that needs what name=value cannot spell: a list of records, a list of strings, a flag and a number. -->
+<Component xmlns="urn:tml:v1" name="App">
+	<DataTemplate name="Row">
+		<Property name="name" type="string" default=""/>
+		<Property name="tags" type="string[]" default=""/>
+		<Template>
+			<Stack orientation="horizontal" gap="1">
+				<Text>{name}</Text>
+				<For each="{tags}" as="tag">
+					<Text>#{tag}</Text>
+				</For>
+			</Stack>
+		</Template>
+	</DataTemplate>
+
+	<Property name="title" type="string" default=""/>
+	<Property name="rows" type="record[]" default=""/>
+	<Property name="notes" type="string[]" default=""/>
+	<Property name="shown" type="bool" default="false"/>
+	<Property name="height" type="int" default="1"/>
+
+	<Template>
+		<Stack>
+			<Text id="title">{title}</Text>
+			<Stack id="rows" itemsSource="{rows}" itemTemplate="Row" height="{height}"/>
+			<For each="{notes}" as="note">
+				<Text>{note}</Text>
+			</For>
+			<Text id="flag" if="{shown}">shown</Text>
+		</Stack>
+	</Template>
+</Component>

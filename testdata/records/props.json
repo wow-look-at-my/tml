@@ -1,0 +1,10 @@
+{
+	"title": "from the file",
+	"rows": [
+		{ "name": "alpha", "tags": ["one", "two"] },
+		{ "name": "beta", "tags": [] }
+	],
+	"notes": ["first note", "second note"],
+	"shown": true,
+	"height": 2
+}

@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -248,6 +249,19 @@ func TestSocketAnswersOneRequestPerLine(t *testing.T) {
 	var second Response
 	require.NoError(t, dec.Decode(&second))
 	assert.Equal(t, []string{"app", "status"}, second.IDs)
+}
+
+// The kernel's own answer to a long path is "invalid argument". The refusal names the length and the way out.
+func TestSocketRefusesAPathTooLongToBind(t *testing.T) {
+	path := filepath.Join(t.TempDir(), strings.Repeat("d", socketPathLimit()), "inspect.sock")
+
+	err := NewServer(newFake()).ListenSocket(path)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "a unix socket path holds")
+	assert.Contains(t, err.Error(), "TML_INSPECT_DIR")
+	_, statErr := os.Stat(filepath.Dir(path))
+	assert.True(t, os.IsNotExist(statErr), "a refused path creates no directory")
 }
 
 func TestSocketRefusesAPathAlreadyServed(t *testing.T) {

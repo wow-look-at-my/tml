@@ -82,6 +82,29 @@ Every widget also takes the style attributes. Anything a widget does not claim g
 | Element | Attributes | Notes |
 | --- | --- | --- |
 | `Popup` | as `Border` | A dialog. Defaults to a rounded border and centres itself on a `Canvas`. |
+| `Area` | none | A region the pointer reaches. It draws nothing and keeps no cell. |
+
+**`Area` is how plain content answers the pointer.** Only a widget is a target, so a `Text` with an `id` is not one. Write the `id` and the `action` on an `Area` around it:
+
+```xml
+<Area id="save" action="save"><Text>Save</Text></Area>
+```
+
+**`Scrim` moves every colour inside it toward the theme's `fade`.** A glyph with no colour of its own starts from `fadeText`. `percent` is how far each colour moves, and `on="false"` leaves the content as it was drawn. Put it around everything but the part that has the user's attention, and that part stands out:
+
+```xml
+<Scrim on="{asking}"><Transcript/></Scrim>
+<Dialog if="{asking}"/>
+```
+
+`lift="hover"` takes the scrim off while the pointer is over it. A widget with no `id` takes the hover of the element around it. A scrim inside an `Area` therefore lifts when the pointer is anywhere on that area:
+
+```xml
+<Area id="row">
+	<Text>{name}</Text>
+	<Scrim lift="hover"><Text>{detail}</Text></Scrim>
+</Area>
+```
 
 `Scrollbox` is where the pointer-only rule earns itself. It never takes focus, and its clipping is real. A control scrolled out of view is not in the frame's geometry. A click where it used to be finds nothing.
 
@@ -352,7 +375,7 @@ Then opt into whatever else applies:
 | Interface | What it adds |
 | --- | --- |
 | `Focusable` | Takes part in the focus ring. Returning false means disabled, and a disabled widget is unreachable by pointer too. |
-| `Stateful` | Told focus, hover and press before each measure. |
+| `Stateful` | Told focus, hover and press before each measure. A widget the pointer cannot reach is told the hover of the element around it. |
 | `Composer` | Wraps the children written inside it: declare the `Insets` you keep on each side. `Draw` paints what sits behind the children, and the engine paints the children inside the insets. |
 | `Overlay` | Draws over the children once they are painted. `Scrollbox` draws its scrollbar and its fade this way. |
 | `Styler` | A style the children inherit. `Border` hands a button's face to its label this way. |

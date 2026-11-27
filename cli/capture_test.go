@@ -27,6 +27,64 @@ func runCapture(t *testing.T, args ...string) (string, error) {
 	return out.String(), err
 }
 
+// A list of records has no spelling as name=value. A file of typed values draws the view a host would.
+func TestPropsComeFromAFileOfTypedValues(t *testing.T) {
+	drawn := func(args ...string) string {
+		t.Helper()
+		page, err := runCapture(t, append([]string{"../testdata/records/app.tml", "--width", "30", "--height", "6"}, args...)...)
+		require.NoError(t, err)
+		var held inspect.Capture
+		require.NoError(t, json.Unmarshal([]byte(betweenTags(t, page)), &held))
+		return held.Frame.Text
+	}
+
+	out := drawn("--prop", "@../testdata/records/props.json")
+	assert.Contains(t, out, "from the file")
+	assert.Contains(t, out, "alpha #one #two", "a record holds a list of its own")
+	assert.Contains(t, out, "beta")
+	assert.Contains(t, out, "second note")
+	assert.Contains(t, out, "shown", "true is a flag, not the text true")
+
+	// A value named after the file wins, so one file serves several renders.
+	out = drawn("--prop", "@../testdata/records/props.json", "--prop", "title=from the flag")
+	assert.Contains(t, out, "from the flag")
+	assert.NotContains(t, out, "from the file")
+}
+
+func TestABadPropsFileSaysWhatIsWrongWithIt(t *testing.T) {
+	dir := t.TempDir()
+	for name, tc := range map[string]struct{ body, want string }{
+		"array.json":  {`[1, 2]`, "expected a JSON object of properties"},
+		"nested.json": {`{"rows": {"a": 1}}`, "rows: a property is text"},
+		"mixed.json":  {`{"rows": [{"a": "b"}, "c"]}`, "this holds both"},
+		"deep.json":   {`{"rows": [[1]]}`, "a list holds text or records"},
+		"null.json":   {`{"rows": [{"a": null}]}`, "a: a property is text"},
+	} {
+		path := filepath.Join(dir, name)
+		require.NoError(t, os.WriteFile(path, []byte(tc.body), 0o600))
+		_, err := runCapture(t, "../testdata/records/app.tml", "--prop", "@"+path)
+		require.Error(t, err, name)
+		assert.Contains(t, err.Error(), tc.want, name)
+	}
+
+	_, err := runCapture(t, "../testdata/records/app.tml", "--prop", "@"+filepath.Join(dir, "missing.json"))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "missing.json")
+}
+
+// A capture of a document is the same bytes twice when the build names its moment. A committed capture can be
+// checked against a fresh one.
+func TestACaptureOfAFileIsReproducible(t *testing.T) {
+	t.Setenv("SOURCE_DATE_EPOCH", "86400")
+	first, err := runCapture(t, "../testdata/inspect/app.tml", "--width", "40", "--height", "8")
+	require.NoError(t, err)
+	second, err := runCapture(t, "../testdata/inspect/app.tml", "--width", "40", "--height", "8")
+	require.NoError(t, err)
+
+	assert.Equal(t, first, second)
+	assert.Contains(t, first, "1970-01-02T00:00:00Z")
+}
+
 // A capture of a file is the whole page: it opens with nothing running and nothing to fetch.
 func TestCaptureOfAFileIsSelfContained(t *testing.T) {
 	page, err := runCapture(t, "../testdata/inspect/app.tml",
