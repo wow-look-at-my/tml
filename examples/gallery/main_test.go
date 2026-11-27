@@ -137,11 +137,42 @@ func TestClickingATabSwitchesSection(t *testing.T) {
 	m := gallery(t)
 	require.NotContains(t, m.frameOf(), "tml: ")
 
-	target := control(t, m, "tab-media")
-	press(t, m, program(t, m), target.Rect.X+1, target.Rect.Y+1)
+	target := control(t, m, "tabs")
+	require.NotNil(t, target.Part)
+	x := -1
+	for col := range target.Box.W {
+		if target.Part.Part(col, 0) == "tab:2" {
+			x = target.Box.X + col
+			break
+		}
+	}
+	require.GreaterOrEqual(t, x, 0, "the strip draws the media tab")
+	press(t, m, program(t, m), x, target.Box.Y)
 
 	assert.Equal(t, "media", m.tab)
 	assert.Contains(t, cell.Strip(m.frameOf()), "Media ─", "the media section is the one drawn")
+}
+
+// With the strip focused, the arrows move between sections. At the last section the arrow goes back to the ring.
+func TestTheArrowsSwitchSection(t *testing.T) {
+	m := gallery(t)
+	require.NotContains(t, m.frameOf(), "tml: ")
+	require.True(t, m.view.UI().Focus("tabs"))
+	p := program(t, m)
+
+	send(t, m, p, input.ParseKey("right"))
+	assert.Equal(t, "data", m.tab)
+	send(t, m, p, input.ParseKey("right"))
+	assert.Equal(t, "media", m.tab)
+	send(t, m, p, input.ParseKey("left"))
+	assert.Equal(t, "data", m.tab)
+
+	m.tab = "media"
+	require.NotContains(t, m.frameOf(), "tml: ")
+	send(t, m, p, input.ParseKey("right"))
+	assert.Equal(t, "media", m.tab, "right at the last tab does not wrap")
+	focused, _ := m.view.UI().Focused()
+	assert.NotEqual(t, "tabs", focused, "the ring took the key")
 }
 
 // Typing belongs to the field while the field has focus, so the ring's own keys and the quit key both have to stand
@@ -160,6 +191,21 @@ func TestTypingGoesToTheFocusedField(t *testing.T) {
 	send(t, m, p, input.ParseKey("backspace"))
 	assert.Equal(t, "schedq", m.query)
 	assert.False(t, quits(t, p), "typing q into the field does not quit")
+}
+
+// A multi-line paste into the notes keeps its newlines, and enter types one.
+func TestTheNotesKeepTheirNewlines(t *testing.T) {
+	m := gallery(t)
+	require.NotContains(t, m.frameOf(), "tml: ")
+	require.True(t, m.view.UI().Focus("notes"))
+	p := program(t, m)
+
+	send(t, m, p, input.Paste{Text: "\nthird\r\nfourth"})
+	assert.Equal(t, "first line\nsecond line\nthird\nfourth", m.notes)
+	send(t, m, p, input.ParseKey("enter"))
+	assert.Equal(t, "first line\nsecond line\nthird\nfourth\n", m.notes)
+	assert.Equal(t, len(m.notes), m.notesCursor)
+	assert.Contains(t, cell.Strip(m.frameOf()), "fourth", "the area follows the caret down")
 }
 
 func TestQuitKeysOnlyBindOutsideAField(t *testing.T) {
@@ -241,6 +287,24 @@ func TestClickingATableRowSelectsIt(t *testing.T) {
 	press(t, m, program(t, m), table.Rect.X+1, table.Rect.Y+4)
 
 	assert.Equal(t, 2, m.step, "the third row, under the header and its rule")
+}
+
+// The glyph in front of the run folds its steps away, and a second click brings them back.
+func TestClickingATreeToggleFoldsTheRun(t *testing.T) {
+	m := gallery(t)
+	m.tab = "data"
+	require.NotContains(t, m.frameOf(), "tml: ")
+
+	table := control(t, m, "steps")
+	press(t, m, program(t, m), table.Box.X, table.Box.Y+2)
+	assert.True(t, m.folded)
+	assert.NotContains(t, cell.Strip(m.frameOf()), "build", "the steps are folded away")
+	assert.Contains(t, cell.Strip(m.frameOf()), "▸ pipeline")
+
+	table = control(t, m, "steps")
+	press(t, m, program(t, m), table.Box.X, table.Box.Y+2)
+	assert.False(t, m.folded)
+	assert.Contains(t, cell.Strip(m.frameOf()), "▾ pipeline")
 }
 
 // press clicks and releases over a single point, which is what activates a

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -18,10 +19,14 @@ import (
 //go:embed ui
 var uiFS embed.FS
 
+// sections are the tabs, in the order the strip draws them.
+var sections = []string{"controls", "data", "media"}
+
 var services = []string{"api", "web", "worker", "scheduler", "database", "cache"}
 
 // steps are table rows: cells joined by the separator <Table> splits on.
 var steps = []string{
+	"pipeline|09:05|running",
 	"build|09:05|done",
 	"test|09:12|done",
 	"deploy|09:20|running",
@@ -30,18 +35,22 @@ var steps = []string{
 type model struct {
 	view *tml.View
 
-	tab      string
-	status   string
-	query    string
-	cursor   int
-	notify   bool
-	size     string
-	progress int
-	frame    int
-	load     []int
+	tab    string
+	status string
+	query  string
+	cursor int
+	notes  string
+	// notesCursor is the caret in notes, in runes. A negative one is the end.
+	notesCursor int
+	notify      bool
+	size        string
+	progress    int
+	frame       int
+	load        []int
 
 	selected   int
 	step       int
+	folded     bool
 	offset     int
 	log        []string
 	confirming bool
@@ -70,10 +79,13 @@ func newModel() (*model, error) {
 		tab:    "controls",
 		status: "ready",
 		notify: true,
+		notes:  "first line\nsecond line",
 		size:   "medium",
-		load:   []int{2, 5, 3, 8, 6, 9, 4, 7, 5, 9, 6, 3},
-		width:  90,
-		height: 30,
+		// The caret starts at the end of the notes.
+		notesCursor: -1,
+		load:        []int{2, 5, 3, 8, 6, 9, 4, 7, 5, 9, 6, 3},
+		width:       90,
+		height:      30,
 	}
 	for i := 1; i <= 24; i++ {
 		m.log = append(m.log, fmt.Sprintf("%02d:%02d deploy step %d finished", 9+i/12, i*5%60, i))
@@ -107,15 +119,37 @@ func (m *model) event(event tml.Event) {
 		if event.ID == "search" {
 			m.query, m.cursor = event.Value, event.Cursor
 		}
+		// The notes keep their newlines, and the caret is an offset in runes.
+		if event.ID == "notes" {
+			m.notes, m.notesCursor = event.Value, event.Cursor
+		}
+		// The arrows on the tab strip report the index of the new tab.
+		if event.ID == "tabs" {
+			m.show(event.Cursor)
+		}
 	case tml.Activated:
+		// A click on the tab strip names the tab it landed on.
+		if event.ID == "tabs" {
+			if index, ok := strings.CutPrefix(event.Part, "tab:"); ok {
+				n, _ := strconv.Atoi(index)
+				m.show(n)
+			}
+			return
+		}
 		// A list is a single control to the ring.
 		if event.ID == "services" && event.Y >= 0 {
 			m.selected = clamp(event.Y, 0, len(services)-1)
 			return
 		}
-		// A borderless table's header and the rule under it take the first a couple of lines.
-		if event.ID == "steps" && event.Y >= 0 {
-			m.step = clamp(event.Y-2, 0, len(steps)-1)
+		// A table names the row a click landed on, and the disclosure glyph of a row in its tree.
+		if event.ID == "steps" {
+			if _, ok := strings.CutPrefix(event.Part, "toggle:"); ok {
+				m.folded = !m.folded
+				m.step = 0
+			} else if row, ok := strings.CutPrefix(event.Part, "row:"); ok {
+				n, _ := strconv.Atoi(row)
+				m.step = clamp(n, 0, len(m.shownSteps())-1)
+			}
 			return
 		}
 		if event.Action != "" && !m.act(event.Action) {
@@ -127,7 +161,7 @@ func (m *model) event(event tml.Event) {
 	}
 }
 
-// hotkey handles the keys the host keeps for itself. A letter is the search box's while it has the focus.
+// hotkey handles the keys the host keeps for itself. A letter belongs to a text field while that field has the focus.
 func (m *model) hotkey(p *tml.Program, key tml.Key) bool {
 	focused, _ := m.view.UI().Focused()
 	switch key.String() {
@@ -142,7 +176,7 @@ func (m *model) hotkey(p *tml.Program, key tml.Key) bool {
 		p.Quit()
 		return true
 	case "q":
-		if focused != "search" {
+		if focused != "search" && focused != "notes" {
 			p.Quit()
 			return true
 		}
@@ -154,9 +188,6 @@ func (m *model) hotkey(p *tml.Program, key tml.Key) bool {
 func (m *model) act(action string) bool {
 	kind, arg, _ := strings.Cut(action, ":")
 	switch kind {
-	case "tab":
-		m.tab = arg
-		m.status = arg
 	case "toggle":
 		m.notify = !m.notify
 	case "size":
@@ -177,6 +208,17 @@ func (m *model) act(action string) bool {
 	return true
 }
 
+// show switches to the section at index n of sections.
+func (m *model) show(n int) {
+	m.tab = sections[clamp(n, 0, len(sections)-1)]
+	m.status = m.tab
+}
+
+// section is the index of the section on screen, which is the tab the strip marks.
+func (m *model) section() int {
+	return max(0, slices.Index(sections, m.tab))
+}
+
 func (m *model) scroll(id string, delta int) {
 	switch id {
 	case "log":
@@ -184,8 +226,28 @@ func (m *model) scroll(id string, delta int) {
 	case "services":
 		m.selected = clamp(m.selected+delta, 0, len(services)-1)
 	case "steps":
-		m.step = clamp(m.step+delta, 0, len(steps)-1)
+		m.step = clamp(m.step+delta, 0, len(m.shownSteps())-1)
 	}
+}
+
+// shownSteps is the rows of the table: the run alone while it is folded, and the run with its steps otherwise.
+func (m *model) shownSteps() []string {
+	if m.folded {
+		return steps[:1]
+	}
+	return steps
+}
+
+// tree is the place of each shown row in the table's tree.
+func (m *model) tree() []string {
+	if m.folded {
+		return []string{"0:closed"}
+	}
+	out := []string{"0:open"}
+	for range steps[1:] {
+		out = append(out, "1:leaf")
+	}
+	return out
 }
 
 func clamp(n, low, high int) int { return max(low, min(n, high)) }
@@ -209,33 +271,26 @@ func (m *model) Props() tml.Props {
 		"dataTab":     sema.BoolValue(m.tab == "data"),
 		"mediaTab":    sema.BoolValue(m.tab == "media"),
 
-		"controlsVariant": sema.StringValue(variant(m.tab == "controls")),
-		"dataVariant":     sema.StringValue(variant(m.tab == "data")),
-		"mediaVariant":    sema.StringValue(variant(m.tab == "media")),
-		"query":           sema.StringValue(m.query),
-		"cursor":          sema.StringValue(strconv.Itoa(m.cursor)),
-		"notify":          sema.BoolValue(m.notify),
-		"small":           sema.BoolValue(m.size == "small"),
-		"medium":          sema.BoolValue(m.size == "medium"),
-		"large":           sema.BoolValue(m.size == "large"),
-		"progress":        sema.StringValue(strconv.Itoa(m.progress)),
-		"load":            sema.StringValue(join(m.load)),
-		"services":        sema.StringValue(strings.Join(services, ",")),
-		"selected":        sema.StringValue(strconv.Itoa(m.selected)),
-		"offset":          sema.StringValue(strconv.Itoa(m.offset)),
-		"log":             sema.StringValue(strings.Join(m.log, ",")),
-		"steps":           sema.StringValue(strings.Join(steps, ",")),
-		"step":            sema.StringValue(strconv.Itoa(m.step)),
-		"confirming":      sema.BoolValue(m.confirming),
+		"section":     sema.StringValue(strconv.Itoa(m.section())),
+		"query":       sema.StringValue(m.query),
+		"cursor":      sema.StringValue(strconv.Itoa(m.cursor)),
+		"notes":       sema.StringValue(m.notes),
+		"notesCursor": sema.StringValue(strconv.Itoa(m.notesCursor)),
+		"notify":      sema.BoolValue(m.notify),
+		"small":       sema.BoolValue(m.size == "small"),
+		"medium":      sema.BoolValue(m.size == "medium"),
+		"large":       sema.BoolValue(m.size == "large"),
+		"progress":    sema.StringValue(strconv.Itoa(m.progress)),
+		"load":        sema.StringValue(join(m.load)),
+		"services":    sema.StringValue(strings.Join(services, ",")),
+		"selected":    sema.StringValue(strconv.Itoa(m.selected)),
+		"offset":      sema.StringValue(strconv.Itoa(m.offset)),
+		"log":         sema.StringValue(strings.Join(m.log, ",")),
+		"steps":       sema.StringValue(strings.Join(m.shownSteps(), ",")),
+		"tree":        sema.StringValue(strings.Join(m.tree(), ",")),
+		"step":        sema.StringValue(strconv.Itoa(m.step)),
+		"confirming":  sema.BoolValue(m.confirming),
 	}
-}
-
-// variant is how a tab button is drawn. The language has no conditional expression on purpose, so a choice like this
-func variant(active bool) string {
-	if active {
-		return "primary"
-	}
-	return "default"
 }
 
 func join(values []int) string {

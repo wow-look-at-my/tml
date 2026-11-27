@@ -20,6 +20,9 @@ type Rows struct {
 	widths     []int
 	measureFor uintptr
 	measured   bool
+	// cellWidths is the width of each row's cell, by column, measured by the measure that cellsFor names.
+	cellWidths map[int][]int
+	cellsFor   uintptr
 	// memoKey and memo are the last thing Memo computed: one layout's worth, which a resize replaces.
 	memoKey string
 	memo    []int
@@ -69,4 +72,26 @@ func (r *Rows) Widths(n int, measure Measurer) []int {
 		r.measured, r.measureFor = true, key
 	}
 	return slices.Clone(r.widths[:n])
+}
+
+// CellWidths is the width of column col in each row, in row order. The rows measure a column once for each measure.
+// The slice is shared, so the caller must not change it.
+func (r *Rows) CellWidths(col int, measure Measurer) []int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	key := reflect.ValueOf(measure).Pointer()
+	if r.cellsFor != key || r.cellWidths == nil {
+		r.cellWidths, r.cellsFor = map[int][]int{}, key
+	}
+	if widths, ok := r.cellWidths[col]; ok {
+		return widths
+	}
+	widths := make([]int, len(r.cells))
+	for i, row := range r.cells {
+		if col < len(row) {
+			widths[i] = measure.Width(row[col])
+		}
+	}
+	r.cellWidths[col] = widths
+	return widths
 }

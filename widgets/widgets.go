@@ -13,6 +13,7 @@ func Library() *widget.Registry {
 		BindFactory("Scrollbox", factory(newScrollbox, scrollboxAttrs)).
 		BindFactory("Button", slotted(newButton, buttonAttrs, buttonSlots)).
 		BindFactory("Textbox", factory(newTextbox, textboxAttrs)).
+		BindFactory("TextArea", factory(newTextArea, textareaAttrs)).
 		BindFactory("Checkbox", factory(newCheck("Checkbox"), checkAttrs)).
 		BindFactory("Radio", factory(newCheck("Radio"), checkAttrs)).
 		BindFactory("List", factory(newList, listAttrs)).
@@ -24,7 +25,8 @@ func Library() *widget.Registry {
 		BindFactory("Spinner", factory(newSpinner, spinnerAttrs)).
 		BindFactory("Sparkline", factory(newSparkline, sparklineAttrs)).
 		BindFactory("Badge", factory(newBadge, badgeAttrs)).
-		BindFactory("IconLabel", factory(newIconLabel, iconLabelAttrs))
+		BindFactory("IconLabel", factory(newIconLabel, iconLabelAttrs)).
+		BindFactory("Tabs", factory(newTabs, tabsAttrs))
 }
 
 // Names lists every element the library binds, for documentation and for a host that wants to know what it is getting.

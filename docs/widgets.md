@@ -140,6 +140,58 @@ It is as wide as its longest line, the title included, up to `maxWidth`. A longe
 
 The mark is the `accent` and `accentText` colours when the element gives them, else reversed video. A click reports `Activated` with `event.Part` set to `item:N`.
 
+A `TextArea` is a text field of many lines. A `Textbox` turns the newlines of a paste into spaces. A `TextArea` keeps them, so a pasted key arrives as it was written:
+
+```xml
+<TextArea id="key" value="{key}" cursor="{keyCursor}" placeholder="paste a key" height="6"/>
+```
+
+| Attribute | Default | Notes |
+| --- | --- | --- |
+| `value` | empty | The text, newlines included. |
+| `cursor` | `-1` | The caret, as an offset in runes into the whole value. A negative one is the end. |
+| `placeholder` | empty | Drawn faint while the value is empty. |
+| `disabled` | `false` | A disabled area takes no focus and no keys. |
+| `password` | `false` | Draws a `•` for each rune and keeps the newlines. The value in an edit is still the plain text. |
+
+It fills the width it is given. Its height is its line count, with a floor of a few lines. A line wider than the area is cut, not wrapped. The area shows the rows and the columns that keep the caret in view, worked out from `value`, `cursor` and its size on every frame. Like a `Textbox` it holds nothing: every edit reports `Changed` with the new `Value` and `Cursor`, and the host hands both back.
+
+Typed text inserts at the caret, and so does a paste, whole. A carriage return in a paste becomes a newline. Enter inserts a newline. Backspace and delete join a pair of lines at a line edge. Left and right move by a rune across line ends. Up and down keep the column, clamped to the shorter line.
+
+On the first line up is not taken, and on the last line down is not taken, so the focus ring moves on them. Home and end go to the edges of the line. Tab is not taken.
+
+```go
+case tml.Changed:
+    if event.ID == "key" {
+        m.key, m.keyCursor = event.Value, event.Cursor
+    }
+```
+
+A `Tabs` is a row of labels with one of them selected:
+
+```xml
+<Tabs id="tabs" items="Controls,Data,Media" selected="{section}"/>
+```
+
+| Attribute | Default | Notes |
+| --- | --- | --- |
+| `items` | none | The labels, in order. |
+| `selected` | `0` | The index of the selected label. The host owns it. |
+| `disabled` | `false` | A disabled strip takes no focus and names no parts. |
+
+The selected label is bold and underlined in the theme's `primary` colour, and reversed while the strip has the focus. A strip too narrow for its labels cuts the label at the edge and drops the rest. A click reports `Activated` with `event.Part` set to `tab:N`. While the strip has the focus, left and right report `Changed`: `Value` is the new index in decimal. `Cursor` is the same index as a number. Left at the first tab and right at the last are not taken, so the focus ring moves on them.
+
+```go
+case tml.Activated:
+    if index, ok := strings.CutPrefix(event.Part, "tab:"); ok {
+        m.section, _ = strconv.Atoi(index)
+    }
+case tml.Changed:
+    if event.ID == "tabs" {
+        m.section = event.Cursor
+    }
+```
+
 ### Data
 
 Both take focus, and both leave the selection to the host. `selected` is a row index the model owns. Nothing in the widget can therefore disagree with what the program thinks is picked. A `Table` marks its row in place, as a reversed bar across every column, bold while the table focus. It uses no cursor gutter, because a row of columns has no single place to put one. The bar draws whether or not the table focus.
@@ -179,6 +231,27 @@ props["rows"] = rows.Value()
 ```
 
 `weights` shares spare room among the columns in proportion, one number for each column. A column the list does not reach weighs one, and a weight of zero takes none. `fit` names the columns that keep their whole width longest when the table is too narrow, the most important first. The other columns give way first, widest first, and then the fit columns, the last named first. A plain list of delimited strings still works for a short table.
+
+`tree` makes column 0 a tree. It takes one entry for each row, in row order, each `<depth>:<state>`. A malformed entry, or a count that does not match the rows, fails the element and names the entry and its row. Column 0 then draws an indent. This happens for each level of depth and then `▾` for an open row. This also happens `▸` for a closed one, or a blank for a leaf, then a space and the text.
+
+The header has no prefix. The column is sized with the prefix, over every row, and the rows measure their cells once.
+
+```xml
+<Table id="steps" columns="step,when,state" rows="{steps}" tree="{tree}" wrap="false"/>
+```
+
+```go
+props["tree"] = sema.StringValue("0:open,1:leaf,1:closed")
+```
+
+A point on the glyph of an open or closed row answers `toggle:N`, and the rest of the row answers `row:N`. N is the row's index in the whole listing, however far the table scrolled. A leaf never answers `toggle:`. The host owns which rows are open: it rebuilds the rows and the tree when a toggle arrives.
+
+```go
+if row, ok := strings.CutPrefix(event.Part, "toggle:"); ok {
+    n, _ := strconv.Atoi(row)
+    m.open[n] = !m.open[n]   // then rebuild rows and tree
+}
+```
 
 ### Display
 

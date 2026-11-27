@@ -14,7 +14,7 @@ import (
 )
 
 var tableAttrs = []string{
-	"columns", "rows", "separator", "border", "rule", "spacing", "selected", "disabled", "wrap", "collapse", "weights", "fit",
+	"columns", "rows", "separator", "border", "rule", "spacing", "selected", "disabled", "wrap", "collapse", "weights", "fit", "tree",
 }
 
 // dataTable is a grid of text with headers. It takes every row up front. It sizes its columns from all of them, and
@@ -35,8 +35,11 @@ type dataTable struct {
 	// weights is the share of spare room each column takes. fit is the columns.
 	weights []int
 	fit     []int
-	state   widget.State
-	measure widget.Measurer
+	// tree is each row's place in the tree the first column draws, or nil for a table with no tree.
+	tree      []treeNode
+	treeWidth int
+	state     widget.State
+	measure   widget.Measurer
 	// drawn is the width the table last drew at, and top the first of its lines on screen.
 	drawn, top int
 }
@@ -47,7 +50,7 @@ func newTable(ctx widget.Context) (widget.Native, error) {
 		return nil, err
 	}
 
-	t := &dataTable{columns: ctx.Attrs.List("columns"), bordered: bordered, measure: ctx.Measure}
+	t := &dataTable{columns: ctx.Attrs.List("columns"), bordered: bordered, measure: ctx.Measure, treeWidth: -1}
 	if t.selected, err = ctx.Attrs.Int("selected", -1); err != nil {
 		return nil, err
 	}
@@ -78,6 +81,9 @@ func newTable(ctx widget.Context) (widget.Native, error) {
 		return nil, err
 	}
 	if t.rows, err = tableRows(ctx); err != nil {
+		return nil, err
+	}
+	if t.tree, err = treeNodes(ctx, t.rows.Len()); err != nil {
 		return nil, err
 	}
 	return t, nil
@@ -148,7 +154,7 @@ func (t *dataTable) Part(x, y int) string {
 	// The header is drawn at the top of what is on screen, over the rows a scroll moved under it.
 	if line := y - t.top; line >= 0 && line < head {
 		border := t.edges() / 2
-		if line >= border && line < border+t.rowHeight(t.columns, s) {
+		if line >= border && line < border+t.rowHeight(t.columns, nil, s) {
 			if col, ok := t.columnAt(x, s); ok {
 				return "header:" + strconv.Itoa(col)
 			}
@@ -156,9 +162,42 @@ func (t *dataTable) Part(x, y int) string {
 		return ""
 	}
 	if i := t.rowAt(s, y-head); i >= 0 && i < t.rows.Len() {
+		if t.onToggle(s, i, x, y-head) {
+			return "toggle:" + strconv.Itoa(i)
+		}
 		return "row:" + strconv.Itoa(i)
 	}
 	return ""
+}
+
+// onToggle reports whether a point is on the disclosure glyph of row i. The glyph sits on the row's first line, in
+// the first column. line counts from the first row. A leaf has no glyph.
+func (t *dataTable) onToggle(s shape, i, x, line int) bool {
+	if t.tree == nil || t.tree[i].state == "leaf" || len(s.shown) == 0 || s.shown[0] != 0 {
+		return false
+	}
+	at := t.tree[i].glyphAt()
+	return line == t.rowStart(s, i) && at < s.widths[0] && x == t.edges()/2+at
+}
+
+// node is row i's place in the tree, or nil when the table has no tree.
+func (t *dataTable) node(i int) *treeNode {
+	if t.tree == nil {
+		return nil
+	}
+	return &t.tree[i]
+}
+
+// treeColumn is the widest cell of the first column with its tree prefix, over every row. The rows measure the cells
+// once, so this reads numbers and measures nothing.
+func (t *dataTable) treeColumn() int {
+	if t.treeWidth < 0 {
+		t.treeWidth = 0
+		for i, width := range t.rows.CellWidths(0, t.measure) {
+			t.treeWidth = max(t.treeWidth, t.tree[i].prefix()+width)
+		}
+	}
+	return t.treeWidth
 }
 
 // columnAt is the declared column whose cells span x.
@@ -207,7 +246,11 @@ func (t *dataTable) natural(shown []int) []int {
 	all := t.rows.Widths(len(t.columns), t.measure)
 	widths := make([]int, len(shown))
 	for i, col := range shown {
-		widths[i] = max(t.measure.Width(t.columns[col]), all[col])
+		cells := all[col]
+		if col == 0 && t.tree != nil {
+			cells = t.treeColumn()
+		}
+		widths[i] = max(t.measure.Width(t.columns[col]), cells)
 	}
 	return widths
 }
@@ -321,16 +364,25 @@ func (t *dataTable) lines(text string, width int) []cell.Line {
 	return t.measure.Wrap(text, width)
 }
 
-// rowHeight is the lines the tallest cell of a row takes. A table that does not wrap gives every row one line.
-func (t *dataTable) rowHeight(row []string, s shape) int {
+// rowHeight is the lines the tallest cell of a row takes. A table that does not wrap gives every row one line. node is
+// the row's place in the tree, or nil for the header and for a table with no tree.
+func (t *dataTable) rowHeight(row []string, node *treeNode, s shape) int {
 	if !t.wrap {
 		return 1
 	}
 	height := 1
 	for i, col := range s.shown {
-		height = max(height, len(t.lines(cellText(row, col), s.widths[i])))
+		height = max(height, len(t.lines(cellText(row, col), t.textWidth(col, node, s.widths[i]))))
 	}
 	return height
+}
+
+// textWidth is the cells a cell's text has in a column width cells wide.
+func (t *dataTable) textWidth(col int, node *treeNode, width int) int {
+	if col != 0 || node == nil {
+		return width
+	}
+	return max(1, width-node.prefix())
 }
 
 // starts is where each row begins, counted in lines from the first, with the line after the last at the end. A table
@@ -339,10 +391,11 @@ func (t *dataTable) starts(s shape) []int {
 	if !t.wrap {
 		return nil
 	}
-	return t.rows.Memo(fmt.Sprint(s.shown, s.widths), func() []int {
+	// A tree takes cells from the first column, so the same widths with and without a tree wrap differently.
+	return t.rows.Memo(fmt.Sprint(s.shown, s.widths, t.tree != nil), func() []int {
 		out := make([]int, t.rows.Len()+1)
 		for i := range t.rows.Len() {
-			out[i+1] = out[i] + t.rowHeight(t.rows.Row(i), s)
+			out[i+1] = out[i] + t.rowHeight(t.rows.Row(i), t.node(i), s)
 		}
 		return out
 	})
@@ -380,7 +433,7 @@ func (t *dataTable) headerRule() bool { return t.bordered || t.rule }
 
 // headLines is the lines above the first row: the top border, the header and the rule under it.
 func (t *dataTable) headLines(s shape) int {
-	lines := t.edges()/2 + t.rowHeight(t.columns, s)
+	lines := t.edges()/2 + t.rowHeight(t.columns, nil, s)
 	if t.headerRule() {
 		lines++
 	}
@@ -425,7 +478,7 @@ func (t *dataTable) Draw(c cell.Canvas) {
 				style = style.Bold(true)
 			}
 		}
-		y += t.drawRow(body, y, t.rows.Row(i), s, style)
+		y += t.drawRow(body, y, t.rows.Row(i), t.node(i), s, style)
 	}
 	if t.bordered && y < end {
 		t.drawRule(body, y, s, "└", "─", "┴", "┘")
@@ -439,7 +492,7 @@ func (t *dataTable) drawHead(c cell.Canvas, y int, s shape) {
 		t.drawRule(c, y, s, "┌", "─", "┬", "┐")
 		y++
 	}
-	y += t.drawRow(c, y, t.columns, s, cell.Style{})
+	y += t.drawRow(c, y, t.columns, nil, s, cell.Style{})
 	if t.bordered {
 		t.drawRule(c, y, s, "├", "─", "┼", "┤")
 	} else if t.rule {
@@ -465,8 +518,8 @@ func (t *dataTable) drawRule(c cell.Canvas, y int, s shape, left, line, joint, r
 
 // drawRow draws one row of cells in style, and reports how many lines it took. A borderless row carries the style
 // across the gaps between its columns, so a marked row reads as one unbroken bar.
-func (t *dataTable) drawRow(c cell.Canvas, y int, row []string, s shape, style cell.Style) int {
-	height := t.rowHeight(row, s)
+func (t *dataTable) drawRow(c cell.Canvas, y int, row []string, node *treeNode, s shape, style cell.Style) int {
+	height := t.rowHeight(row, node, s)
 	x := 0
 	if t.bordered {
 		c.Repeat(x, y, 1, height, "│", cell.Style{})
@@ -484,13 +537,31 @@ func (t *dataTable) drawRow(c cell.Canvas, y int, row []string, s shape, style c
 		if t.bordered && !style.IsZero() {
 			c.Fill(x, y, s.widths[i], height, style)
 		}
-		for n, line := range t.lines(cellText(row, col), s.widths[i]) {
-			c.Line(x, y+n, line, style)
-		}
+		t.drawCell(c.Clip(x, y, s.widths[i], height), x, y, cellText(row, col), t.cellNode(col, node), s.widths[i], style)
 		x += s.widths[i]
 	}
 	if t.bordered {
 		c.Repeat(x, y, 1, height, "│", cell.Style{})
 	}
 	return height
+}
+
+// cellNode is the node a cell draws its tree prefix for: the row's node in the first column, and nil elsewhere.
+func (t *dataTable) cellNode(col int, node *treeNode) *treeNode {
+	if col != 0 {
+		return nil
+	}
+	return node
+}
+
+// drawCell draws one cell at x, y, on a canvas clipped to the cell. A tree row's first column draws its indent and
+// its glyph first, and its text after them.
+func (t *dataTable) drawCell(c cell.Canvas, x, y int, text string, node *treeNode, width int, style cell.Style) {
+	if node != nil {
+		c.Text(x+node.glyphAt(), y, treeGlyphs[node.state], style)
+		x += node.prefix()
+	}
+	for n, line := range t.lines(text, t.textWidth(0, node, width)) {
+		c.Line(x, y+n, line, style)
+	}
 }
