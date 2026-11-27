@@ -66,9 +66,18 @@ func newImage(ctx widget.Context) (widget.Native, error) {
 		protocol = detectProtocol(os.Getenv)
 	}
 
+	w, err := loadImage(ctx, "Image", "src", src, ctx.Attrs.String("alt", path.Base(src)), protocol)
+	if err != nil {
+		return nil, err
+	}
+	return w, nil
+}
+
+// loadImage builds the picture an element draws. The caller resolves an auto protocol first.
+func loadImage(ctx widget.Context, element, attr, src, alt, protocol string) (*imageWidget, error) {
 	w := &imageWidget{
 		src:      src,
-		alt:      ctx.Attrs.String("alt", path.Base(src)),
+		alt:      alt,
 		protocol: protocol,
 		measure:  ctx.Measure,
 		dark:     ctx.Dark,
@@ -80,11 +89,11 @@ func newImage(ctx widget.Context) (widget.Native, error) {
 
 	raw, err := readImage(ctx.FS, ctx.Dir, src)
 	if err != nil {
-		return nil, fmt.Errorf("<Image> src %q: %w", src, err)
+		return nil, fmt.Errorf("<%s> %s %q: %w", element, attr, src, err)
 	}
 	decoded, _, err := image.Decode(bytes.NewReader(raw))
 	if err != nil {
-		return nil, fmt.Errorf("<Image> src %q: %w", src, err)
+		return nil, fmt.Errorf("<%s> %s %q: %w", element, attr, src, err)
 	}
 	w.img = decoded
 	return w, nil
