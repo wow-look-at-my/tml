@@ -108,9 +108,11 @@ type Program struct {
 	width, height int
 	tty           bool
 	dirty         bool
-	unchanged     bool
-	stopping      bool
-	err           error
+	// stale says a message changed what the last layout published, so the next input needs a fresh layout.
+	stale     bool
+	unchanged bool
+	stopping  bool
+	err       error
 	// stopTooltip cancels the wait for a tooltip, or is nil when nothing waits.
 	stopTooltip func()
 
@@ -303,10 +305,17 @@ func (p *Program) loop() {
 
 		select {
 		case <-p.signal:
-			// A burst of input is one frame, not a frame for each value.
+			// A burst of input is one frame, not a frame for each value. Each input still meets the state the one
+			// before it left.
 			for _, msg := range p.received() {
 				if p.stopping {
 					break
+				}
+				if p.stale && isInput(msg) {
+					if err := p.settle(); err != nil {
+						p.err = err
+						return
+					}
 				}
 				p.dispatch(msg)
 			}
@@ -326,7 +335,7 @@ func (p *Program) Unchanged() { p.unchanged = true }
 // dispatch routes one message, and asks for a frame unless the app said the message changed nothing.
 func (p *Program) dispatch(msg Msg) {
 	if !p.route(msg) {
-		p.dirty = true
+		p.dirty, p.stale = true, true
 	}
 }
 
@@ -404,11 +413,8 @@ func (p *Program) update(msg Msg) bool {
 
 // paint prints the queued lines, lays the view out at the screen's size, and draws the frame.
 func (p *Program) paint() error {
-	p.dirty = false
-	if p.measure() {
-		p.screen.Invalidate()
-		p.app.Update(p, Resize{Width: p.width, Height: p.height})
-	}
+	p.dirty, p.stale = false, false
+	p.remeasure()
 	if lines := p.take(false); len(lines) > 0 && p.opts.Inline {
 		if err := p.screen.Print(lines); err != nil {
 			return err
@@ -423,11 +429,7 @@ func (p *Program) paint() error {
 	var frame *cell.Buffer
 	var err error
 	if p.opts.Inline {
-		limit := p.opts.MaxHeight
-		if limit <= 0 {
-			limit = p.height
-		}
-		frame, err = p.view.DrawFit(p.app.Props(), p.width, limit)
+		frame, err = p.view.DrawFit(p.app.Props(), p.width, p.limit())
 	} else {
 		frame, err = p.view.Draw(p.app.Props(), p.width, p.height)
 	}
