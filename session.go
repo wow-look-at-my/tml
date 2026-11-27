@@ -71,7 +71,7 @@ func (s *session) adopt(v *View) error {
 		s.insp.Attach(v)
 	}
 	if s.serving {
-		return nil
+		return s.err
 	}
 	s.serving = true
 	socket := SocketPath()
