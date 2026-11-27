@@ -87,6 +87,6 @@ func assertUnknown(element string) error { return unknownElement(element) }
 func TestLibraryBindsEveryDocumentedWidget(t *testing.T) {
 	assert.Equal(t, []string{
 		"Area", "Badge", "Border", "Button", "Checkbox", "Image", "List", "Menu", "Popup", "ProgressBar",
-		"Radio", "Rule", "Scrim", "Scrollbox", "Sparkline", "Spinner", "Table", "Textbox",
+		"Radio", "Rule", "Scrim", "Scrollbox", "Sparkline", "Spinner", "Table", "Tabs", "TextArea", "Textbox",
 	}, Names())
 }

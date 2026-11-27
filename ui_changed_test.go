@@ -39,6 +39,16 @@ func TestAPasteInsertsIntoTheFocusedTextbox(t *testing.T) {
 	assert.Equal(t, 3, events[0].Cursor)
 }
 
+// A paste reaches a focused text area whole, newlines and all.
+func TestAPasteKeepsItsNewlinesInATextArea(t *testing.T) {
+	loaded := interactive(t, `<Stack><TextArea id="key" action="key" value=""/></Stack>`, 30, 6)
+
+	events := loaded.UI().Update(input.Paste{Text: "line one\nline two\n"})
+	require.Len(t, events, 1)
+	assert.Equal(t, tml.Event{Kind: tml.Changed, ID: "key", Action: "key", X: -1, Y: -1, Value: "line one\nline two\n", Cursor: 18},
+		events[0])
+}
+
 // Enter and tab are not the field's, so the ring still activates and moves.
 func TestATextboxLeavesEnterAndTabToTheRing(t *testing.T) {
 	loaded := interactive(t, field, 30, 6)
