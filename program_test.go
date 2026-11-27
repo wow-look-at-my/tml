@@ -281,7 +281,7 @@ func TestAProgramCopiesToTheClipboard(t *testing.T) {
 }
 
 func TestAProgramNamesTheWindow(t *testing.T) {
-	t.Serial("the program's view is attached to the single inspector of the process")
+	t.Serial("the window title program binds its view to the process inspector and resets the drivable guard")
 	exclusive(t)
 	run := startTyped(t, tml.ProgramOptions{})
 	require.Eventually(t, func() bool { return onScreen(run.out.String(), "hello") },
