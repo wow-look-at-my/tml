@@ -48,7 +48,7 @@ A `Grid` track takes a range (`*[8..32]`), and `collapse` names the columns that
 
 ## Widgets
 
-Panels solve constraints. Widgets draw. `widgets/` is the library: Border, Popup, Scrollbox, Button, Textbox, Checkbox, Radio, List, Menu, Table, Image, Rule, ProgressBar, Spinner, Sparkline, Badge. Default registers each one, dropped by `Options.Bare`, and overridable by name. Nothing in it holds state. A `widget.Templated` widget is drawn as another element: a `Button` is a real `<Border>` box in the tree around its content (`layout/template.go`).
+Panels solve constraints. Widgets draw. `widgets/` is the library: Border, Popup, Scrollbox, Button, Textbox, TextArea, Checkbox, Radio, List, Menu, Table, Image, Rule, ProgressBar, Spinner, Sparkline, Badge, Tabs. Default registers each one, dropped by `Options.Bare`, and overridable by name. Nothing in it holds state. A `widget.Templated` widget is drawn as another element: a `Button` is a real `<Border>` box in the tree around its content (`layout/template.go`).
 
 Containers go through the public `widget.Composer`/`Arranger` seam, not through the engine, so a widget written outside the language is not a second-class one. Do not special-case a library widget inside `layout/`.
 
