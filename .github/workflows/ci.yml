@@ -39,10 +39,13 @@ jobs:
       # The prose gate, at the top of the job. A finding is about the checkout, so it fails here rather than after the build.
       - uses: wow-look-at-my/actions@ste-lint#latest
 
-      # inspect/ui/inspector.js is compiled from inspect/ui/src, and committed because go:embed reads the module's tree.
-      - uses: extractions/setup-just@v2
+      # inspect/ui/inspector.js is compiled from inspect/ui/src, and committed because go:embed reads the module's tree. The justfile's build recipe, run by hand: the extractions/setup-just action it used to come from failed on a GitHub API Server Error.
       - name: Compile the inspector page
-        run: corepack enable && pnpm install && just build
+        run: |
+          corepack enable
+          pnpm install
+          export PATH="$PWD/node_modules/.bin:$PATH"
+          cd inspect/ui && ts0 build
       - name: Check the committed page is what its source compiles to
         run: git diff --exit-code -- inspect/ui/inspector.js
 
