@@ -32,6 +32,15 @@ func TestSparklineKeepsTheMostRecentPoints(t *testing.T) {
 	assert.Equal(t, "▁█", widgettest.Text(line, 2, 1))
 }
 
+// A graph given more than one row fills whole cells from the bottom, and the partial block is the top of a bar.
+func TestSparklineFillsEveryRowItIsGiven(t *testing.T) {
+	line := build(t, "Sparkline", map[string]string{"values": "0,5,9,15", "max": "15"})
+
+	assert.Equal(t, "  ▂█\n▁▆██", widgettest.Text(line, 4, 2))
+	assert.Equal(t, "   █\n  ▆█\n▁███", widgettest.Text(line, 4, 3))
+	assert.Equal(t, "▁▃▅█", widgettest.Text(line, 4, 1), "one row draws as it always did")
+}
+
 func TestSparklineTakesAColour(t *testing.T) {
 	line := build(t, "Sparkline", map[string]string{"values": "1,2", "color": ref("accent")})
 
