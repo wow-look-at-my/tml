@@ -283,6 +283,12 @@ if row, ok := strings.CutPrefix(event.Part, "toggle:"); ok {
 | `Spinner` | `kind`, `color` | It animates itself; see [Animation](#animation). |
 | `Badge` | `label` | A padded chip. |
 
+A `Sparkline` is one row unless the element says otherwise. With a `height` it fills every row it is given: a bar fills whole cells from the bottom. A partial block is its top.
+
+```xml
+<Sparkline values="{load}" max="100" height="3" color="{theme.accent}"/>
+```
+
 `IconLabel` draws its `icon` through the same ladder as `Image`: see [images.md](images.md). The label takes the element's own colours, so a theme colour on the element is the name's colour:
 
 ```xml

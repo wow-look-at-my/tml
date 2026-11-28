@@ -68,8 +68,10 @@ func (s *sparkline) Measure(maxW, _ int) (int, int) {
 	return width, 1
 }
 
+// Draw plots the series over every row it is given. A height on the element makes the graph that tall. A bar
+// fills whole cells from the bottom row up, and the partial block is its top.
 func (s *sparkline) Draw(c cell.Canvas) {
-	w, _ := c.Size()
+	w, h := c.Size()
 	values := s.values
 	// Too many points for the space: keep the most recent, because a series scrolls off the left in every chart anybody
 	if w > 0 && len(values) > w {
@@ -77,10 +79,24 @@ func (s *sparkline) Draw(c cell.Canvas) {
 	}
 	scale := s.scale()
 
-	var b strings.Builder
+	h = max(h, 1)
+	steps := len(sparkBars)
+	rows := make([]strings.Builder, h)
 	for _, v := range values {
-		index := int(min(1, max(0, v/scale)) * float64(len(sparkBars)-1))
-		b.WriteRune(sparkBars[index])
+		// A bar is a count of eighths of a cell. The lowest bar is still one eighth, so a zero shows.
+		level := int(min(1, max(0, v/scale)) * float64(h*steps-1))
+		for row := range h {
+			switch above := level - row*steps; {
+			case above >= steps:
+				rows[row].WriteRune(sparkBars[steps-1])
+			case above >= 0:
+				rows[row].WriteRune(sparkBars[above])
+			default:
+				rows[row].WriteRune(' ')
+			}
+		}
 	}
-	c.Text(0, 0, b.String(), paint(s.color))
+	for row := range h {
+		c.Text(0, h-1-row, rows[row].String(), paint(s.color))
+	}
 }
