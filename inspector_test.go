@@ -246,6 +246,13 @@ func TestAViewThatCannotBeServedIsNotReturned(t *testing.T) {
 	assert.Nil(t, loaded)
 	assert.ErrorContains(t, err, "serve the inspection protocol")
 	assert.ErrorContains(t, tml.InspectError(), "serve the inspection protocol")
+
+	// The socket is opened once a process, so a later view is no more reachable than the first one.
+	again, err := tml.Load(fstest.MapFS{"app.tml": &fstest.MapFile{Data: []byte(inspectorView)}},
+		"app.tml", tml.Options{})
+	require.Error(t, err, "a second view loaded after the serve failed is just as unreachable")
+	assert.Nil(t, again)
+	assert.ErrorContains(t, err, "serve the inspection protocol")
 }
 
 // The socket is not conditional on the environment: a program that sets nothing at all still serves, and the path it
